@@ -1,6 +1,6 @@
-# CLUB CHUCHOTER Official Site
+# CHUCHOTER Official Site
 
-高級隠れ家クラブ「CLUB CHUCHOTER」の公式ウェブサイトです。
+高級隠れ家クラブ「CHUCHOTER」の公式ウェブサイトです。
 
 ## 技術スタック
 

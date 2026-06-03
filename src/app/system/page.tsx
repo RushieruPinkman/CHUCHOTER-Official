@@ -5,7 +5,7 @@ import ScrollReveal from "@/components/ScrollReveal";
 export const metadata: Metadata = {
   title: "ご案内",
   description:
-    "CLUB CHUCHOTERの入館システム、Request Invite手順、ドレスコード・マナーをご案内。初めてのお客様も迷わずチェックインいただけます。",
+    "CHUCHOTERの入館システム、Request Invite手順、ドレスコード・マナーをご案内。初めてのお客様も迷わずチェックインいただけます。",
 };
 
 const STEPS = [
@@ -42,7 +42,7 @@ export default function SystemPage() {
               入館システム
             </h2>
             <p className="max-w-3xl text-[15px] leading-[1.85] text-cream-muted">
-              CLUB CHUCHOTERは、完全1対1の個別ルーム（私室）でのサービスです。選ばれたお客様だけが静かで質の高いコミュニケーションを楽しめる空間となっております。
+              CHUCHOTERは、完全1対1の個別ルーム（私室）でのサービスです。選ばれたお客様だけが静かで質の高いコミュニケーションを楽しめる空間となっております。
             </p>
           </ScrollReveal>
 

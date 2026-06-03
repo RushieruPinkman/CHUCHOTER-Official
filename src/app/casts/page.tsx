@@ -6,7 +6,7 @@ import { getCasts } from "@/lib/data";
 export const metadata: Metadata = {
   title: "住人紹介",
   description:
-    "CLUB CHUCHOTERのレジデンス — Le Ciel Blanc、黒糖アメをはじめとする住人のプロフィール。",
+    "CHUCHOTERのレジデンス — Le Ciel Blanc、黒糖アメをはじめとする住人のプロフィール。",
 };
 
 export default async function CastsPage() {

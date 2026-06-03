@@ -76,7 +76,7 @@ export default async function HomePage() {
                 喧騒の向こう側へ
               </h2>
               <p className="text-[15px] leading-[2] text-cream-muted">
-                CLUB CHUCHOTERは、VRChat内で提供される完全私室の1対1空間です。パブリックの騒がしさから離れ、静かで質の高いコミュニケーションを求める方に、コンシェルジュ目線のおもてなしをお届けします。
+                CHUCHOTERは、VRChat内で提供される完全私室の1対1空間です。パブリックの騒がしさから離れ、静かで質の高いコミュニケーションを求める方に、コンシェルジュ目線のおもてなしをお届けします。
               </p>
             </ScrollReveal>
 

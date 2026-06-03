@@ -1,5 +1,5 @@
 export const SITE = {
-  name: "CLUB CHUCHOTER",
+  name: "CHUCHOTER",
   logo: "/images/logo.png", // 背景透過PNG必須 · 差替後は npm run logo:transparent
   favicon: "/icon.svg",
   appleIcon: "/apple-icon.svg",

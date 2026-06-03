@@ -12,7 +12,6 @@ export const metadata: Metadata = {
   },
   description: SITE.description,
   keywords: [
-    "CLUB CHUCHOTER",
     "CHUCHOTER",
     "VRChat",
     "Le Ciel Blanc",

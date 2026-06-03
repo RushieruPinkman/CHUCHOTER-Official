@@ -7,7 +7,7 @@ import { getAllCasts, getSchedule } from "@/lib/data";
 export const metadata: Metadata = {
   title: "予定表",
   description:
-    "CLUB CHUCHOTERの今週の営業予定と出勤キャストのシフト表。1部（20:50〜）・2部（22:00〜）の出勤状況をご確認ください。",
+    "CHUCHOTERの今週の営業予定と出勤キャストのシフト表。1部（20:50〜）・2部（22:00〜）の出勤状況をご確認ください。",
 };
 
 const STATUS = {
