@@ -8,15 +8,6 @@ import type { Cast } from "@/types";
 type Columns = 1 | 2 | 3 | 4 | 5 | 6;
 type GenderFilter = "all" | "male" | "female";
 
-const GRID_CLASS: Record<Columns, string> = {
-  1: "grid-cols-1",
-  2: "grid-cols-1 sm:grid-cols-2",
-  3: "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3",
-  4: "grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4",
-  5: "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5",
-  6: "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6",
-};
-
 const COLUMN_OPTIONS: Columns[] = [1, 2, 3, 4, 5, 6];
 
 const GENDER_FILTERS: { value: GenderFilter; label: string }[] = [
@@ -119,10 +110,10 @@ export default function CastsGrid({ casts }: { casts: Cast[] }) {
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3">
-            <p className="text-sm text-cream-muted">表示列数</p>
+          <div className="flex min-w-0 flex-wrap items-center gap-3 sm:flex-nowrap">
+            <p className="shrink-0 text-sm text-cream-muted">表示列数</p>
             <div
-              className="flex gap-1 border border-[var(--color-border)] p-1"
+              className="flex max-w-full gap-1 overflow-x-auto border border-[var(--color-border)] p-1 touch-pan-x"
               role="group"
               aria-label="カラム数を変更"
             >
@@ -131,7 +122,7 @@ export default function CastsGrid({ casts }: { casts: Cast[] }) {
                   key={n}
                   type="button"
                   onClick={() => setColumns(n)}
-                  className={`flex h-10 w-10 items-center justify-center transition-colors ${
+                  className={`flex h-10 w-10 shrink-0 items-center justify-center transition-colors ${
                     columns === n
                       ? "bg-gold/15 text-gold"
                       : "text-cream-muted hover:text-gold"
@@ -151,9 +142,9 @@ export default function CastsGrid({ casts }: { casts: Cast[] }) {
             該当する住人がいません。
           </p>
         ) : (
-          <div className={`grid gap-4 ${GRID_CLASS[columns]}`}>
+          <div className={`grid gap-4 min-w-0`} style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }}>
             {filteredCasts.map((cast) => (
-              <article key={cast.id} className="h-full">
+              <article key={cast.id} className="min-w-0 h-full">
                 <button
                   type="button"
                   onClick={() => openCast(cast)}
