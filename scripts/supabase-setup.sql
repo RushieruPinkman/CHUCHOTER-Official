@@ -40,3 +40,23 @@ create policy "Public read cast images"
   for select
   to public
   using (bucket_id = 'cast-images');
+
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values (
+  'cast-voices',
+  'cast-voices',
+  true,
+  10485760,
+  array['audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/x-wav', 'audio/ogg', 'audio/webm', 'audio/mp4', 'audio/x-m4a', 'audio/aac']
+)
+on conflict (id) do update set
+  public = excluded.public,
+  file_size_limit = excluded.file_size_limit,
+  allowed_mime_types = excluded.allowed_mime_types;
+
+drop policy if exists "Public read cast voices" on storage.objects;
+create policy "Public read cast voices"
+  on storage.objects
+  for select
+  to public
+  using (bucket_id = 'cast-voices');

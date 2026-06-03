@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { lockBodyScroll, unlockBodyScroll } from "@/lib/body-scroll-lock";
 import CastRoleBadge from "@/components/CastRoleBadge";
+import CastVoicePlayer from "@/components/CastVoicePlayer";
 import type { Cast } from "@/types";
 
 interface CastDetailModalProps {
@@ -125,11 +126,10 @@ export default function CastDetailModal({ cast, onClose }: CastDetailModalProps)
 
             {/* テキストエリア: スクロール可能 */}
             <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain border-t border-[var(--color-border)] px-4 py-3">
-              <p
-                className="font-serif-jp text-xs leading-relaxed text-gold/90"
-              >
-                {cast.tagline}
-              </p>
+              <p className="font-serif-jp text-xs leading-relaxed text-gold/90">{cast.tagline}</p>
+              {cast.voiceUrl ? (
+                <CastVoicePlayer src={cast.voiceUrl} className="my-3" />
+              ) : null}
               <div className="hairline my-2" />
               <p className="whitespace-pre-line text-xs leading-relaxed text-cream-muted">
                 {cast.bio}
@@ -157,11 +157,10 @@ export default function CastDetailModal({ cast, onClose }: CastDetailModalProps)
                 {cast.nameEn}
               </h2>
               <p className="mb-4 text-lg text-cream-muted">{cast.name}</p>
-              <p
-                className="font-serif-jp mb-6 text-lg text-gold/90"
-              >
-                {cast.tagline}
-              </p>
+              <p className="font-serif-jp mb-4 text-lg text-gold/90">{cast.tagline}</p>
+              {cast.voiceUrl ? (
+                <CastVoicePlayer src={cast.voiceUrl} className="mb-6" />
+              ) : null}
               <div className="hairline mb-6" />
               <p className="whitespace-pre-line pb-1 text-[15px] leading-[2] text-cream-muted">
                 {cast.bio}

@@ -80,6 +80,8 @@ export async function POST(request: NextRequest) {
 
       image: body.image || "/images/casts/placeholder.svg",
 
+      voiceUrl: body.voiceUrl,
+
       xUrl: body.xUrl,
 
       vrchatUrl: body.vrchatUrl,

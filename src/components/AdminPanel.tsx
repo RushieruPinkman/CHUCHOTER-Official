@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Logo from "@/components/Logo";
 import ImageUploader from "@/components/admin/ImageUploader";
+import VoiceUploader from "@/components/admin/VoiceUploader";
 import ResidentsEditor from "@/components/admin/ResidentsEditor";
 import ScheduleEditor from "@/components/admin/ScheduleEditor";
 import { readApiError } from "@/lib/api-error";
@@ -524,6 +525,11 @@ export default function AdminPanel({
             <ImageUploader
               value={editingCast.image}
               onChange={(url) => setEditingCast({ ...editingCast, image: url })}
+              authToken={token}
+            />
+            <VoiceUploader
+              value={editingCast.voiceUrl}
+              onChange={(voiceUrl) => setEditingCast({ ...editingCast, voiceUrl })}
               authToken={token}
             />
             {(

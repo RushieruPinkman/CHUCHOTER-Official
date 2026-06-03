@@ -9,6 +9,7 @@ export interface Cast {
   tagline: string;
   bio: string;
   image: string;
+  voiceUrl?: string;
   xUrl?: string;
   vrchatUrl?: string;
   order: number;

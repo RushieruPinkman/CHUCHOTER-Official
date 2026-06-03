@@ -156,6 +156,7 @@ export default function ResidentsEditor({
       tagline: cast.tagline,
       bio: cast.bio,
       image: cast.image,
+      voiceUrl: cast.voiceUrl,
       xUrl: cast.xUrl,
       vrchatUrl: cast.vrchatUrl,
       order: ordered.length + 1,
