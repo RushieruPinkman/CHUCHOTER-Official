@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { readApiError } from "@/lib/api-error";
 import CastRoleBadge from "@/components/CastRoleBadge";
 import { normalizeCastRole } from "@/lib/cast-roles";
 import type { Cast } from "@/types";
@@ -100,7 +101,7 @@ export default function ResidentsEditor({
         onReload();
       } else {
         setLocalCasts(previous);
-        onMessage("表示順の保存に失敗しました");
+        onMessage(await readApiError(res, "表示順の保存に失敗しました"));
       }
     } catch {
       setLocalCasts(previous);
@@ -136,7 +137,7 @@ export default function ResidentsEditor({
         onMessage(cast.active ? "非公開にしました" : "公開しました");
         onReload();
       } else {
-        onMessage("公開設定の更新に失敗しました");
+        onMessage(await readApiError(res, "公開設定の更新に失敗しました"));
       }
     } catch {
       onMessage("公開設定の更新に失敗しました");
@@ -172,7 +173,7 @@ export default function ResidentsEditor({
         onMessage("住人を複製しました（非公開で追加）");
         onReload();
       } else {
-        onMessage("複製に失敗しました");
+        onMessage(await readApiError(res, "複製に失敗しました"));
       }
     } catch {
       onMessage("複製に失敗しました");

@@ -1,12 +1,33 @@
 import "server-only";
 import { promises as fs } from "fs";
 import path from "path";
-import { getSupabaseAdmin } from "@/lib/supabase-admin";
+import { getMissingSupabaseEnvVars, getSupabaseAdmin, isRemoteStorageEnabled } from "@/lib/supabase-admin";
 
 const DATA_DIR = path.join(process.cwd(), "data");
 
 function fileKey(filename: string): string {
   return filename.replace(/\.json$/, "");
+}
+
+export function getStorageStatus() {
+  const missing = getMissingSupabaseEnvVars();
+  return {
+    remoteStorage: isRemoteStorageEnabled(),
+    isVercel: process.env.VERCEL === "1",
+    missingEnv: missing,
+    writable: isRemoteStorageEnabled() || process.env.VERCEL !== "1",
+  };
+}
+
+function assertWritableStorage(): void {
+  if (process.env.VERCEL === "1" && !isRemoteStorageEnabled()) {
+    const missing = getMissingSupabaseEnvVars();
+    throw new Error(
+      missing.length > 0
+        ? `Supabase が未設定です（${missing.join(" / ")}）。Vercel の環境変数を設定して再デプロイしてください。`
+        : "本番環境では Supabase ストレージが必要です。"
+    );
+  }
 }
 
 async function readLocalJsonFile<T>(filename: string, fallback: T): Promise<T> {
@@ -19,6 +40,7 @@ async function readLocalJsonFile<T>(filename: string, fallback: T): Promise<T> {
 }
 
 async function writeLocalJsonFile<T>(filename: string, data: T): Promise<void> {
+  assertWritableStorage();
   await fs.writeFile(
     path.join(DATA_DIR, filename),
     JSON.stringify(data, null, 2),
@@ -60,11 +82,14 @@ export async function writeJsonFile<T>(filename: string, data: T): Promise<void>
   }
 
   const key = fileKey(filename);
-  const { error } = await supabase.from("site_data").upsert({
-    key,
-    value: data,
-    updated_at: new Date().toISOString(),
-  });
+  const { error } = await supabase.from("site_data").upsert(
+    {
+      key,
+      value: data,
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "key" }
+  );
 
   if (error) {
     throw new Error(`Failed to write ${key}: ${error.message}`);

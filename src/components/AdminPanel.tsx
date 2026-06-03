@@ -5,6 +5,7 @@ import Logo from "@/components/Logo";
 import ImageUploader from "@/components/admin/ImageUploader";
 import ResidentsEditor from "@/components/admin/ResidentsEditor";
 import ScheduleEditor from "@/components/admin/ScheduleEditor";
+import { readApiError } from "@/lib/api-error";
 import { CAST_ROLES, CAST_ROLE_LABELS, normalizeCastRole } from "@/lib/cast-roles";
 import type { Announcement, Cast, CastRole, ScheduleEntry, SiteStatus } from "@/types";
 
@@ -55,6 +56,7 @@ export default function AdminPanel({
   const [isNewAnnouncement, setIsNewAnnouncement] = useState(false);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
+  const [storageIssue, setStorageIssue] = useState<string | null>(null);
 
   const authGetHeaders = useCallback(
     (): HeadersInit => ({
@@ -71,6 +73,51 @@ export default function AdminPanel({
     [token]
   );
 
+  const checkStorage = useCallback(async () => {
+    if (!token) return;
+    try {
+      const res = await fetch("/api/admin/storage", { headers: authGetHeaders() });
+      if (!res.ok) {
+        setStorageIssue("ストレージ状態を確認できませんでした");
+        return;
+      }
+      const body = (await res.json()) as {
+        writable?: boolean;
+        remoteStorage?: boolean;
+        supabaseOk?: boolean;
+        supabaseError?: string | null;
+        missingEnv?: string[];
+      };
+
+      if (!body.writable) {
+        const missing = body.missingEnv?.length ? `（${body.missingEnv.join(" / ")}）` : "";
+        setStorageIssue(`Supabase が未設定のため、本番では保存できません${missing}`);
+        return;
+      }
+
+      if (body.remoteStorage && !body.supabaseOk) {
+        setStorageIssue(
+          body.supabaseError
+            ? `Supabase への接続に失敗: ${body.supabaseError}`
+            : "Supabase への接続に失敗しました"
+        );
+        return;
+      }
+
+      setStorageIssue(null);
+    } catch {
+      setStorageIssue("ストレージ状態を確認できませんでした");
+    }
+  }, [token, authGetHeaders]);
+
+  const ensureWritable = () => {
+    if (readOnlyHost || storageIssue) {
+      setMessage(storageIssue || "本番環境では Supabase の設定が必要です。");
+      return false;
+    }
+    return true;
+  };
+
   const loadData = useCallback(async () => {
     if (!token) return;
     setLoading(true);
@@ -85,12 +132,13 @@ export default function AdminPanel({
       if (announceRes.ok) setAnnouncements(await announceRes.json());
       if (scheduleRes.ok) setSchedule(await scheduleRes.json());
       if (statusRes.ok) setStatus(await statusRes.json());
+      await checkStorage();
     } catch {
       setMessage("データの読み込みに失敗しました。開発サーバーを確認して再読み込みしてください。");
     } finally {
       setLoading(false);
     }
-  }, [token, authGetHeaders]);
+  }, [token, authGetHeaders, checkStorage]);
 
   useEffect(() => {
     const saved = sessionStorage.getItem("chuchoter-admin-token");
@@ -129,7 +177,7 @@ export default function AdminPanel({
 
   const handleSaveCast = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!editingCast || !token) return;
+    if (!editingCast || !token || !ensureWritable()) return;
     try {
       const payload = {
         ...editingCast,
@@ -147,7 +195,7 @@ export default function AdminPanel({
         setIsNewCast(false);
         loadData();
       } else {
-        setMessage("保存に失敗しました");
+        setMessage(await readApiError(res, "保存に失敗しました"));
       }
     } catch {
       setMessage("保存に失敗しました。サーバーへの接続を確認してください。");
@@ -172,7 +220,7 @@ export default function AdminPanel({
 
   const handleSaveAnnouncement = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!editingAnnouncement || !token) return;
+    if (!editingAnnouncement || !token || !ensureWritable()) return;
     try {
       const res = await fetch("/api/announcements", {
         method: isNewAnnouncement ? "POST" : "PUT",
@@ -185,7 +233,7 @@ export default function AdminPanel({
         setIsNewAnnouncement(false);
         loadData();
       } else {
-        setMessage("保存に失敗しました");
+        setMessage(await readApiError(res, "保存に失敗しました"));
       }
     } catch {
       setMessage("保存に失敗しました。サーバーへの接続を確認してください。");
@@ -210,7 +258,7 @@ export default function AdminPanel({
 
   const handleStatusUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!status || !token) return;
+    if (!status || !token || !ensureWritable()) return;
     try {
       const res = await fetch("/api/status", {
         method: "PATCH",
@@ -218,14 +266,14 @@ export default function AdminPanel({
         body: JSON.stringify(status),
       });
       if (res.ok) setMessage("運行状況を更新しました");
-      else setMessage("運行状況の保存に失敗しました");
+      else setMessage(await readApiError(res, "運行状況の保存に失敗しました"));
     } catch {
       setMessage("運行状況の保存に失敗しました。サーバーへの接続を確認してください。");
     }
   };
 
   const handleSaveSchedule = async (entries: ScheduleEntry[]) => {
-    if (!token) return false;
+    if (!token || !ensureWritable()) return false;
     try {
       const res = await fetch("/api/schedule", {
         method: "PUT",
@@ -237,7 +285,7 @@ export default function AdminPanel({
         setSchedule(entries);
         return true;
       }
-      setMessage("予定表の保存に失敗しました");
+      setMessage(await readApiError(res, "予定表の保存に失敗しました"));
       return false;
     } catch {
       setMessage("予定表の保存に失敗しました。サーバーへの接続を確認してください。");
@@ -293,15 +341,17 @@ export default function AdminPanel({
         </button>
       </div>
 
-      {remoteStorage && (
+      {remoteStorage && !storageIssue && (
         <p className="panel mb-6 border-gold/30 px-4 py-3 text-sm leading-relaxed text-cream-muted">
           オンラインストレージに接続済みです。保存内容は本番サイトに即時反映されます。
         </p>
       )}
 
-      {readOnlyHost && (
-        <div className="panel mb-6 space-y-3 border-[var(--color-border)] px-4 py-3 text-sm leading-relaxed text-cream-muted">
-          <p>Supabase が未設定のため、本番では保存できません。</p>
+      {(readOnlyHost || storageIssue) && (
+        <div className="panel mb-6 space-y-3 border-red-400/40 bg-red-950/20 px-4 py-3 text-sm leading-relaxed text-cream-muted">
+          <p className="text-red-300">
+            {storageIssue || "Supabase が未設定のため、本番では保存できません。"}
+          </p>
           {missingSupabaseEnv.length > 0 && (
             <p>
               Vercel → プロジェクト → <strong className="text-cream">Settings → Environment Variables</strong>

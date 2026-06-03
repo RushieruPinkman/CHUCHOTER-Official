@@ -70,13 +70,16 @@ export default function ImageUploader({
         body: formData,
       });
 
-      if (!res.ok) throw new Error("Upload failed");
+      if (!res.ok) {
+        const body = (await res.json().catch(() => null)) as { error?: string } | null;
+        throw new Error(body?.error || "Upload failed");
+      }
       const { url } = (await res.json()) as { url: string };
       onChange(url);
       setCropSrc(null);
     } catch (err) {
       const message = err instanceof Error ? err.message : "アップロードに失敗しました";
-      setError(message.includes("fetch") ? "サーバーに接続できません" : "アップロードに失敗しました");
+      setError(message.includes("fetch") ? "サーバーに接続できません" : message);
     } finally {
       setUploading(false);
     }

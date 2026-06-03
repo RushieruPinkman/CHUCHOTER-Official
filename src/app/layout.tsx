@@ -6,6 +6,8 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 import { SITE } from "@/lib/site";
 import "./globals.css";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   metadataBase: new URL(SITE.url),
   title: {
