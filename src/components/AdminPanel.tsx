@@ -34,9 +34,11 @@ const inputClass =
 export default function AdminPanel({
   readOnlyHost = false,
   remoteStorage = false,
+  missingSupabaseEnv = [],
 }: {
   readOnlyHost?: boolean;
   remoteStorage?: boolean;
+  missingSupabaseEnv?: string[];
 }) {
   const [token, setToken] = useState<string | null>(null);
   const [password, setPassword] = useState("");
@@ -292,10 +294,22 @@ export default function AdminPanel({
       )}
 
       {readOnlyHost && (
-        <p className="panel mb-6 border-[var(--color-border)] px-4 py-3 text-sm leading-relaxed text-cream-muted">
-          Supabase が未設定のため、本番では保存できません。README の手順で Supabase（無料）を設定するか、ローカルで編集して
-          GitHub に push してください。
-        </p>
+        <div className="panel mb-6 space-y-3 border-[var(--color-border)] px-4 py-3 text-sm leading-relaxed text-cream-muted">
+          <p>Supabase が未設定のため、本番では保存できません。</p>
+          {missingSupabaseEnv.length > 0 && (
+            <p>
+              Vercel → プロジェクト → <strong className="text-cream">Settings → Environment Variables</strong>
+              に次を追加してください:
+              <br />
+              <code className="text-gold">{missingSupabaseEnv.join(" / ")}</code>
+            </p>
+          )}
+          <ol className="list-decimal space-y-1 pl-5">
+            <li>Supabase で SQL（scripts/supabase-setup.sql）を実行済みか確認</li>
+            <li>Supabase → Settings → API から URL と service_role キーをコピー</li>
+            <li>Vercel に環境変数を追加後、Deployments → Redeploy（キャッシュ OFF）</li>
+          </ol>
+        </div>
       )}
 
       {message && (
