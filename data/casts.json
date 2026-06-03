@@ -1,0 +1,38 @@
+[
+  {
+    "id": "le-ciel-blanc",
+    "name": "ル・シエル・ブラン",
+    "nameEn": "Le Ciel Blanc",
+    "role": "host",
+    "gender": "male",
+    "tagline": "ちょっとやんちゃな優しいお兄さん",
+    "bio": "今日も一日頑張ったんだって…？\nご褒美に何でもしてあげるよ。",
+    "image": "/images/casts/VRChat_2026-04-11_20-26-08.862_1080x1920.png",
+    "order": 1,
+    "active": true
+  },
+  {
+    "id": "kokuto-ame",
+    "name": "黒糖アメ",
+    "nameEn": "Kokuto Ame",
+    "role": "cast",
+    "gender": "female",
+    "tagline": "近所の世話好きお姉さん",
+    "bio": "疲れたら、いつでもうちにおいでね…\nお姉さんが全部受け止めてあげる",
+    "image": "/images/casts/cast-1780412638194.webp",
+    "order": 2,
+    "active": true
+  },
+  {
+    "id": "cast-1780408934343",
+    "name": "カサネ",
+    "nameEn": "Kasane",
+    "role": "cast",
+    "gender": "female",
+    "tagline": "全肯定ちょっと意地悪お姉さん",
+    "bio": "今日も頑張れてえらいねぇ。\nほら、たくさん甘やかしてあげるからおいで？",
+    "image": "/images/casts/VRChat_2026-03-03_18-01-26.989_2160x3840.png",
+    "order": 3,
+    "active": true
+  }
+]

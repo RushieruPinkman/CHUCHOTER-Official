@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 500" role="img" aria-label="Le Ciel Blanc ������">
+  <defs>
+    <linearGradient id="bg1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1c1a18"/>
+      <stop offset="100%" style="stop-color:#0a0908"/>
+    </linearGradient>
+    <radialGradient id="glow1" cx="50%" cy="30%" r="60%">
+      <stop offset="0%" style="stop-color:#d4af37;stop-opacity:0.25"/>
+      <stop offset="100%" style="stop-color:#d4af37;stop-opacity:0"/>
+    </radialGradient>
+  </defs>
+  <rect width="400" height="500" fill="url(#bg1)"/>
+  <rect width="400" height="500" fill="url(#glow1)"/>
+  <ellipse cx="200" cy="180" rx="70" ry="85" fill="#2a2826"/>
+  <path d="M130 320 Q200 280 270 320 L280 500 L120 500 Z" fill="#2a2826"/>
+  <text x="200" y="460" text-anchor="middle" fill="#d4af37" font-family="Georgia, serif" font-size="14" opacity="0.8">Le Ciel Blanc</text>
+</svg>

@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180" fill="none" role="img" aria-label="CHUCHOTER">
+  <defs>
+    <linearGradient id="gold" x1="36" y1="24" x2="144" y2="156" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#dfc07a"/>
+      <stop offset="1" stop-color="#c9a962"/>
+    </linearGradient>
+  </defs>
+  <rect width="180" height="180" rx="40" fill="#060605"/>
+  <rect x="6" y="6" width="168" height="168" rx="34" stroke="url(#gold)" stroke-opacity="0.28" stroke-width="3"/>
+  <path
+    d="M117 70C107.5 57 95 49 75 49C51 49 29 71 29 95s22 46 46 46c20 0 32.5-8 42-21"
+    stroke="url(#gold)"
+    stroke-width="13"
+    stroke-linecap="round"
+  />
+  <path
+    d="M122 63c9 7.5 14.5 18 14.5 30"
+    stroke="#c9a962"
+    stroke-opacity="0.45"
+    stroke-width="6"
+    stroke-linecap="round"
+  />
+  <circle cx="126" cy="58" r="6" fill="#c9a962" fill-opacity="0.9"/>
+</svg>

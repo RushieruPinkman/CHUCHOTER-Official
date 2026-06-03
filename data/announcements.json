@@ -1,0 +1,10 @@
+[
+  {
+    "id": "announce-001",
+    "title": "本日の営業について",
+    "body": "1部 20:50〜、2部 22:00〜にて営業しております。Request Inviteはご案内ページをご確認ください。",
+    "publishedAt": "2026-06-01",
+    "active": true,
+    "pinned": true
+  }
+]
