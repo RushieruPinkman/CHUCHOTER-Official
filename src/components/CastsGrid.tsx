@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import CastDetailModal from "@/components/CastDetailModal";
 import type { Cast } from "@/types";
@@ -8,7 +8,32 @@ import type { Cast } from "@/types";
 type Columns = 1 | 2 | 3 | 4 | 5 | 6;
 type GenderFilter = "all" | "male" | "female";
 
-const COLUMN_OPTIONS: Columns[] = [1, 2, 3, 4, 5, 6];
+const DESKTOP_COLUMN_OPTIONS: Columns[] = [1, 2, 3, 4, 5, 6];
+const COMPACT_COLUMN_OPTIONS: Columns[] = [1, 2];
+
+const DESKTOP_MEDIA_QUERY = "(min-width: 1024px)";
+
+function subscribeDesktopMedia(onChange: () => void) {
+  const mq = window.matchMedia(DESKTOP_MEDIA_QUERY);
+  mq.addEventListener("change", onChange);
+  return () => mq.removeEventListener("change", onChange);
+}
+
+function getDesktopMediaSnapshot() {
+  return window.matchMedia(DESKTOP_MEDIA_QUERY).matches;
+}
+
+function getDesktopMediaServerSnapshot() {
+  return false;
+}
+
+function useIsDesktop() {
+  return useSyncExternalStore(
+    subscribeDesktopMedia,
+    getDesktopMediaSnapshot,
+    getDesktopMediaServerSnapshot
+  );
+}
 
 const GENDER_FILTERS: { value: GenderFilter; label: string }[] = [
   { value: "all", label: "すべて" },
@@ -39,9 +64,12 @@ function ColumnIcon({ cols }: { cols: Columns }) {
 export default function CastsGrid({ casts }: { casts: Cast[] }) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const isDesktop = useIsDesktop();
   const [columns, setColumns] = useState<Columns>(4);
   const [genderFilter, setGenderFilter] = useState<GenderFilter>("all");
   const [selectedCast, setSelectedCast] = useState<Cast | null>(null);
+
+  const displayColumns: Columns = isDesktop ? columns : columns > 2 ? 2 : columns;
 
   const filteredCasts = useMemo(
     () =>
@@ -113,11 +141,33 @@ export default function CastsGrid({ casts }: { casts: Cast[] }) {
           <div className="flex min-w-0 flex-wrap items-center gap-3 sm:flex-nowrap">
             <p className="shrink-0 text-sm text-cream-muted">表示列数</p>
             <div
-              className="flex max-w-full gap-1 overflow-x-auto border border-[var(--color-border)] p-1 touch-pan-x"
+              className="flex max-w-full gap-1 overflow-x-auto border border-[var(--color-border)] p-1 touch-pan-x lg:hidden"
               role="group"
               aria-label="カラム数を変更"
             >
-              {COLUMN_OPTIONS.map((n) => (
+              {COMPACT_COLUMN_OPTIONS.map((n) => (
+                <button
+                  key={n}
+                  type="button"
+                  onClick={() => setColumns(n)}
+                  className={`flex h-10 w-10 shrink-0 items-center justify-center transition-colors ${
+                    displayColumns === n
+                      ? "bg-gold/15 text-gold"
+                      : "text-cream-muted hover:text-gold"
+                  }`}
+                  aria-label={`${n}列表示`}
+                  aria-pressed={displayColumns === n}
+                >
+                  <ColumnIcon cols={n} />
+                </button>
+              ))}
+            </div>
+            <div
+              className="hidden max-w-full gap-1 overflow-x-auto border border-[var(--color-border)] p-1 lg:flex"
+              role="group"
+              aria-label="カラム数を変更"
+            >
+              {DESKTOP_COLUMN_OPTIONS.map((n) => (
                 <button
                   key={n}
                   type="button"
@@ -142,7 +192,7 @@ export default function CastsGrid({ casts }: { casts: Cast[] }) {
             該当する住人がいません。
           </p>
         ) : (
-          <div className={`grid gap-4 min-w-0`} style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }}>
+          <div className={`grid gap-4 min-w-0`} style={{ gridTemplateColumns: `repeat(${displayColumns}, minmax(0, 1fr))` }}>
             {filteredCasts.map((cast) => (
               <article key={cast.id} className="min-w-0 h-full">
                 <button
