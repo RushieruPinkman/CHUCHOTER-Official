@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import PageHero from "@/components/PageHero";
 import ScrollReveal from "@/components/ScrollReveal";
+import { SITE } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "ご案内",
@@ -48,8 +49,8 @@ export default function SystemPage() {
 
           <div className="mt-6 grid gap-3 sm:grid-cols-2">
             {[
-              { label: "1部", time: "20:50〜", note: "落ち着いた時間帯の営業" },
-              { label: "2部", time: "22:00〜", note: "深夜の静かな時間" },
+              { label: "1部", time: `${SITE.part1Time}〜`, note: "落ち着いた時間帯の営業" },
+              { label: "2部", time: `${SITE.part2Time}〜`, note: "深夜の静かな時間" },
             ].map((part) => (
               <article
                 key={part.label}

@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   metadataBase: new URL(SITE.url),
   title: {
-    default: `${SITE.name} | 高級隠れ家クラブ`,
+    default: `${SITE.name} | 高級隠れ家マンション`,
     template: `%s | ${SITE.name}`,
   },
   description: SITE.description,
@@ -27,13 +27,13 @@ export const metadata: Metadata = {
     locale: "ja_JP",
     url: SITE.url,
     siteName: SITE.name,
-    title: `${SITE.name} | 高級隠れ家クラブ`,
+    title: `${SITE.name} | 高級隠れ家マンション`,
     description: SITE.description,
     images: [{ url: SITE.ogImage, alt: SITE.logoAlt }],
   },
   twitter: {
     card: "summary_large_image",
-    title: `${SITE.name} | 高級隠れ家クラブ`,
+    title: `${SITE.name} | 高級隠れ家マンション`,
     description: SITE.description,
     images: [SITE.ogImage],
   },

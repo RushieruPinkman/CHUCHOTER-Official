@@ -188,18 +188,25 @@ export default function CastsGrid({ casts }: { casts: Cast[] }) {
           </div>
         </div>
 
+        {/* フィルター結果をスクリーンリーダーへ通知 */}
+        <p className="sr-only" aria-live="polite" aria-atomic="true">
+          {filteredCasts.length === 0
+            ? "該当する住人がいません。"
+            : `${filteredCasts.length}名の住人が表示されています。`}
+        </p>
+
         {filteredCasts.length === 0 ? (
-          <p className="py-12 text-center text-sm text-cream-muted">
+          <p className="py-12 text-center text-sm text-cream-muted" aria-hidden="true">
             該当する住人がいません。
           </p>
         ) : (
-          <div className={`grid gap-4 min-w-0`} style={{ gridTemplateColumns: `repeat(${displayColumns}, minmax(0, 1fr))` }}>
+          <div className="grid gap-4 min-w-0" style={{ gridTemplateColumns: `repeat(${displayColumns}, minmax(0, 1fr))` }}>
             {filteredCasts.map((cast) => (
               <article key={cast.id} className="min-w-0 h-full">
                 <button
                   type="button"
                   onClick={() => openCast(cast)}
-                  className="group panel panel-hover flex h-full w-full flex-col overflow-hidden text-left"
+                  className="group panel panel-hover flex h-full w-full flex-col overflow-hidden text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold"
                 >
                   <div className="cast-card-media aspect-[3/4] shrink-0">
                     <div className="cast-card-media__media">
@@ -217,10 +224,7 @@ export default function CastsGrid({ casts }: { casts: Cast[] }) {
                     </div>
                     <div className="absolute inset-x-0 bottom-0 z-[2] p-6">
                       <CastRoleBadge role={cast.role} className="mb-2" />
-                      <p
-                        className="text-xl text-gold"
-                        style={{ fontFamily: "var(--font-display)" }}
-                      >
+                      <p className="font-display text-xl text-gold">
                         {cast.nameEn}
                       </p>
                       <p className="text-sm text-cream-muted">{cast.name}</p>

@@ -645,12 +645,12 @@ html.theme-transition *::after {
   }
 
   .footer-heading {
-    @apply text-[15px] font-medium tracking-[0.28em] text-gold/90 uppercase;
+    @apply text-[11px] font-medium tracking-[0.22em] text-gold/90 uppercase md:text-[15px] md:tracking-[0.28em];
     font-family: var(--font-display);
   }
 
   .footer-link {
-    @apply text-sm text-cream underline decoration-gold/40 underline-offset-[3px] transition-colors;
+    @apply text-[13px] text-cream underline decoration-gold/40 underline-offset-[3px] transition-colors md:text-sm;
   }
 
   .footer-link:hover {
@@ -827,18 +827,32 @@ html.theme-transition *::after {
     font-family: var(--font-display);
   }
 
-  .btn-primary:hover {
-    @apply border-gold bg-gold/20 text-gold-bright;
-    transform: translateY(-1px);
-    box-shadow:
-      0 0 24px rgba(201, 169, 98, 0.14),
-      0 4px 16px rgba(0, 0, 0, 0.12);
+  @media (hover: hover) {
+    .btn-primary:hover {
+      @apply border-gold bg-gold/20 text-gold-bright;
+      transform: translateY(-1px);
+      box-shadow:
+        0 0 24px rgba(201, 169, 98, 0.14),
+        0 4px 16px rgba(0, 0, 0, 0.12);
+    }
+
+    [data-theme="light"] .btn-primary:hover {
+      box-shadow:
+        0 0 20px rgba(143, 115, 48, 0.12),
+        0 4px 14px rgba(31, 28, 24, 0.06);
+    }
   }
 
-  [data-theme="light"] .btn-primary:hover {
+  .btn-primary:focus-visible {
+    @apply outline-none border-gold bg-gold/20 text-gold-bright;
     box-shadow:
-      0 0 20px rgba(143, 115, 48, 0.12),
-      0 4px 14px rgba(31, 28, 24, 0.06);
+      0 0 0 2px var(--color-void),
+      0 0 0 4px var(--color-gold);
+  }
+
+  .btn-primary:active {
+    transform: translateY(0);
+    box-shadow: none;
   }
 
   .btn-ghost {
@@ -846,8 +860,35 @@ html.theme-transition *::after {
     font-family: var(--font-display);
   }
 
-  .btn-ghost:hover {
-    @apply border-gold/40 text-gold;
-    transform: translateY(-1px);
+  @media (hover: hover) {
+    .btn-ghost:hover {
+      @apply border-gold/40 text-gold;
+      transform: translateY(-1px);
+    }
+  }
+
+  .btn-ghost:focus-visible {
+    @apply outline-none border-gold/60 text-gold;
+    box-shadow:
+      0 0 0 2px var(--color-void),
+      0 0 0 4px rgba(201, 169, 98, 0.5);
+  }
+
+  .btn-ghost:active {
+    transform: translateY(0);
+  }
+
+  /* Cast card keyboard zoom parity */
+  .group:focus-visible .cast-card-media__zoom {
+    transform: scale(1.03) translateZ(0);
+  }
+
+  /* Shared font utilities */
+  .font-display {
+    font-family: var(--font-display);
+  }
+
+  .font-serif-jp {
+    font-family: var(--font-serif-jp);
   }
 }

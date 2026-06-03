@@ -4,10 +4,10 @@ export const SITE = {
   favicon: "/icon.svg",
   appleIcon: "/apple-icon.svg",
   logoAlt:
-    "CHUCHOTER — La meilleure guérison pour vous. 高級隠れ家クラブのロゴ",
+    "CHUCHOTER — La meilleure guérison pour vous. 高級隠れ家マンションのロゴ",
   tagline: "あなたに最高の癒しを。",
   description:
-    "VRChatで静かで質の高い1対1コミュニケーションを提供する、高級隠れ家クラブ。Le Ciel Blanc・黒糖アメへのRequest Inviteはこちら。",
+    "VRChatで静かで質の高い1対1コミュニケーションを提供する、高級隠れ家マンション。Le Ciel Blanc・黒糖アメへのRequest Inviteはこちら。",
   url: process.env.NEXT_PUBLIC_SITE_URL || "https://club-chuchoter.example.com",
   xUrl: "https://x.com/CHUCHOTER_VRC?s=20",
   ogImage: "/images/logo.svg",

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import PageHero from "@/components/PageHero";
 import ScrollReveal from "@/components/ScrollReveal";
-import { formatJapaneseDate, getWeekDates } from "@/lib/site";
+import { formatJapaneseDate, getWeekDates, SITE } from "@/lib/site";
 import { getAllCasts, getSchedule } from "@/lib/data";
 
 export const metadata: Metadata = {
@@ -52,7 +52,7 @@ export default async function SchedulePage() {
                 <caption className="sr-only">今週の営業スケジュール</caption>
                 <thead>
                   <tr className="border-b border-[var(--color-border)]">
-                    {["日付", "状態", "1部 20:50〜", "2部 22:00〜", "備考"].map((col) => (
+                    {["日付", "状態", `1部 ${SITE.part1Time}〜`, `2部 ${SITE.part2Time}〜`, "備考"].map((col) => (
                       <th
                         key={col}
                         scope="col"
@@ -71,6 +71,7 @@ export default async function SchedulePage() {
                     return (
                       <tr
                         key={entry.id}
+                        aria-current={isToday ? "date" : undefined}
                         className={`border-b border-[var(--color-border)] transition-colors ${
                           isToday ? "bg-gold/[0.04]" : ""
                         }`}
@@ -78,7 +79,7 @@ export default async function SchedulePage() {
                         <td className="px-5 py-4 text-cream">
                           {formatJapaneseDate(entry.date)}
                           {isToday && (
-                            <span className="ml-2 text-[10px] tracking-widest text-gold">TODAY</span>
+                            <span className="ml-2 text-[10px] tracking-widest text-gold" aria-hidden="true">TODAY</span>
                           )}
                         </td>
                         <td className="px-5 py-4">
@@ -109,7 +110,7 @@ export default async function SchedulePage() {
 
           <ScrollReveal delay={0.1} className="mt-5">
             <p className="text-[11px] tracking-wide text-cream-faint">
-              ※ data/schedule.json で管理 · CSV連携可能
+              ※ 予定は変更になる場合があります。最新情報は公式Xをご確認ください。
             </p>
           </ScrollReveal>
         </div>

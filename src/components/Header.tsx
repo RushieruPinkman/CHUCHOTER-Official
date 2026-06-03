@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Logo from "@/components/Logo";
 import ThemeToggle from "@/components/ThemeToggle";
 import { lockBodyScroll, unlockBodyScroll } from "@/lib/body-scroll-lock";
@@ -12,6 +12,8 @@ export default function Header() {
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const menuBtnRef = useRef<HTMLButtonElement>(null);
+  const firstNavLinkRef = useRef<HTMLAnchorElement>(null);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 24);
@@ -21,10 +23,37 @@ export default function Header() {
   }, []);
 
   useEffect(() => {
-    if (!menuOpen) return;
-    lockBodyScroll();
-    return () => unlockBodyScroll();
+    if (menuOpen) {
+      lockBodyScroll();
+      // フォーカスを最初のナビリンクへ移動
+      requestAnimationFrame(() => firstNavLinkRef.current?.focus());
+    } else {
+      unlockBodyScroll();
+    }
   }, [menuOpen]);
+
+  // Escape でメニューを閉じる
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setMenuOpen(false);
+        menuBtnRef.current?.focus();
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [menuOpen]);
+
+  // ページ遷移でメニューを閉じる
+  useEffect(() => {
+    setMenuOpen(false);
+  }, [pathname]);
+
+  const closeMenu = () => {
+    setMenuOpen(false);
+    menuBtnRef.current?.focus();
+  };
 
   return (
     <>
@@ -77,8 +106,9 @@ export default function Header() {
             <ThemeToggle className="relative z-10 shrink-0" />
 
             <button
+              ref={menuBtnRef}
               type="button"
-              className="relative z-10 flex h-10 w-10 shrink-0 flex-col items-center justify-center gap-[5px] border border-[var(--color-border)] lg:hidden"
+              className="relative z-10 flex h-10 w-10 shrink-0 flex-col items-center justify-center gap-[5px] border border-[var(--color-border)] transition-colors hover:border-gold/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold lg:hidden"
               onClick={() => setMenuOpen((open) => !open)}
               aria-expanded={menuOpen}
               aria-controls="mobile-nav"
@@ -98,6 +128,7 @@ export default function Header() {
         </div>
       </header>
 
+      {/* モバイルメニューオーバーレイ */}
       <nav
         id="mobile-nav"
         className={`fixed inset-0 z-40 flex flex-col bg-void transition-opacity duration-300 lg:hidden ${
@@ -105,28 +136,45 @@ export default function Header() {
         }`}
         aria-label="モバイルナビゲーション"
         aria-hidden={!menuOpen}
+        // メニュー内でTabが最後の要素を超えたらハンバーガーボタンへ戻す
+        onKeyDown={(e) => {
+          if (e.key !== "Tab" || !menuOpen) return;
+          const focusable = Array.from(
+            e.currentTarget.querySelectorAll<HTMLElement>("a, button")
+          ).filter((el) => !el.closest("[aria-hidden]"));
+          const last = focusable[focusable.length - 1];
+          const first = focusable[0];
+          if (!e.shiftKey && document.activeElement === last) {
+            e.preventDefault();
+            menuBtnRef.current?.focus();
+          }
+          if (e.shiftKey && document.activeElement === first) {
+            e.preventDefault();
+            menuBtnRef.current?.focus();
+          }
+        }}
       >
         <div className="flex flex-1 flex-col justify-center px-8 pt-20">
           <div className="mb-8 flex justify-center">
             <ThemeToggle />
           </div>
           <ul className="space-y-1">
-            {NAV_ITEMS.map((item) => {
+            {NAV_ITEMS.map((item, index) => {
               const isActive = pathname === item.href;
               return (
                 <li key={item.href}>
                   <Link
+                    ref={index === 0 ? firstNavLinkRef : undefined}
                     href={item.href}
-                    onClick={() => setMenuOpen(false)}
-                    className={`block border-b border-[var(--color-border)] py-5 text-center transition-colors ${
+                    onClick={closeMenu}
+                    className={`block border-b border-[var(--color-border)] py-5 text-center transition-colors focus-visible:outline-none focus-visible:text-gold ${
                       isActive ? "text-gold" : "text-cream hover:text-gold"
                     }`}
                     aria-current={isActive ? "page" : undefined}
+                    tabIndex={menuOpen ? 0 : -1}
                   >
                     <span className="section-label mb-1 block">{item.label}</span>
-                    <span className="block text-xl" style={{ fontFamily: "var(--font-serif-jp)" }}>
-                      {item.labelJa}
-                    </span>
+                    <span className="block text-xl font-serif-jp">{item.labelJa}</span>
                   </Link>
                 </li>
               );

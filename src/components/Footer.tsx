@@ -14,7 +14,7 @@ function FooterColumn({
 }) {
   return (
     <div className={className}>
-      <p className="footer-heading mb-4">{label}</p>
+      <p className="footer-heading mb-3 md:mb-4">{label}</p>
       {children}
     </div>
   );
@@ -23,9 +23,9 @@ function FooterColumn({
 export default function Footer() {
   return (
     <footer className="relative mt-auto border-t border-[var(--color-border)] bg-deep/40">
-      <div className="site-container py-10 md:py-12">
-        <div className="grid gap-8 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1.9fr)] lg:gap-10">
-          <div>
+      <div className="site-container py-8 md:py-12">
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1.9fr)] lg:gap-10">
+          <div className="flex flex-col items-center border-b border-[var(--color-border)] pb-6 text-center lg:items-start lg:border-b-0 lg:pb-0 lg:text-left">
             <Link
               href="/"
               aria-label="CHUCHOTER トップページへ"
@@ -34,16 +34,16 @@ export default function Footer() {
               <Logo size="sm" />
             </Link>
             <p
-              className="mt-4 text-sm leading-relaxed text-cream-muted"
+              className="mt-3 max-w-xs text-sm leading-relaxed text-cream-muted md:mt-4"
               style={{ fontFamily: "var(--font-serif-jp)" }}
             >
               {SITE.tagline}
             </p>
           </div>
 
-          <div className="grid gap-8 sm:grid-cols-3 sm:gap-6">
-            <FooterColumn label="Site">
-              <ul className="space-y-2.5">
+          <div className="grid grid-cols-2 gap-x-5 gap-y-6 sm:grid-cols-3 sm:gap-6">
+            <FooterColumn label="Site" className="col-span-2 sm:col-span-1">
+              <ul className="grid grid-cols-2 gap-x-4 gap-y-2 sm:block sm:space-y-2.5">
                 {NAV_ITEMS.map((item) => (
                   <li key={item.href}>
                     <Link href={item.href} className="footer-link">
@@ -55,43 +55,43 @@ export default function Footer() {
             </FooterColumn>
 
             <FooterColumn label="Hours">
-              <ul className="space-y-2.5 text-sm text-cream-muted">
-                <li>火 · 水 · 木（不定期）</li>
-                <li>
+              <ul className="space-y-2 text-sm text-cream-muted">
+                <li className="leading-snug">火 · 水 · 木（不定期）</li>
+                <li className="leading-snug">
                   1部 {SITE.part1Time}〜
                   <br />
                   2部 {SITE.part2Time}〜
                 </li>
                 <li>
                   <Link href="/schedule" className="footer-link">
-                    予定表を見る →
+                    予定表 →
                   </Link>
                 </li>
               </ul>
             </FooterColumn>
 
             <FooterColumn label="Contact">
-              <ul className="space-y-3">
+              <ul className="space-y-2.5">
                 <li>
                   <a
                     href={SITE.xUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="footer-link group inline-flex items-center gap-2.5"
+                    className="footer-link group inline-flex min-h-10 items-center gap-2"
                   >
-                    <span className="flex h-8 w-8 items-center justify-center border border-[var(--color-border)] text-cream-faint transition-colors group-hover:border-gold/40 group-hover:text-gold">
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center border border-[var(--color-border)] text-cream-faint transition-colors group-hover:border-gold/40 group-hover:text-gold">
                       <XIcon className="h-3.5 w-3.5" />
                     </span>
-                    @CHUCHOTER_VRC
+                    <span className="min-w-0 text-[12px] leading-snug break-all md:text-[13px]">
+                      @CHUCHOTER_VRC
+                    </span>
                   </a>
                 </li>
-                <li>
-                  <Link href="/system#request-invite" className="footer-link">
+                <li className="space-y-2">
+                  <Link href="/system#request-invite" className="footer-link block leading-snug">
                     Request Invite →
                   </Link>
-                </li>
-                <li>
-                  <Link href="/media" className="footer-link">
+                  <Link href="/media" className="footer-link block leading-snug">
                     キャスト・スタッフ募集 →
                   </Link>
                 </li>
@@ -100,12 +100,12 @@ export default function Footer() {
           </div>
         </div>
 
-        <div className="hairline my-6 md:my-8" />
+        <div className="hairline my-5 md:my-8" />
 
-        <div className="flex flex-col gap-2 text-[10px] tracking-[0.22em] text-cream-faint sm:flex-row sm:items-center sm:justify-between">
-          <p>© {new Date().getFullYear()} {SITE.name}</p>
-          <p className="uppercase">All rights reserved</p>
-        </div>
+        <p className="text-center text-[10px] tracking-[0.16em] whitespace-nowrap text-cream-faint md:tracking-[0.2em]">
+          © {new Date().getFullYear()} {SITE.name}{" "}
+          <span className="uppercase">All rights reserved.</span>
+        </p>
       </div>
     </footer>
   );
