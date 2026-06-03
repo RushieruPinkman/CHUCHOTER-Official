@@ -1,4 +1,5 @@
--- Supabase SQL Editor で一度実行してください（無料プランで利用可）
+-- Supabase SQL Editor で実行（初回・再実行どちらも可）
+-- 既存の設定は上書きせず、足りない部分だけ追加します
 
 create table if not exists public.site_data (
   key text primary key,
@@ -11,6 +12,7 @@ alter table public.site_data enable row level security;
 grant all on public.site_data to service_role;
 
 -- 匿名ユーザーからは読み書き不可（サーバー側の service_role キーのみアクセス）
+drop policy if exists "No public access" on public.site_data;
 create policy "No public access"
   on public.site_data
   for all
@@ -31,7 +33,7 @@ on conflict (id) do update set
   file_size_limit = excluded.file_size_limit,
   allowed_mime_types = excluded.allowed_mime_types;
 
--- Storage: 公開バケットの読み取り（再実行可）
+-- Storage: 公開バケットの読み取り
 drop policy if exists "Public read cast images" on storage.objects;
 create policy "Public read cast images"
   on storage.objects
