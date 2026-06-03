@@ -3,8 +3,10 @@
 import { useCallback, useEffect, useState } from "react";
 import Logo from "@/components/Logo";
 import ImageUploader from "@/components/admin/ImageUploader";
+import ResidentsEditor from "@/components/admin/ResidentsEditor";
 import ScheduleEditor from "@/components/admin/ScheduleEditor";
-import type { Announcement, Cast, ScheduleEntry, SiteStatus } from "@/types";
+import { CAST_ROLES, CAST_ROLE_LABELS, normalizeCastRole } from "@/lib/cast-roles";
+import type { Announcement, Cast, CastRole, ScheduleEntry, SiteStatus } from "@/types";
 
 type Tab = "announcements" | "residents" | "schedule" | "status";
 
@@ -129,7 +131,11 @@ export default function AdminPanel({
     e.preventDefault();
     if (!editingCast || !token) return;
     try {
-      const payload = { ...editingCast, gender: editingCast.gender ?? "female" };
+      const payload = {
+        ...editingCast,
+        gender: editingCast.gender ?? "female",
+        role: normalizeCastRole(editingCast.role),
+      };
       const res = await fetch("/api/casts", {
         method: isNewCast ? "POST" : "PUT",
         headers: authJsonHeaders(),
@@ -388,56 +394,26 @@ export default function AdminPanel({
         </section>
       )}
 
-      {tab === "residents" && (
-        <section className="panel p-6 md:p-8">
-          <div className="mb-6 flex items-center justify-between">
-            <h2 className="text-lg text-gold">住民管理</h2>
-            <button
-              type="button"
-              onClick={() => {
-                setIsNewCast(true);
-                setEditingCast({ ...EMPTY_CAST, id: "" } as Cast);
-              }}
-              className="btn-primary text-sm"
-            >
-              + 新規追加
-            </button>
-          </div>
-          <ul className="space-y-3">
-            {casts.map((cast) => (
-              <li
-                key={cast.id}
-                className="flex flex-wrap items-center justify-between gap-3 border border-[var(--color-border)] bg-deep/50 px-4 py-3"
-              >
-                <div>
-                  <span className="text-cream">{cast.name}</span>
-                  <span className="ml-2 text-xs text-cream-muted">
-                    {cast.active ? "公開" : "非公開"}
-                  </span>
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsNewCast(false);
-                      setEditingCast({ ...cast, gender: cast.gender ?? "female" });
-                    }}
-                    className="text-sm text-gold hover:underline"
-                  >
-                    編集
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleDeleteCast(cast.id)}
-                    className="text-sm text-cream-muted hover:text-red-400"
-                  >
-                    削除
-                  </button>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </section>
+      {tab === "residents" && token && (
+        <ResidentsEditor
+          casts={casts}
+          authJsonHeaders={authJsonHeaders}
+          onReload={loadData}
+          onMessage={setMessage}
+          onEdit={(cast) => {
+            setIsNewCast(false);
+            setEditingCast(cast);
+          }}
+          onAdd={() => {
+            setIsNewCast(true);
+            setEditingCast({
+              ...EMPTY_CAST,
+              id: "",
+              order: casts.length + 1,
+            } as Cast);
+          }}
+          onDelete={handleDeleteCast}
+        />
       )}
 
       {tab === "schedule" && token && (
@@ -504,9 +480,8 @@ export default function AdminPanel({
               [
                 ["name", "名前（日本語）", "text"],
                 ["nameEn", "名前（英語）", "text"],
-                ["tagline", "キャッチコピー", "text"],
-                ["bio", "紹介文", "textarea"],
-                ["order", "表示順", "number"],
+                ["tagline", "コンセプト", "text"],
+                ["bio", "皆様へ一言", "textarea"],
               ] as const
             ).map(([key, label, type]) => (
               <label key={key} className="block">
@@ -521,11 +496,11 @@ export default function AdminPanel({
                 ) : (
                   <input
                     type={type}
-                    value={key === "order" ? editingCast.order : (editingCast[key] ?? "")}
+                    value={editingCast[key] ?? ""}
                     onChange={(e) =>
                       setEditingCast({
                         ...editingCast,
-                        [key]: key === "order" ? Number(e.target.value) : e.target.value,
+                        [key]: e.target.value,
                       })
                     }
                     className={inputClass}
@@ -533,6 +508,30 @@ export default function AdminPanel({
                 )}
               </label>
             ))}
+            {!isNewCast && (
+              <p className="text-xs text-cream-faint">
+                表示順は一覧のドラッグ操作で変更できます（現在: {editingCast.order} 番目）
+              </p>
+            )}
+            <label className="block">
+              <span className="mb-1 block text-sm text-cream-muted">ロール</span>
+              <select
+                value={normalizeCastRole(editingCast.role)}
+                onChange={(e) =>
+                  setEditingCast({
+                    ...editingCast,
+                    role: e.target.value as CastRole,
+                  })
+                }
+                className={inputClass}
+              >
+                {CAST_ROLES.map((role) => (
+                  <option key={role} value={role}>
+                    {CAST_ROLE_LABELS[role]}
+                  </option>
+                ))}
+              </select>
+            </label>
             <label className="block">
               <span className="mb-1 block text-sm text-cream-muted">性別</span>
               <select

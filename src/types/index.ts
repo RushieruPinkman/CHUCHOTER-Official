@@ -1,8 +1,10 @@
+export type CastRole = "owner" | "co-owner" | "cast" | "staff";
+
 export interface Cast {
   id: string;
   name: string;
   nameEn: string;
-  role: "host" | "cast";
+  role: CastRole;
   gender: "male" | "female";
   tagline: string;
   bio: string;

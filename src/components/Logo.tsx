@@ -6,7 +6,7 @@ interface LogoProps {
   className?: string;
 }
 
-const LOGO_ASPECT = 643 / 166;
+const LOGO_ASPECT = 1762.51 / 372.79;
 
 const SIZE_CONFIG = {
   sm: { height: 32, className: "h-8 w-auto md:h-9" },
@@ -20,19 +20,15 @@ export default function Logo({
   className = "",
 }: LogoProps) {
   const config = SIZE_CONFIG[size];
-  const width = Math.round(config.height * LOGO_ASPECT);
 
   return (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
-      src={SITE.logo}
-      alt={SITE.logoAlt}
-      width={width}
-      height={config.height}
-      decoding="async"
-      loading={priority ? "eager" : "lazy"}
-      fetchPriority={priority ? "high" : "auto"}
-      className={`block ${config.className} ${className}`.trim()}
-    />
+    <svg
+      viewBox="0 0 1762.51 372.79"
+      role="img"
+      aria-label={SITE.logoAlt}
+      className={`site-logo block max-w-full ${config.className} ${className}`.trim()}
+    >
+      <use href={`${SITE.logo}#chuchoter-logo`} xlinkHref={`${SITE.logo}#chuchoter-logo`} />
+    </svg>
   );
 }

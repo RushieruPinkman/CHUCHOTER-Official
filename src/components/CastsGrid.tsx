@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import CastDetailModal from "@/components/CastDetailModal";
+import CastRoleBadge from "@/components/CastRoleBadge";
 import type { Cast } from "@/types";
 
 type Columns = 1 | 2 | 3 | 4 | 5 | 6;
@@ -200,17 +201,22 @@ export default function CastsGrid({ casts }: { casts: Cast[] }) {
                   onClick={() => openCast(cast)}
                   className="group panel panel-hover flex h-full w-full flex-col overflow-hidden text-left"
                 >
-                  <div className="relative aspect-[3/4] shrink-0 overflow-hidden bg-deep">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={cast.image}
-                      alt={`${cast.name} — ${cast.tagline}`}
-                      loading="lazy"
-                      decoding="async"
-                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-void via-transparent to-transparent" />
-                    <div className="absolute inset-x-0 bottom-0 p-6">
+                  <div className="cast-card-media aspect-[3/4] shrink-0">
+                    <div className="cast-card-media__media">
+                      <div className="cast-card-media__zoom">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={cast.image}
+                          alt={`${cast.name} — ${cast.tagline}`}
+                          loading="lazy"
+                          decoding="async"
+                          className="cast-card-media__image"
+                        />
+                        <div className="cast-card-media__gradient" aria-hidden="true" />
+                      </div>
+                    </div>
+                    <div className="absolute inset-x-0 bottom-0 z-[2] p-6">
+                      <CastRoleBadge role={cast.role} className="mb-2" />
                       <p
                         className="text-xl text-gold"
                         style={{ fontFamily: "var(--font-display)" }}

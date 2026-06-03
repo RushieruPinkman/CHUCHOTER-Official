@@ -2,16 +2,17 @@ import type { SiteStatus } from "@/types";
 
 interface StatusBadgeProps {
   status: SiteStatus;
+  className?: string;
 }
 
-export default function StatusBadge({ status }: StatusBadgeProps) {
+export default function StatusBadge({ status, className = "" }: StatusBadgeProps) {
   return (
     <div
       className={`inline-flex items-center gap-3 border px-5 py-2 text-[13px] tracking-wide ${
         status.isOpen
           ? "border-gold/30 bg-gold/[0.06] text-gold"
           : "border-[var(--color-border)] bg-surface/80 text-cream-muted"
-      }`}
+      } ${className}`.trim()}
       role="status"
       aria-live="polite"
     >

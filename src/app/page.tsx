@@ -1,5 +1,6 @@
 import Button from "@/components/Button";
 import Logo from "@/components/Logo";
+import CastRoleBadge from "@/components/CastRoleBadge";
 import ScrollReveal from "@/components/ScrollReveal";
 import StatusBadge from "@/components/StatusBadge";
 import AnnouncementList from "@/components/AnnouncementList";
@@ -19,17 +20,30 @@ export default async function HomePage() {
     <>
       {/* Hero */}
       <section
-        className="relative flex min-h-[100svh] flex-col"
+        className="hero-mv relative flex min-h-[100svh] w-full max-w-full flex-col overflow-hidden"
         aria-labelledby="hero-title"
       >
-        <div
-          className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_45%,rgba(201,169,98,0.09),transparent_65%)]"
-          aria-hidden="true"
-        />
+        <div className="hero-mv__backdrop pointer-events-none absolute" aria-hidden="true">
+          <div className="hero-mv__media">
+            <div className="hero-mv__zoom">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={SITE.heroImage}
+                alt=""
+                width={2560}
+                height={1440}
+                fetchPriority="high"
+                decoding="async"
+                className="hero-mv__image"
+              />
+            </div>
+          </div>
+          <div className="hero-mv__scrim absolute" />
+        </div>
 
-        <div className="flex flex-1 flex-col items-center justify-center px-4 pb-6 pt-24 text-center">
+        <div className="hero-content relative z-10 flex flex-1 flex-col items-center justify-center px-4 pb-6 pt-24 text-center">
           <ScrollReveal immediate className="mb-6">
-            <StatusBadge status={status} />
+            <StatusBadge status={status} className="hero-status" />
           </ScrollReveal>
 
           <ScrollReveal immediate delay={0.08}>
@@ -41,7 +55,7 @@ export default async function HomePage() {
 
           <ScrollReveal immediate delay={0.16}>
             <p
-              className="mx-auto mb-8 max-w-xl text-[15px] leading-[1.85] text-cream-muted md:text-base"
+              className="hero-tagline mx-auto mb-8 max-w-xl text-[15px] leading-[1.85] text-cream-muted md:text-base"
               style={{ fontFamily: "var(--font-serif-jp)" }}
             >
               {SITE.tagline}
@@ -56,7 +70,7 @@ export default async function HomePage() {
           </ScrollReveal>
         </div>
 
-        <div className="flex shrink-0 justify-center pb-6 pt-4">
+        <div className="relative z-10 flex shrink-0 justify-center pb-6 pt-4">
           <div className="flex flex-col items-center gap-3 text-cream-faint" aria-hidden="true">
             <span className="sr-only">スクロールして続きを読む</span>
             <span className="scroll-hint block h-10 w-px bg-gradient-to-b from-gold/40 to-transparent" />
@@ -129,7 +143,7 @@ export default async function HomePage() {
             </div>
             <Link
               href="/casts"
-              className="text-sm tracking-[0.15em] text-gold transition-opacity hover:opacity-70"
+              className="link-gold text-sm tracking-[0.15em] text-gold"
             >
               View All →
             </Link>
@@ -142,16 +156,21 @@ export default async function HomePage() {
                   href={`/casts?cast=${cast.id}`}
                   className="group panel panel-hover block overflow-hidden"
                 >
-                  <div className="relative aspect-[3/4] overflow-hidden bg-deep">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={cast.image}
-                      alt={`${cast.name}のポートレート`}
-                      loading="lazy"
-                      className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03]"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-void via-void/20 to-transparent" />
-                    <div className="absolute inset-x-0 bottom-0 p-5 md:p-6">
+                  <div className="cast-card-media aspect-[3/4] shrink-0">
+                    <div className="cast-card-media__media">
+                      <div className="cast-card-media__zoom">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={cast.image}
+                          alt={`${cast.name}のポートレート`}
+                          loading="lazy"
+                          className="cast-card-media__image"
+                        />
+                        <div className="cast-card-media__gradient" aria-hidden="true" />
+                      </div>
+                    </div>
+                    <div className="absolute inset-x-0 bottom-0 z-[2] p-5 md:p-6">
+                      <CastRoleBadge role={cast.role} className="mb-2" />
                       <p
                         className="text-xl text-gold md:text-2xl"
                         style={{ fontFamily: "var(--font-display)" }}
@@ -173,10 +192,7 @@ export default async function HomePage() {
         <div className="site-container">
           <ScrollReveal>
             <div className="panel relative overflow-hidden px-6 py-10 text-center md:px-10 md:py-14">
-              <div
-                className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(201,169,98,0.08),transparent_70%)]"
-                aria-hidden="true"
-              />
+              <div className="panel-spotlight-bg pointer-events-none absolute inset-0" aria-hidden="true" />
               <span className="section-label">Tonight</span>
               <h2 id="cta-heading" className="section-title mb-4">
                 今夜、私室へ

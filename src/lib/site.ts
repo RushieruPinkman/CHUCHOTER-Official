@@ -1,6 +1,6 @@
 export const SITE = {
   name: "CHUCHOTER",
-  logo: "/images/logo.png", // 背景透過PNG必須 · 差替後は npm run logo:transparent
+  logo: "/images/logo.svg",
   favicon: "/icon.svg",
   appleIcon: "/apple-icon.svg",
   logoAlt:
@@ -10,7 +10,9 @@ export const SITE = {
     "VRChatで静かで質の高い1対1コミュニケーションを提供する、高級隠れ家クラブ。Le Ciel Blanc・黒糖アメへのRequest Inviteはこちら。",
   url: process.env.NEXT_PUBLIC_SITE_URL || "https://club-chuchoter.example.com",
   xUrl: "https://x.com/CHUCHOTER_VRC?s=20",
-  ogImage: "/images/logo.png",
+  ogImage: "/images/logo.svg",
+  heroImage: "/images/VRChat_2026-06-03_20-04-04.166_2560x1440.png",
+  heroImageAlt: "CHUCHOTER ラウンジ内観",
   part1Time: "20:50",
   part2Time: "22:00",
 } as const;

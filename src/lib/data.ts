@@ -1,24 +1,26 @@
 import "server-only";
 import { readJsonFile, writeJsonFile } from "@/lib/site-storage";
+import { normalizeCast } from "@/lib/cast-roles";
 import type { Announcement, Cast, MediaArchive, ScheduleEntry, SiteStatus } from "@/types";
 
 export async function getCasts(): Promise<Cast[]> {
   const casts = await readJsonFile<Cast[]>("casts.json", []);
-  return casts.filter((c) => c.active).sort((a, b) => a.order - b.order);
+  return casts.map(normalizeCast).filter((c) => c.active).sort((a, b) => a.order - b.order);
 }
 
 export async function getAllCasts(): Promise<Cast[]> {
   const casts = await readJsonFile<Cast[]>("casts.json", []);
-  return casts.sort((a, b) => a.order - b.order);
+  return casts.map(normalizeCast).sort((a, b) => a.order - b.order);
 }
 
 export async function getCastById(id: string): Promise<Cast | undefined> {
   const casts = await readJsonFile<Cast[]>("casts.json", []);
-  return casts.find((c) => c.id === id && c.active);
+  const cast = casts.find((c) => c.id === id && c.active);
+  return cast ? normalizeCast(cast) : undefined;
 }
 
 export async function saveCasts(casts: Cast[]): Promise<void> {
-  await writeJsonFile("casts.json", casts);
+  await writeJsonFile("casts.json", casts.map(normalizeCast));
 }
 
 export async function getSchedule(): Promise<ScheduleEntry[]> {
