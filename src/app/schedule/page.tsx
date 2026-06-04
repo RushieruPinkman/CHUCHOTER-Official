@@ -4,6 +4,8 @@ import ScrollReveal from "@/components/ScrollReveal";
 import { formatJapaneseDate, getWeekDates, SITE } from "@/lib/site";
 import { getAllCasts, getSchedule } from "@/lib/data";
 
+export const revalidate = 300;
+
 export const metadata: Metadata = {
   title: "予定表",
   description:

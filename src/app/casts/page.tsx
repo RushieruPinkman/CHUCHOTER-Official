@@ -3,6 +3,8 @@ import { Suspense } from "react";
 import PageHero from "@/components/PageHero";
 import CastsGrid from "@/components/CastsGrid";
 import { getCasts } from "@/lib/data";
+export const revalidate = 300;
+
 export const metadata: Metadata = {
   title: "住人紹介",
   description:

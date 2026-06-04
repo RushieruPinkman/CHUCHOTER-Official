@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import CastDetailModal from "@/components/CastDetailModal";
+import CastPortrait from "@/components/CastPortrait";
 import CastRoleBadge from "@/components/CastRoleBadge";
 import type { Cast } from "@/types";
 
@@ -211,13 +212,9 @@ export default function CastsGrid({ casts }: { casts: Cast[] }) {
                   <div className="cast-card-media aspect-[3/4] shrink-0">
                     <div className="cast-card-media__media">
                       <div className="cast-card-media__zoom">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
+                        <CastPortrait
                           src={cast.image}
                           alt={`${cast.name} — ${cast.tagline}`}
-                          loading="lazy"
-                          decoding="async"
-                          className="cast-card-media__image"
                         />
                         <div className="cast-card-media__gradient" aria-hidden="true" />
                       </div>

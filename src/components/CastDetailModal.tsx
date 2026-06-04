@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { lockBodyScroll, unlockBodyScroll } from "@/lib/body-scroll-lock";
+import CastPortrait from "@/components/CastPortrait";
 import CastRoleBadge from "@/components/CastRoleBadge";
 import CastVoicePlayer from "@/components/CastVoicePlayer";
 import type { Cast } from "@/types";
@@ -102,11 +103,12 @@ export default function CastDetailModal({ cast, onClose }: CastDetailModalProps)
           <div className="flex min-h-0 flex-1 flex-col overflow-hidden md:hidden">
             {/* 画像エリア: flex-[0_0_55%] で固定割合、残りをテキストに */}
             <div className="relative shrink-0 overflow-hidden bg-deep" style={{ flex: "0 0 55%" }}>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
+              <CastPortrait
                 src={cast.image}
                 alt={`${cast.name}のポートレート`}
-                className="h-full w-full object-cover object-top"
+                variant="cover"
+                sizes="100vw"
+                className="object-top"
               />
               <div
                 className="pointer-events-none absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-t from-void via-void/70 to-transparent"
@@ -140,11 +142,10 @@ export default function CastDetailModal({ cast, onClose }: CastDetailModalProps)
           {/* PC: 2カラム */}
           <div className="hidden gap-10 p-8 md:grid md:grid-cols-[0.85fr_1.15fr]">
             <div className="border border-[var(--color-border)] bg-deep">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
+              <CastPortrait
                 src={cast.image}
                 alt={`${cast.name}のポートレート`}
-                className="block h-auto w-full"
+                variant="natural"
               />
             </div>
 

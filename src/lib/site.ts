@@ -12,7 +12,7 @@ export const SITE = {
   xUrl: "https://x.com/CHUCHOTER_VRC?s=20",
   vrchatGroupUrl: "https://vrc.group/CHUCHO.3872",
   ogImage: "/images/logo.svg",
-  heroImage: "/images/VRChat_2026-06-03_20-04-04.166_2560x1440.png",
+  heroImage: "/images/hero.webp",
   heroImageAlt: "CHUCHOTER ラウンジ内観",
   part1Time: "20:50",
   part2Time: "22:00",

@@ -1,4 +1,6 @@
 import Button from "@/components/Button";
+import HeroBackgroundImage from "@/components/HeroBackgroundImage";
+import CastPortrait from "@/components/CastPortrait";
 import Logo from "@/components/Logo";
 import CastRoleBadge from "@/components/CastRoleBadge";
 import ScrollReveal from "@/components/ScrollReveal";
@@ -9,6 +11,8 @@ import VrChatGroupLink from "@/components/VrChatGroupLink";
 import { getAnnouncements, getCasts, getStatus } from "@/lib/data";
 import { SITE } from "@/lib/site";
 import Link from "next/link";
+
+export const revalidate = 300;
 
 export default async function HomePage() {
   const [status, casts, announcements] = await Promise.all([
@@ -26,18 +30,7 @@ export default async function HomePage() {
       >
         <div className="hero-mv__backdrop pointer-events-none absolute" aria-hidden="true">
           <div className="hero-mv__media">
-            <div className="hero-mv__zoom">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={SITE.heroImage}
-                alt=""
-                width={2560}
-                height={1440}
-                fetchPriority="high"
-                decoding="async"
-                className="hero-mv__image"
-              />
-            </div>
+            <HeroBackgroundImage />
           </div>
           <div className="hero-mv__scrim absolute" />
         </div>
@@ -160,12 +153,10 @@ export default async function HomePage() {
                   <div className="cast-card-media aspect-[3/4] shrink-0">
                     <div className="cast-card-media__media">
                       <div className="cast-card-media__zoom">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
+                        <CastPortrait
                           src={cast.image}
                           alt={`${cast.name}のポートレート`}
-                          loading="lazy"
-                          className="cast-card-media__image"
+                          sizes="(max-width: 640px) 100vw, 50vw"
                         />
                         <div className="cast-card-media__gradient" aria-hidden="true" />
                       </div>

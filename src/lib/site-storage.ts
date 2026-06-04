@@ -1,7 +1,11 @@
 import "server-only";
 import { promises as fs } from "fs";
 import path from "path";
+import { unstable_cache } from "next/cache";
 import { getMissingSupabaseEnvVars, getSupabaseAdmin, isRemoteStorageEnabled } from "@/lib/supabase-admin";
+
+export const SITE_DATA_CACHE_TAG = "site-data";
+const SITE_DATA_REVALIDATE_SECONDS = 300;
 
 const DATA_DIR = path.join(process.cwd(), "data");
 
@@ -48,7 +52,7 @@ async function writeLocalJsonFile<T>(filename: string, data: T): Promise<void> {
   );
 }
 
-export async function readJsonFile<T>(filename: string, fallback: T): Promise<T> {
+async function readJsonFileUncached<T>(filename: string, fallback: T): Promise<T> {
   const supabase = getSupabaseAdmin();
   if (!supabase) {
     return readLocalJsonFile(filename, fallback);
@@ -72,6 +76,19 @@ export async function readJsonFile<T>(filename: string, fallback: T): Promise<T>
   const local = await readLocalJsonFile(filename, fallback);
   await writeJsonFile(filename, local);
   return local;
+}
+
+export async function readJsonFile<T>(filename: string, fallback: T): Promise<T> {
+  const key = fileKey(filename);
+  const cached = unstable_cache(
+    () => readJsonFileUncached(filename, fallback),
+    ["site-json", key],
+    {
+      revalidate: SITE_DATA_REVALIDATE_SECONDS,
+      tags: [SITE_DATA_CACHE_TAG, `site-json:${key}`],
+    }
+  );
+  return cached();
 }
 
 export async function writeJsonFile<T>(filename: string, data: T): Promise<void> {
