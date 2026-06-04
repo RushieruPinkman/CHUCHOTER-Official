@@ -5,6 +5,7 @@ import ScrollReveal from "@/components/ScrollReveal";
 import StatusBadge from "@/components/StatusBadge";
 import AnnouncementList from "@/components/AnnouncementList";
 import XLink from "@/components/XLink";
+import VrChatGroupLink from "@/components/VrChatGroupLink";
 import { getAnnouncements, getCasts, getStatus } from "@/lib/data";
 import { SITE } from "@/lib/site";
 import Link from "next/link";
@@ -203,6 +204,7 @@ export default async function HomePage() {
               <div className="flex flex-wrap items-center justify-center gap-4">
                 <Button href="/system#request-invite">Request Invite</Button>
                 <XLink href={SITE.xUrl} size="lg" />
+                <VrChatGroupLink href={SITE.vrchatGroupUrl} size="lg" />
               </div>
             </div>
           </ScrollReveal>

@@ -10,6 +10,7 @@ export const SITE = {
     "VRChatで静かで質の高い1対1コミュニケーションを提供する、高級隠れ家マンション。Le Ciel Blanc・黒糖アメへのRequest Inviteはこちら。",
   url: process.env.NEXT_PUBLIC_SITE_URL || "https://club-chuchoter.example.com",
   xUrl: "https://x.com/CHUCHOTER_VRC?s=20",
+  vrchatGroupUrl: "https://vrc.group/CHUCHO.3872",
   ogImage: "/images/logo.svg",
   heroImage: "/images/VRChat_2026-06-03_20-04-04.166_2560x1440.png",
   heroImageAlt: "CHUCHOTER ラウンジ内観",

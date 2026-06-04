@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import PageHero from "@/components/PageHero";
 import ScrollReveal from "@/components/ScrollReveal";
+import VrChatGroupLink from "@/components/VrChatGroupLink";
+import XLink from "@/components/XLink";
 import { SITE } from "@/lib/site";
 
 export const metadata: Metadata = {
@@ -10,7 +12,11 @@ export const metadata: Metadata = {
 };
 
 const STEPS = [
-  { step: "01", title: "公式Xを確認", desc: "営業日・Request Inviteの受付状況を公式Xでご確認ください。" },
+  {
+    step: "01",
+    title: "公式X・グループを確認",
+    desc: "営業日・Request Inviteの受付状況は公式XまたはVRChatグループでご確認ください。",
+  },
   { step: "02", title: "Request Invite", desc: "指定キャスト（Le Ciel Blanc / 黒糖アメ）へVRChat内でRequest Inviteをお送りください。" },
   { step: "03", title: "招待を受け取る", desc: "キャストからの招待通知を確認し、指定のインスタンスへJoinしてください。" },
   { step: "04", title: "私室へ", desc: "完全1対1の個別ルームへご案内いたします。リラックスしてお過ごしください。" },
@@ -113,6 +119,13 @@ export default function SystemPage() {
               </li>
             ))}
           </ol>
+
+          <ScrollReveal delay={0.08} className="mt-6">
+            <div className="panel flex flex-wrap items-center justify-center gap-4 px-6 py-5 md:gap-6 md:px-8">
+              <XLink href={SITE.xUrl} size="lg" label="公式Xを開く" />
+              <VrChatGroupLink href={SITE.vrchatGroupUrl} size="lg" label="VRChatグループを開く" />
+            </div>
+          </ScrollReveal>
         </div>
       </section>
 

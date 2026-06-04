@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Logo from "@/components/Logo";
+import VRChatIcon from "@/components/VRChatIcon";
 import XIcon from "@/components/XIcon";
 import { NAV_ITEMS, SITE } from "@/lib/site";
 
@@ -84,6 +85,21 @@ export default function Footer() {
                     </span>
                     <span className="min-w-0 text-[12px] leading-snug break-all md:text-[13px]">
                       @CHUCHOTER_VRC
+                    </span>
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href={SITE.vrchatGroupUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="footer-link group inline-flex min-h-10 items-center gap-2"
+                  >
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center border border-[var(--color-border)] text-cream-faint transition-colors group-hover:border-gold/40 group-hover:text-gold">
+                      <VRChatIcon className="h-3.5 w-3.5" />
+                    </span>
+                    <span className="min-w-0 text-[12px] leading-snug break-all md:text-[13px]">
+                      VRChatグループ
                     </span>
                   </a>
                 </li>
