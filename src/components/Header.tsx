@@ -16,8 +16,19 @@ export default function Header() {
   const firstNavLinkRef = useRef<HTMLAnchorElement>(null);
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 24);
-    onScroll();
+    let ticking = false;
+    const update = () => {
+      const next = window.scrollY > 24;
+      setScrolled((prev) => (prev === next ? prev : next));
+      ticking = false;
+    };
+    const onScroll = () => {
+      if (!ticking) {
+        ticking = true;
+        requestAnimationFrame(update);
+      }
+    };
+    update();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);

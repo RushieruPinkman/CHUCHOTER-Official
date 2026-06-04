@@ -32,14 +32,18 @@ function createParticle(width: number, height: number): Particle {
   };
 }
 
+function isMobileViewport() {
+  return typeof window !== "undefined" && window.matchMedia("(max-width: 767px)").matches;
+}
+
 function getParticleCount() {
   if (typeof window === "undefined") return 0;
-  return window.matchMedia("(max-width: 767px)").matches ? 12 : 28;
+  return isMobileViewport() ? 10 : 24;
 }
 
 function getTargetFps() {
   if (typeof window === "undefined") return 30;
-  return window.matchMedia("(max-width: 767px)").matches ? 20 : 28;
+  return isMobileViewport() ? 18 : 24;
 }
 
 export default function AmbientParticles() {
@@ -51,7 +55,8 @@ export default function AmbientParticles() {
     if (!canvas) return;
 
     const motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
-    if (motionQuery.matches) return;
+    const mobileQuery = window.matchMedia("(max-width: 767px)");
+    if (motionQuery.matches || mobileQuery.matches) return;
 
     const ctx = canvas.getContext("2d", { alpha: true, desynchronized: true });
     if (!ctx) return;
@@ -65,6 +70,8 @@ export default function AmbientParticles() {
     let lastFrame = 0;
     let frameInterval = 1000 / getTargetFps();
     let running = true;
+    let scrolling = false;
+    let scrollEndTimer = 0;
 
     const resize = () => {
       dpr = Math.min(window.devicePixelRatio || 1, 1.5);
@@ -83,6 +90,10 @@ export default function AmbientParticles() {
 
     const draw = (time: number) => {
       if (!running) return;
+      if (scrolling) {
+        frameId = requestAnimationFrame(draw);
+        return;
+      }
 
       const elapsed = time - lastFrame;
       if (elapsed < frameInterval) {
@@ -132,15 +143,26 @@ export default function AmbientParticles() {
       else start();
     };
 
+    const onScroll = () => {
+      scrolling = true;
+      window.clearTimeout(scrollEndTimer);
+      scrollEndTimer = window.setTimeout(() => {
+        scrolling = false;
+      }, 180);
+    };
+
     resize();
     frameId = requestAnimationFrame(draw);
 
     window.addEventListener("resize", resize, { passive: true });
+    window.addEventListener("scroll", onScroll, { passive: true });
     document.addEventListener("visibilitychange", onVisibility);
 
     return () => {
       stop();
+      window.clearTimeout(scrollEndTimer);
       window.removeEventListener("resize", resize);
+      window.removeEventListener("scroll", onScroll);
       document.removeEventListener("visibilitychange", onVisibility);
     };
   }, [theme]);

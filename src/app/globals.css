@@ -125,6 +125,12 @@ html.theme-transition *::after {
     max-width: 100%;
   }
 
+  @media (prefers-reduced-motion: no-preference) {
+    html:focus-within {
+      scroll-behavior: smooth;
+    }
+  }
+
   body {
     @apply bg-void text-cream antialiased;
     font-family: var(--font-body);
@@ -132,6 +138,7 @@ html.theme-transition *::after {
     transition: background-color var(--theme-switch-duration) var(--theme-switch-easing);
     overflow-x: clip;
     max-width: 100%;
+    touch-action: pan-y;
   }
 
   body.scroll-locked {
@@ -296,7 +303,7 @@ html.theme-transition *::after {
     opacity: 0.75;
   }
 
-  @media (prefers-reduced-motion: reduce) {
+  @media (max-width: 767px), (prefers-reduced-motion: reduce) {
     .ambient-bg__particles {
       display: none;
     }
@@ -403,8 +410,8 @@ html.theme-transition *::after {
     inset: -8%;
     transform-origin: center center;
     animation: hero-mv-kenburns 28s ease-in-out infinite alternate;
-    will-change: transform;
     backface-visibility: hidden;
+    transform: translateZ(0);
   }
 
   @media (max-width: 767px) {
@@ -503,12 +510,11 @@ html.theme-transition *::after {
 
   .reveal {
     opacity: 0;
-    transform: translateY(1.25rem);
+    transform: translate3d(0, 1.25rem, 0);
     transition:
-      opacity 0.65s cubic-bezier(0.22, 1, 0.36, 1),
-      transform 0.65s cubic-bezier(0.22, 1, 0.36, 1);
+      opacity 0.55s cubic-bezier(0.22, 1, 0.36, 1),
+      transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
     transition-delay: var(--reveal-delay, 0s);
-    will-change: opacity, transform;
   }
 
   .reveal:not(.is-visible) {
@@ -517,7 +523,7 @@ html.theme-transition *::after {
 
   .reveal.is-visible {
     opacity: 1;
-    transform: translateY(0);
+    transform: translate3d(0, 0, 0);
     pointer-events: auto;
   }
 
@@ -580,13 +586,15 @@ html.theme-transition *::after {
     position: absolute;
     inset: -10%;
     transform-origin: center center;
-    transition: transform 0.5s ease-out;
-    will-change: transform;
+    transition: transform 0.45s ease-out;
     backface-visibility: hidden;
+    transform: translateZ(0);
   }
 
-  .group:hover .cast-card-media__zoom {
-    transform: scale(1.03) translateZ(0);
+  @media (hover: hover) {
+    .group:hover .cast-card-media__zoom {
+      transform: scale(1.03) translateZ(0);
+    }
   }
 
   .cast-card-media__image {
@@ -763,7 +771,10 @@ html.theme-transition *::after {
   }
 
   .header-glass {
-    @apply border-b border-[var(--color-border)] bg-deep/80 backdrop-blur-md backdrop-saturate-150;
+    border-bottom: 1px solid var(--color-border);
+    background-color: color-mix(in srgb, var(--theme-deep) 92%, transparent);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
   }
 
   .header-bar::before {
@@ -790,20 +801,45 @@ html.theme-transition *::after {
     opacity: 0;
   }
 
-  .panel-hover:hover {
-    border-color: var(--color-border-strong);
-    transform: translateY(-2px);
-    box-shadow:
-      0 0 0 1px rgba(201, 169, 98, 0.06),
-      0 12px 40px var(--theme-panel-shadow),
-      inset 0 1px 0 rgba(201, 169, 98, 0.08);
+  @media (hover: hover) {
+    .panel-hover:hover {
+      border-color: var(--color-border-strong);
+      transform: translateY(-2px);
+      box-shadow:
+        0 0 0 1px rgba(201, 169, 98, 0.06),
+        0 12px 40px var(--theme-panel-shadow),
+        inset 0 1px 0 rgba(201, 169, 98, 0.08);
+    }
+
+    [data-theme="light"] .panel-hover:hover {
+      box-shadow:
+        0 0 0 1px rgba(143, 115, 48, 0.08),
+        0 12px 32px var(--theme-panel-shadow),
+        inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    }
   }
 
-  [data-theme="light"] .panel-hover:hover {
-    box-shadow:
-      0 0 0 1px rgba(143, 115, 48, 0.08),
-      0 12px 32px var(--theme-panel-shadow),
-      inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  /* モバイル・低スペック端末: 装飾アニメーションを抑えてスクロールを優先 */
+  @media (max-width: 1023px) {
+    .ambient-bg__glow {
+      animation: none;
+      opacity: 0.6;
+    }
+
+    .hairline::after {
+      display: none;
+    }
+
+    .hero-spotlight,
+    .panel-spotlight-bg {
+      animation: none;
+    }
+
+    .header-glass {
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+      background-color: color-mix(in srgb, var(--theme-deep) 96%, transparent);
+    }
   }
 
   .modal-overlay {
