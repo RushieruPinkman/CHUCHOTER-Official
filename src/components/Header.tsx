@@ -45,15 +45,10 @@ export default function Header() {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [menuOpen]);
 
-  // ページ遷移でメニューを閉じる
+  // ページ遷移完了後にメニューを閉じる
   useEffect(() => {
     setMenuOpen(false);
   }, [pathname]);
-
-  const closeMenu = () => {
-    setMenuOpen(false);
-    menuBtnRef.current?.focus();
-  };
 
   return (
     <>
@@ -166,7 +161,6 @@ export default function Header() {
                   <Link
                     ref={index === 0 ? firstNavLinkRef : undefined}
                     href={item.href}
-                    onClick={closeMenu}
                     className={`block border-b border-[var(--color-border)] py-5 text-center transition-colors focus-visible:outline-none focus-visible:text-gold ${
                       isActive ? "text-gold" : "text-cream hover:text-gold"
                     }`}
