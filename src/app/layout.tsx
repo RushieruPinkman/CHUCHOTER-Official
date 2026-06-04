@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import AmbientParticles from "@/components/AmbientParticles";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { SITE } from "@/lib/site";
 import "./globals.css";
@@ -74,7 +73,6 @@ export default function RootLayout({
             </div>
             <div className="ambient-bg__grain" />
             <div className="ambient-bg__vignette" />
-            <AmbientParticles />
           </div>
 
           <Header />

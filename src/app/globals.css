@@ -296,19 +296,6 @@ html.theme-transition *::after {
     background: radial-gradient(ellipse at center, transparent 52%, var(--effect-vignette) 100%);
   }
 
-  .ambient-bg__particles {
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    opacity: 0.75;
-  }
-
-  @media (max-width: 767px), (prefers-reduced-motion: reduce) {
-    .ambient-bg__particles {
-      display: none;
-    }
-  }
-
   @keyframes ambient-glow {
     from {
       opacity: 0.45;
