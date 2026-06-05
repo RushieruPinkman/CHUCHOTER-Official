@@ -380,7 +380,7 @@ export default function GachaMachine({ casts }: GachaMachineProps) {
 
         <ScrollReveal delay={0.08} className="mx-auto mt-8 max-w-lg text-center">
           <div className="space-y-1.5 text-xs leading-relaxed text-cream-faint">
-            <p>★1ははずれ（ランダムで住人が現れます）。</p>
+            <p>★1はランダムで住人が現れます。</p>
             <p>★2〜★3の景品は当選後にサイトからダウンロードできます。</p>
             <p>
               ★4以上は

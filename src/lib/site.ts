@@ -26,10 +26,14 @@ export const NAV_ITEMS = [
   { href: "/", label: "Entrance", labelJa: "エントランス" },
   { href: "/system", label: "Guide", labelJa: "ご案内" },
   { href: "/casts", label: "Residents", labelJa: "住人紹介" },
-  { href: "/gacha", label: "Fortune", labelJa: "ガチャ" },
   { href: "/schedule", label: "Schedule", labelJa: "予定表" },
   { href: "/media", label: "Lounge", labelJa: "ラウンジ" },
+  { href: "/gacha", label: "Fortune", labelJa: "ガチャ" },
 ] as const;
+
+export function isGachaNavItem(href: string): boolean {
+  return href === "/gacha";
+}
 
 export function formatJapaneseDate(dateStr: string): string {
   const date = new Date(dateStr + "T00:00:00");

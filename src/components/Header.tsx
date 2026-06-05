@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import Logo from "@/components/Logo";
 import ThemeToggle from "@/components/ThemeToggle";
 import { lockBodyScroll, unlockBodyScroll } from "@/lib/body-scroll-lock";
-import { NAV_ITEMS } from "@/lib/site";
+import { isGachaNavItem, NAV_ITEMS } from "@/lib/site";
 
 export default function Header() {
   const pathname = usePathname();
@@ -84,8 +84,9 @@ export default function Header() {
             >
               {NAV_ITEMS.map((item, index) => {
                 const isActive = pathname === item.href;
+                const isGacha = isGachaNavItem(item.href);
                 return (
-                  <span key={item.href} className="flex items-center">
+                  <span key={item.href} className={`flex items-center ${isGacha ? "nav-item--gacha" : ""}`}>
                     {index > 0 && (
                       <span
                         className="mx-1 h-3 w-px bg-[var(--color-border)]"
@@ -167,8 +168,9 @@ export default function Header() {
           <ul className="space-y-1">
             {NAV_ITEMS.map((item, index) => {
               const isActive = pathname === item.href;
+              const isGacha = isGachaNavItem(item.href);
               return (
-                <li key={item.href}>
+                <li key={item.href} className={isGacha ? "mobile-nav-item--gacha" : undefined}>
                   <Link
                     ref={index === 0 ? firstNavLinkRef : undefined}
                     href={item.href}

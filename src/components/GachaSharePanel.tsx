@@ -140,7 +140,7 @@ export default function GachaSharePanel({ result }: GachaSharePanelProps) {
       <p className="text-center text-xs leading-relaxed text-cream-faint">
         {isMiss ? (
           <>
-            はずれでした。{result.cast?.name ?? "住人"}が扉の向こうに現れました。もう一度挑戦して、★2以上の景品を狙いましょう。
+            {result.cast?.name ?? "住人"}が扉の向こうに現れました。もう一度挑戦して、★2以上の景品を狙いましょう。
           </>
         ) : siteDownloadable ? (
           <>

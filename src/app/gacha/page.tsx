@@ -9,7 +9,7 @@ export const revalidate = 300;
 export const metadata: Metadata = {
   title: "ガチャ",
   description:
-    "CHUCHOTERの運命の扉 — 景品抽選。★1ははずれ（住人がランダム登場）。★2〜★3はサイトからダウンロード。★4以上は当選カードを @CHUCHOTER_VRC へDMでお送りください。",
+    "CHUCHOTERの運命の扉 — 景品抽選。★1は住人がランダム登場。★2〜★3はサイトからダウンロード。★4以上は当選カードを @CHUCHOTER_VRC へDMでお送りください。",
 };
 
 export default async function GachaPage() {
@@ -26,7 +26,7 @@ export default async function GachaPage() {
       <PageHero
         titleEn="Fortune"
         titleJa="運命の扉"
-        description="扉の向こうに待つ景品を、運に委ねて。1日1回（日本時間0:00更新）。★1ははずれ（住人がランダム登場）。★2〜★3は当選後にサイトからダウンロード。★4以上は公式XアカウントへDMでご連絡ください。"
+        description="扉の向こうに待つ景品を、運に委ねて。1日1回（日本時間0:00更新）。★1は住人がランダム登場。★2〜★3は当選後にサイトからダウンロード。★4以上は公式XアカウントへDMでご連絡ください。"
       />
       <GachaMachine casts={gachaCasts} />
     </>

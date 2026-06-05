@@ -34,10 +34,12 @@ export default function GachaPrizeCard({
           />
           <div className="gacha-prize-card__miss-overlay">
             <GachaRarityStars rarity={rarity} large={showDetails} />
-            <p className={`font-display text-cream ${showDetails ? "mt-3 text-xl" : "mt-2 text-lg"}`}>
-              {prize.title}
+            <p className={`font-display text-gold ${showDetails ? "mt-3 text-xl" : "mt-2 text-lg"}`}>
+              {cast.name}
             </p>
-            <p className={`text-gold ${showDetails ? "text-sm" : "text-xs"}`}>{cast.name}</p>
+            <p className={`text-cream-muted tracking-widest ${showDetails ? "text-xs" : "text-[10px]"}`}>
+              {cast.nameEn}
+            </p>
             {showDetails && (
               <p className="mt-1 text-xs leading-relaxed text-cream-faint">{prize.description}</p>
             )}

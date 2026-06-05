@@ -19,7 +19,7 @@ export interface GachaPrize {
   download?: GachaPrizeDownload;
 }
 
-/** ガチャ演出・はずれ表示用のキャスト情報 */
+/** ガチャ演出・★1住人表示用のキャスト情報 */
 export interface GachaCastSnapshot {
   id: string;
   name: string;
@@ -27,7 +27,7 @@ export interface GachaCastSnapshot {
   image: string;
 }
 
-/** サイト上で景品ファイルを配布する最大レアリティ（★1はずれ除く） */
+/** サイト上で景品ファイルを配布する最大レアリティ（★1除く） */
 export const GACHA_SITE_DOWNLOAD_MAX_RARITY = 3 as const satisfies GachaRarity;
 
 /** レアリティ別の排出率（合計100） */
@@ -55,8 +55,8 @@ export const RARITY_COLORS: Record<
 export const GACHA_PRIZES: Record<GachaRarity, GachaPrize> = {
   1: {
     rarity: 1,
-    title: "はずれ",
-    subtitle: "Miss",
+    title: "住人登場",
+    subtitle: "Resident",
     description: "扉の向こうから住人が現れます",
   },
   2: {
@@ -104,15 +104,16 @@ export interface GachaDrawResult {
   prize: GachaPrize;
   /** 抽選確定時刻（ISO 8601） */
   wonAt: string;
-  /** ★1はずれ時に表示するキャスト */
+  /** ★1時に表示するキャスト */
   cast?: GachaCastSnapshot;
 }
 
 function buildMissPrize(cast: GachaCastSnapshot): GachaPrize {
   return {
     ...GACHA_PRIZES[1],
+    title: cast.name,
     subtitle: cast.nameEn,
-    description: `${cast.name}が現れました`,
+    description: `${cast.name}が扉の向こうに現れました`,
   };
 }
 
@@ -176,8 +177,8 @@ export function pickGachaPrize(casts: GachaCastSnapshot[] = []): GachaDrawResult
 export function buildShareText(result: GachaDrawResult, siteUrl: string): string {
   if (isGachaMiss(result.rarity)) {
     const castLine = result.cast
-      ? `${result.cast.name}が現れました（はずれ）`
-      : "はずれ…";
+      ? `${result.cast.name}が扉の向こうに現れました`
+      : "扉の向こうから住人が現れました";
     return ["CHUCHOTER 運命の扉", castLine, siteUrl, "#CHUCHOTER"].join("\n");
   }
 
@@ -340,8 +341,8 @@ export function getStageStatus(stage: 1 | 2 | 3, finalRarity: GachaRarity): stri
 export function getResultMessage(rarity: GachaRarity, title: string, castName?: string): string {
   if (isGachaMiss(rarity)) {
     return castName
-      ? `はずれ… ${castName}が現れました。`
-      : "はずれ… また扉を開けてみませんか？";
+      ? `${castName}が扉の向こうに現れました。`
+      : "扉の向こうから住人が現れました。もう一度扉を開けてみませんか？";
   }
   if (rarity === 6) return `最高賞「${title}」の当選です！`;
   if (rarity === 5) return `「${title}」が当選しました！`;
