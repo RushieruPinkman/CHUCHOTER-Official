@@ -14,7 +14,6 @@ import {
 } from "@/lib/gacha";
 import { renderGachaShareImageFromResult } from "@/lib/gacha-share-image";
 import { SITE } from "@/lib/site";
-import GachaPrizeCard from "@/components/GachaPrizeCard";
 import GachaPrizeTextCard from "@/components/GachaPrizeTextCard";
 import XIcon from "@/components/XIcon";
 
@@ -136,7 +135,7 @@ export default function GachaSharePanel({ result }: GachaSharePanelProps) {
   };
 
   return (
-    <div className="gacha-share mt-6 space-y-4">
+    <div className={`gacha-share mt-6 space-y-4 ${isMiss ? "gacha-share--cast-result" : ""}`}>
       <p className="text-center text-xs leading-relaxed text-cream-faint">
         {isMiss ? (
           <>
@@ -174,17 +173,8 @@ export default function GachaSharePanel({ result }: GachaSharePanelProps) {
         )}
       </p>
 
-      <div className={`gacha-share-card gacha-share-card--r${result.rarity}`} data-rarity={result.rarity}>
-        {isMiss && result.cast ? (
-          <div className="gacha-share-card__miss aspect-[4/5] max-h-[420px] overflow-hidden">
-            <GachaPrizeCard
-              prize={result.prize}
-              rarity={result.rarity}
-              cast={result.cast}
-              showDetails
-            />
-          </div>
-        ) : (
+      {!isMiss && (
+        <div className={`gacha-share-card gacha-share-card--r${result.rarity}`} data-rarity={result.rarity}>
           <GachaPrizeTextCard
             prize={result.prize}
             rarity={result.rarity}
@@ -192,8 +182,8 @@ export default function GachaSharePanel({ result }: GachaSharePanelProps) {
             footer={footer}
             wonAt={result.wonAt}
           />
-        )}
-      </div>
+        </div>
+      )}
 
       <div className="gacha-share__actions">
         {siteDownloadable && prizeDownload && (

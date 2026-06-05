@@ -1052,10 +1052,12 @@ html.theme-transition *::after {
   }
 
   .gacha-stars {
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     padding: 0.25rem 0.65rem;
     font-size: 0.75rem;
-    letter-spacing: 0.15em;
+    letter-spacing: 0.12em;
     border: 1px solid currentColor;
     background: rgba(0, 0, 0, 0.55);
     animation: gacha-stars-pop 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
@@ -2309,12 +2311,17 @@ html.theme-transition *::after {
     background: radial-gradient(circle at 50% 35%, rgba(231, 229, 228, 0.12), transparent 65%);
   }
 
-  .gacha-prize-card--miss {
+  .gacha-prize-card {
     position: relative;
+    overflow: hidden;
+  }
+
+  .gacha-prize-card--miss {
+    background: var(--theme-void);
   }
 
   .gacha-prize-card__cast-image {
-    transform: scale(1.02);
+    object-position: center top;
   }
 
   .gacha-prize-card__miss-overlay {
@@ -2323,21 +2330,33 @@ html.theme-transition *::after {
     z-index: 2;
     display: flex;
     flex-direction: column;
-    align-items: center;
+    align-items: stretch;
     justify-content: flex-end;
-    padding: 1.25rem 1rem 1.5rem;
-    text-align: center;
+    pointer-events: none;
     background: linear-gradient(
       to top,
       rgba(6, 6, 5, 0.94) 0%,
-      rgba(6, 6, 5, 0.55) 42%,
-      rgba(6, 6, 5, 0.08) 72%,
+      rgba(6, 6, 5, 0.55) 38%,
+      rgba(6, 6, 5, 0.08) 68%,
       transparent 100%
     );
   }
 
-  .gacha-share-card__miss {
-    border-radius: inherit;
+  .gacha-prize-card__miss-content {
+    width: 100%;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.35rem;
+    padding: 1rem 1rem 1.25rem;
+    text-align: center;
+  }
+
+  .gacha-prize-card__miss-content .gacha-stars {
+    letter-spacing: 0;
+    padding-inline: 0.55rem;
   }
 
   .gacha-prize-text--r2 {
@@ -2389,6 +2408,10 @@ html.theme-transition *::after {
   }
 
   /* Share card */
+  .gacha-share--cast-result {
+    margin-top: 1rem;
+  }
+
   .gacha-share__actions,
   .gacha-machine__actions {
     display: grid;

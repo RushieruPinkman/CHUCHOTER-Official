@@ -303,7 +303,7 @@ export default function GachaMachine({ casts }: GachaMachineProps) {
                   )}
 
                   {showPrize && (
-                    <div className="relative h-full w-full">
+                    <div className="absolute inset-0 z-[1]">
                       {phase === "result" && <div className="gacha-machine__result-shine" aria-hidden="true" />}
                       <GachaPrizeCard
                         prize={previewPrize}

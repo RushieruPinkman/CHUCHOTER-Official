@@ -22,26 +22,26 @@ export default function GachaPrizeCard({
 }: GachaPrizeCardProps) {
   if (isGachaMiss(rarity) && cast) {
     return (
-      <div className="relative flex h-full w-full flex-col">
-        <div className={`relative min-h-0 flex-1 overflow-hidden bg-void gacha-prize-card--r${rarity} gacha-prize-card--miss`}>
-          <Image
-            src={cast.image}
-            alt={cast.name}
-            fill
-            sizes="(max-width: 260px) 260px, 320px"
-            className="gacha-prize-card__cast-image object-cover object-top"
-            priority
-          />
-          <div className="gacha-prize-card__miss-overlay">
+      <div className="gacha-prize-card gacha-prize-card--miss absolute inset-0">
+        <Image
+          src={cast.image}
+          alt={cast.name}
+          fill
+          sizes="(max-width: 260px) 260px, 320px"
+          className="gacha-prize-card__cast-image object-cover object-center"
+          priority
+        />
+        <div className="gacha-prize-card__miss-overlay">
+          <div className="gacha-prize-card__miss-content">
             <GachaRarityStars rarity={rarity} large={showDetails} />
-            <p className={`font-display text-gold ${showDetails ? "mt-3 text-xl" : "mt-2 text-lg"}`}>
+            <p className={`font-display text-gold ${showDetails ? "text-xl" : "text-lg"}`}>
               {cast.name}
             </p>
             <p className={`text-cream-muted tracking-widest ${showDetails ? "text-xs" : "text-[10px]"}`}>
               {cast.nameEn}
             </p>
             {showDetails && (
-              <p className="mt-1 text-xs leading-relaxed text-cream-faint">{prize.description}</p>
+              <p className="text-xs leading-relaxed text-cream-faint">{prize.description}</p>
             )}
           </div>
         </div>
@@ -50,11 +50,9 @@ export default function GachaPrizeCard({
   }
 
   return (
-    <div className="relative flex h-full w-full flex-col">
-      <div className={`relative min-h-0 flex-1 overflow-hidden bg-void gacha-prize-card--r${rarity}`}>
-        <GachaPrizeTextCard prize={prize} rarity={rarity} compact={!showDetails} wonAt={wonAt} />
-        {rarity === 6 && <div className="gacha-prize-art__shine" aria-hidden="true" />}
-      </div>
+    <div className={`gacha-prize-card gacha-prize-card--r${rarity} absolute inset-0 flex flex-col overflow-hidden bg-void`}>
+      <GachaPrizeTextCard prize={prize} rarity={rarity} compact={!showDetails} wonAt={wonAt} />
+      {rarity === 6 && <div className="gacha-prize-art__shine" aria-hidden="true" />}
     </div>
   );
 }
