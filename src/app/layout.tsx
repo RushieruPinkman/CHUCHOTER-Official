@@ -55,7 +55,7 @@ export default function RootLayout({
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>
-      <body className="relative min-h-screen">
+      <body className="relative flex min-h-[100dvh] flex-col">
         <ThemeProvider>
           <a
             href="#main-content"
@@ -64,19 +64,18 @@ export default function RootLayout({
             メインコンテンツへスキップ
           </a>
 
-          <div className="ambient-bg fixed inset-0 -z-20" aria-hidden="true">
+          <div className="ambient-bg" aria-hidden="true">
             <div className="ambient-bg__layer ambient-bg__layer--dark" />
             <div className="ambient-bg__layer ambient-bg__layer--light" />
             <div className="ambient-bg__glow">
               <div className="ambient-bg__glow-layer ambient-bg__glow-layer--dark" />
               <div className="ambient-bg__glow-layer ambient-bg__glow-layer--light" />
             </div>
-            <div className="ambient-bg__grain" />
             <div className="ambient-bg__vignette" />
           </div>
 
           <Header />
-          <main id="main-content" className="relative z-10 w-full max-w-full overflow-x-clip">
+          <main id="main-content" className="relative z-10 w-full max-w-full flex-1 overflow-x-hidden">
             {children}
           </main>
           <Footer />

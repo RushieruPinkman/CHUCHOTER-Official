@@ -23,9 +23,8 @@ export default async function HomePage() {
 
   return (
     <>
-      {/* Hero */}
       <section
-        className="hero-mv relative flex min-h-[100svh] w-full max-w-full flex-col overflow-hidden"
+        className="hero-mv relative flex min-h-[100dvh] w-full max-w-full flex-col overflow-hidden"
         aria-labelledby="hero-title"
       >
         <div className="hero-mv__backdrop pointer-events-none absolute" aria-hidden="true">
@@ -42,7 +41,7 @@ export default async function HomePage() {
 
           <ScrollReveal immediate delay={0.08}>
             <h1 id="hero-title" className="mb-6">
-            <Logo size="lg" priority className="mx-auto" />
+              <Logo size="lg" priority className="mx-auto" />
               <span className="sr-only">{SITE.name}</span>
             </h1>
           </ScrollReveal>
@@ -58,6 +57,9 @@ export default async function HomePage() {
 
           <ScrollReveal immediate delay={0.24} className="flex flex-wrap justify-center gap-4">
             <Button href="/system#request-invite">Request Invite</Button>
+            <Button href="/gacha" variant="ghost">
+              運命の扉
+            </Button>
             <Button href="/casts" variant="ghost">
               住人を見る
             </Button>
@@ -74,7 +76,6 @@ export default async function HomePage() {
 
       <AnnouncementList items={announcements} />
 
-      {/* Concept */}
       <section className="section-py" aria-labelledby="concept-heading">
         <div className="site-container">
           <div className="grid gap-10 lg:grid-cols-2 lg:gap-14">
@@ -125,7 +126,6 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* Residents preview */}
       <section className="section-py border-t border-[var(--color-border)]" aria-labelledby="residents-heading">
         <div className="site-container">
           <ScrollReveal className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
@@ -135,10 +135,7 @@ export default async function HomePage() {
                 住人紹介
               </h2>
             </div>
-            <Link
-              href="/casts"
-              className="link-gold text-sm tracking-[0.15em] text-gold"
-            >
+            <Link href="/casts" className="link-gold text-sm tracking-[0.15em] text-gold">
               View All →
             </Link>
           </ScrollReveal>
@@ -179,12 +176,10 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* CTA */}
       <section className="section-py" aria-labelledby="cta-heading">
         <div className="site-container">
           <ScrollReveal>
             <div className="panel relative overflow-hidden px-6 py-10 text-center md:px-10 md:py-14">
-              <div className="panel-spotlight-bg pointer-events-none absolute inset-0" aria-hidden="true" />
               <span className="section-label">Tonight</span>
               <h2 id="cta-heading" className="section-title mb-4">
                 今夜、私室へ

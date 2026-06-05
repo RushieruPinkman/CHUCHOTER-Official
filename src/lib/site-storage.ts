@@ -13,18 +13,26 @@ function fileKey(filename: string): string {
   return filename.replace(/\.json$/, "");
 }
 
+/** 本番ビルドかつ Supabase 設定済みのときだけリモートを使う（開発は常に data/*.json） */
+export function shouldUseRemoteStorage(): boolean {
+  return process.env.NODE_ENV === "production" && isRemoteStorageEnabled();
+}
+
 export function getStorageStatus() {
   const missing = getMissingSupabaseEnvVars();
+  const remoteConfigured = isRemoteStorageEnabled();
+  const remoteActive = shouldUseRemoteStorage();
   return {
-    remoteStorage: isRemoteStorageEnabled(),
+    remoteStorage: remoteConfigured,
+    remoteActive,
     isVercel: process.env.VERCEL === "1",
     missingEnv: missing,
-    writable: isRemoteStorageEnabled() || process.env.VERCEL !== "1",
+    writable: remoteActive || process.env.VERCEL !== "1",
   };
 }
 
 function assertWritableStorage(): void {
-  if (process.env.VERCEL === "1" && !isRemoteStorageEnabled()) {
+  if (process.env.VERCEL === "1" && !shouldUseRemoteStorage()) {
     const missing = getMissingSupabaseEnvVars();
     throw new Error(
       missing.length > 0
@@ -53,6 +61,10 @@ async function writeLocalJsonFile<T>(filename: string, data: T): Promise<void> {
 }
 
 async function readJsonFileUncached<T>(filename: string, fallback: T): Promise<T> {
+  if (!shouldUseRemoteStorage()) {
+    return readLocalJsonFile(filename, fallback);
+  }
+
   const supabase = getSupabaseAdmin();
   if (!supabase) {
     return readLocalJsonFile(filename, fallback);
@@ -92,6 +104,11 @@ export async function readJsonFile<T>(filename: string, fallback: T): Promise<T>
 }
 
 export async function writeJsonFile<T>(filename: string, data: T): Promise<void> {
+  if (!shouldUseRemoteStorage()) {
+    await writeLocalJsonFile(filename, data);
+    return;
+  }
+
   const supabase = getSupabaseAdmin();
   if (!supabase) {
     await writeLocalJsonFile(filename, data);

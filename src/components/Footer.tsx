@@ -23,7 +23,7 @@ function FooterColumn({
 
 export default function Footer() {
   return (
-    <footer className="relative mt-auto border-t border-[var(--color-border)] bg-deep/40">
+    <footer className="relative mt-auto border-t border-[var(--color-border)] bg-deep pb-[env(safe-area-inset-bottom,0px)]">
       <div className="site-container py-8 md:py-12">
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1.9fr)] lg:gap-10">
           <div className="flex flex-col items-center border-b border-[var(--color-border)] pb-6 text-center lg:items-start lg:border-b-0 lg:pb-0 lg:text-left">
@@ -118,7 +118,7 @@ export default function Footer() {
 
         <div className="hairline my-5 md:my-8" />
 
-        <p className="text-center text-[10px] tracking-[0.16em] whitespace-nowrap text-cream-faint md:tracking-[0.2em]">
+        <p className="text-center text-[10px] tracking-[0.12em] text-cream-faint sm:tracking-[0.16em] md:tracking-[0.2em]">
           © {new Date().getFullYear()} {SITE.name}{" "}
           <span className="uppercase">All rights reserved.</span>
         </p>

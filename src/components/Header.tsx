@@ -137,7 +137,7 @@ export default function Header() {
       {/* モバイルメニューオーバーレイ */}
       <nav
         id="mobile-nav"
-        className={`fixed inset-0 z-40 flex flex-col bg-void transition-opacity duration-300 lg:hidden ${
+        className={`fixed inset-0 z-40 flex max-h-[100dvh] flex-col overflow-hidden bg-void transition-opacity duration-300 lg:hidden ${
           menuOpen ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"
         }`}
         aria-label="モバイルナビゲーション"
