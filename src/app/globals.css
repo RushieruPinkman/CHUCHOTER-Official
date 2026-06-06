@@ -2316,17 +2316,10 @@ html.theme-transition *::after {
     inset: 0;
     z-index: 2;
     display: flex;
-    flex-direction: column;
-    align-items: stretch;
-    justify-content: flex-end;
+    align-items: center;
+    justify-content: center;
     pointer-events: none;
-    background: linear-gradient(
-      to top,
-      rgba(6, 6, 5, 0.94) 0%,
-      rgba(6, 6, 5, 0.55) 38%,
-      rgba(6, 6, 5, 0.08) 68%,
-      transparent 100%
-    );
+    background: rgba(6, 6, 5, 0.52);
   }
 
   .gacha-prize-card__miss-content {
@@ -2335,9 +2328,9 @@ html.theme-transition *::after {
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: flex-end;
-    gap: 0.35rem;
-    padding: 1rem 1rem 1.25rem;
+    justify-content: center;
+    gap: 0.65rem;
+    padding: 1.25rem 1rem;
     text-align: center;
   }
 

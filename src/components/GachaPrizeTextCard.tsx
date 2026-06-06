@@ -1,7 +1,15 @@
 "use client";
 
 import { GachaRarityStars } from "@/components/GachaVfx";
-import { getRarityLabel, RARITY_COLORS, shouldShowGachaWonAt, formatGachaWonAt, type GachaPrize, type GachaRarity } from "@/lib/gacha";
+import {
+  formatGachaWonAt,
+  getGachaPrizeCardDisplay,
+  getRarityLabel,
+  RARITY_COLORS,
+  shouldShowGachaWonAt,
+  type GachaPrize,
+  type GachaRarity,
+} from "@/lib/gacha";
 
 interface GachaPrizeTextCardProps {
   prize: GachaPrize;
@@ -26,10 +34,11 @@ export default function GachaPrizeTextCard({
 }: GachaPrizeTextCardProps) {
   const colors = RARITY_COLORS[rarity];
   const showWonAt = shouldShowGachaWonAt(rarity) && wonAt;
+  const display = getGachaPrizeCardDisplay(prize, rarity);
 
   return (
     <div
-      className={`gacha-prize-text gacha-prize-text--r${rarity} flex h-full flex-col items-center justify-center text-center ${
+      className={`gacha-prize-text gacha-prize-text--r${rarity} flex h-full w-full flex-col items-center justify-center text-center ${
         compact ? "gap-3 p-5" : "gap-4 p-6 md:p-8"
       }`}
     >
@@ -44,16 +53,20 @@ export default function GachaPrizeTextCard({
 
       <GachaRarityStars rarity={rarity} large={!compact} />
 
-      <div className="relative z-[1] space-y-2">
+      <div className="relative z-[1] flex w-full flex-col items-center gap-2">
         <p className={`font-display text-gold ${compact ? "text-lg" : "text-xl md:text-2xl"}`}>
-          {prize.title}
+          {display.primary}
         </p>
-        <p className={`tracking-widest text-cream-muted ${compact ? "text-[10px]" : "text-xs"}`}>
-          {prize.subtitle}
-        </p>
-        <p className={`leading-relaxed text-cream-faint ${compact ? "text-[11px]" : "text-xs md:text-sm"}`}>
-          {prize.description}
-        </p>
+        {display.secondary && (
+          <p className={`tracking-widest text-cream-muted ${compact ? "text-[10px]" : "text-xs"}`}>
+            {display.secondary}
+          </p>
+        )}
+        {display.detail && (
+          <p className={`leading-relaxed text-cream-faint ${compact ? "text-[11px]" : "text-xs md:text-sm"}`}>
+            {display.detail}
+          </p>
+        )}
       </div>
 
       <p className={`relative z-[1] tracking-widest text-cream-faint ${compact ? "text-[10px]" : "text-[11px]"}`}>

@@ -180,6 +180,47 @@ export function formatGachaWonAt(iso: string): string {
   }).format(new Date(iso));
 }
 
+/** 結果カードに載せる文言（同一内容の重複を除く） */
+export interface GachaPrizeCardDisplay {
+  primary: string;
+  secondary?: string;
+  detail?: string;
+}
+
+function normalizeGachaCardText(value: string): string {
+  return value.trim();
+}
+
+function isDuplicateGachaCardText(a: string, b: string): boolean {
+  const left = normalizeGachaCardText(a);
+  const right = normalizeGachaCardText(b);
+  return left.length > 0 && left === right;
+}
+
+export function getGachaPrizeCardDisplay(
+  prize: GachaPrize,
+  rarity: GachaRarity
+): GachaPrizeCardDisplay {
+  if (isGachaMiss(rarity)) {
+    return { primary: prize.description };
+  }
+
+  const primary = normalizeGachaCardText(prize.title);
+  const secondaryRaw = normalizeGachaCardText(prize.subtitle);
+  const detailRaw = normalizeGachaCardText(prize.description);
+
+  const secondary = isDuplicateGachaCardText(secondaryRaw, primary)
+    ? undefined
+    : secondaryRaw || undefined;
+  const detail =
+    isDuplicateGachaCardText(detailRaw, primary) ||
+    (secondary !== undefined && isDuplicateGachaCardText(detailRaw, secondary))
+      ? undefined
+      : detailRaw || undefined;
+
+  return { primary, secondary, detail };
+}
+
 export function pickGachaPrize(
   casts: GachaCastSnapshot[] = [],
   rates: Record<GachaRarity, number> = RARITY_RATE

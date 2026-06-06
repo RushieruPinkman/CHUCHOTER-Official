@@ -23,7 +23,6 @@ import {
   getStageDuration,
   getStageLabel,
   getStageStatus,
-  isGachaMiss,
   pickGachaPrize,
   RARITY_RATE,
   type GachaCastSnapshot,
@@ -346,18 +345,8 @@ export default function GachaMachine({ casts, mode = "production" }: GachaMachin
                   </div>
                 </div>
 
-                {phase === "result" && result && !isGachaMiss(result.rarity) && (
+                {phase === "result" && result && isDevMode && (
                   <div className={`gacha-machine__result-msg gacha-machine__result-msg--r${result.rarity} mt-5`}>
-                    <p className="text-sm leading-relaxed text-cream-muted">
-                      {isDevMode
-                        ? `【試験】${getResultMessage(result.rarity, result.prize.title, result.cast?.name)}`
-                        : getResultMessage(result.rarity, result.prize.title, result.cast?.name)}
-                    </p>
-                  </div>
-                )}
-
-                {phase === "result" && result && isDevMode && isGachaMiss(result.rarity) && (
-                  <div className="gacha-machine__result-msg gacha-machine__result-msg--r1 mt-5">
                     <p className="text-sm leading-relaxed text-cream-muted">
                       【試験】{getResultMessage(result.rarity, result.prize.title, result.cast?.name)}
                     </p>
