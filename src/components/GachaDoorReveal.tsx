@@ -13,11 +13,16 @@ interface GachaDoorRevealProps {
   idle?: boolean;
 }
 
-const DOOR_ANGLES = {
+interface DoorAngles {
+  left: number;
+  right: number;
+}
+
+const DOOR_ANGLES: Record<"closed" | "half" | "full", DoorAngles> = {
   closed: { left: 0, right: 0 },
   half: { left: -58, right: 58 },
   full: { left: -96, right: 96 },
-} as const;
+};
 
 export default function GachaDoorReveal({
   stage,
@@ -28,7 +33,7 @@ export default function GachaDoorReveal({
 }: GachaDoorRevealProps) {
   const stageClass = idle ? "gacha-door--idle" : `gacha-door--stage${stage}`;
   const doorControlled = !idle && stage >= 2;
-  const [doorAngles, setDoorAngles] = useState(DOOR_ANGLES.closed);
+  const [doorAngles, setDoorAngles] = useState<DoorAngles>(DOOR_ANGLES.closed);
 
   useLayoutEffect(() => {
     if (idle || stage === 1) {
@@ -40,7 +45,7 @@ export default function GachaDoorReveal({
     let raf1 = 0;
     let raf2 = 0;
 
-    const applyAngles = (angles: (typeof DOOR_ANGLES)[keyof typeof DOOR_ANGLES]) => {
+    const applyAngles = (angles: DoorAngles) => {
       if (!cancelled) setDoorAngles(angles);
     };
 
