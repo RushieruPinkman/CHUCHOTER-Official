@@ -1286,6 +1286,9 @@ html.theme-transition *::after {
     opacity: 0.15;
     z-index: 0;
     transform: translateZ(-40px);
+    transition:
+      opacity 1s cubic-bezier(0.22, 1, 0.36, 1),
+      filter 1s cubic-bezier(0.22, 1, 0.36, 1);
     background: radial-gradient(
       ellipse at 50% 42%,
       var(--gacha-glow, rgba(201, 169, 98, 0.65)),
@@ -1293,14 +1296,18 @@ html.theme-transition *::after {
     );
   }
 
+  .gacha-door--stage1 .gacha-door__light {
+    animation: gacha-door-seam-pulse 1.4s ease-in-out infinite alternate;
+  }
+
   .gacha-door--stage2 .gacha-door__light {
     opacity: 0.55;
-    animation: gacha-door-light-grow 0.8s ease-in-out infinite alternate;
+    animation: gacha-door-light-grow 0.8s ease-in-out 0.85s infinite alternate;
   }
 
   .gacha-door--stage3 .gacha-door__light {
     opacity: 0.95;
-    animation: gacha-door-light-grow 0.55s ease-in-out infinite alternate;
+    animation: gacha-door-light-grow 0.55s ease-in-out 0.75s infinite alternate;
   }
 
   .gacha-door__scene {
@@ -1317,8 +1324,13 @@ html.theme-transition *::after {
     bottom: 0;
     width: 50%;
     transform-style: preserve-3d;
-    transition: transform 0.9s cubic-bezier(0.22, 1, 0.36, 1);
     will-change: transform;
+  }
+
+  .gacha-door__leaf--opening {
+    animation: none !important;
+    transition: transform 1.15s cubic-bezier(0.16, 1, 0.3, 1);
+    z-index: 5;
   }
 
   .gacha-door__leaf--left {
@@ -1361,6 +1373,7 @@ html.theme-transition *::after {
       inset 0 0 28px rgba(0, 0, 0, 0.55),
       inset 4px 0 12px rgba(255, 255, 255, 0.03),
       0 8px 20px rgba(0, 0, 0, 0.35);
+    transition: box-shadow 0.85s cubic-bezier(0.22, 1, 0.36, 1);
   }
 
   .gacha-door__leaf--left .gacha-door__face--front {
@@ -1434,43 +1447,17 @@ html.theme-transition *::after {
 
   .gacha-door--idle .gacha-door__leaf--left,
   .gacha-door--stage1 .gacha-door__leaf--left {
-    transform: rotateY(0deg);
     animation: gacha-door-hinge-shake-l 0.55s ease-in-out infinite alternate;
   }
 
   .gacha-door--idle .gacha-door__leaf--right,
   .gacha-door--stage1 .gacha-door__leaf--right {
-    transform: rotateY(0deg);
     animation: gacha-door-hinge-shake-r 0.55s ease-in-out infinite alternate;
   }
 
   .gacha-door--idle .gacha-door__light {
     opacity: 0.1;
     animation: gacha-door-seam-pulse 1.4s ease-in-out infinite alternate;
-  }
-
-  .gacha-door--stage2 .gacha-door__leaf--left {
-    animation: none;
-    transform: rotateY(-58deg);
-    z-index: 5;
-  }
-
-  .gacha-door--stage2 .gacha-door__leaf--right {
-    animation: none;
-    transform: rotateY(58deg);
-    z-index: 5;
-  }
-
-  .gacha-door--stage3 .gacha-door__leaf--left {
-    animation: none;
-    transform: rotateY(-96deg);
-    z-index: 5;
-  }
-
-  .gacha-door--stage3 .gacha-door__leaf--right {
-    animation: none;
-    transform: rotateY(96deg);
-    z-index: 5;
   }
 
   .gacha-door--stage2 .gacha-door__leaf--left .gacha-door__face--front,
@@ -2843,8 +2830,14 @@ html.theme-transition *::after {
     .gacha-machine__slot--spinning,
     .gacha-door--stage1 .gacha-door__leaf--left,
     .gacha-door--stage1 .gacha-door__leaf--right,
+    .gacha-door__leaf--opening {
+      transition: none !important;
+    }
+
     .gacha-door--stage2 .gacha-door__leaf--left,
     .gacha-door--stage2 .gacha-door__leaf--right,
+    .gacha-door--stage3 .gacha-door__leaf--left,
+    .gacha-door--stage3 .gacha-door__leaf--right,
     .gacha-door--idle .gacha-door__leaf--left,
     .gacha-door--idle .gacha-door__leaf--right,
     .gacha-door--stage2 .gacha-door__light,
@@ -2883,10 +2876,6 @@ html.theme-transition *::after {
       animation: none !important;
     }
 
-    .gacha-door__leaf {
-      transition: none !important;
-    }
-
     .gacha-door--stage2 .gacha-door__leaf--left {
       transform: rotateY(-58deg);
     }
@@ -2901,6 +2890,10 @@ html.theme-transition *::after {
 
     .gacha-door--stage3 .gacha-door__leaf--right {
       transform: rotateY(96deg);
+    }
+
+    .gacha-door__light {
+      transition: none !important;
     }
 
     .gacha-door--stage3 .gacha-door__inner .gacha-stars {

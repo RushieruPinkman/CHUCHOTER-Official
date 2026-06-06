@@ -141,6 +141,33 @@ export function shouldShowGachaWonAt(rarity: GachaRarity): boolean {
   return rarity >= 4;
 }
 
+/** ★4・★5はDMで希望キャスト名の指定が必要 */
+export function shouldIncludeCastNameInGachaDm(rarity: GachaRarity): boolean {
+  return rarity === 4 || rarity === 5;
+}
+
+export function getGachaDmReceiveLine(rarity: GachaRarity): string {
+  if (shouldIncludeCastNameInGachaDm(rarity)) {
+    return "当選カードと希望のキャスト名を @CHUCHOTER_VRC へDMでお送りください。";
+  }
+  return "当選カードを @CHUCHOTER_VRC へDMでお送りください。";
+}
+
+/** Xアイコン直後に続けるDM案内（画面表示用） */
+export function getGachaDmUiSuffix(rarity: GachaRarity): string {
+  if (shouldIncludeCastNameInGachaDm(rarity)) {
+    return "へのDMに当選カードと希望のキャスト名をお送りください。";
+  }
+  return "へのDMに当選カードを添付してご連絡ください。";
+}
+
+export function getGachaReceiveLine(rarity: GachaRarity): string {
+  if (isGachaPrizeSiteDownloadable(rarity)) {
+    return "景品データはサイトからダウンロードできます。";
+  }
+  return getGachaDmReceiveLine(rarity);
+}
+
 export function formatGachaWonAt(iso: string): string {
   return new Intl.DateTimeFormat("ja-JP", {
     timeZone: "Asia/Tokyo",
@@ -153,12 +180,15 @@ export function formatGachaWonAt(iso: string): string {
   }).format(new Date(iso));
 }
 
-export function pickGachaPrize(casts: GachaCastSnapshot[] = []): GachaDrawResult {
+export function pickGachaPrize(
+  casts: GachaCastSnapshot[] = [],
+  rates: Record<GachaRarity, number> = RARITY_RATE
+): GachaDrawResult {
   const wonAt = new Date().toISOString();
   const roll = Math.random() * 100;
   let cumulative = 0;
   for (const rarity of GACHA_RARITIES) {
-    cumulative += RARITY_RATE[rarity];
+    cumulative += rates[rarity];
     if (roll <= cumulative) {
       if (rarity === 1 && casts.length > 0) {
         const cast = casts[Math.floor(Math.random() * casts.length)]!;
@@ -182,9 +212,7 @@ export function buildShareText(result: GachaDrawResult, siteUrl: string): string
     return ["CHUCHOTER 運命の扉", castLine, siteUrl, "#CHUCHOTER"].join("\n");
   }
 
-  const receiveLine = isGachaPrizeSiteDownloadable(result.rarity)
-    ? "景品データはサイトからダウンロードできます。"
-    : "当選カードを @CHUCHOTER_VRC へDMでお送りください。";
+  const receiveLine = getGachaReceiveLine(result.rarity);
 
   return [
     `CHUCHOTER 運命の扉で${getRarityLabel(result.rarity)}【${result.prize.title}】が当選しました！`,
@@ -220,13 +248,7 @@ export function buildShareCardText(result: GachaDrawResult, siteUrl: string): st
   if (isGachaMiss(result.rarity)) {
     lines.push("また扉を開けて、景品を狙いましょう。", siteUrl, "━━━━━━━━━━━━━━━━━━");
   } else {
-    lines.push(
-      isGachaPrizeSiteDownloadable(result.rarity)
-        ? "景品データはサイトからダウンロードできます。"
-        : "当選カードを @CHUCHOTER_VRC へDMでお送りください。",
-      siteUrl,
-      "━━━━━━━━━━━━━━━━━━"
-    );
+    lines.push(getGachaReceiveLine(result.rarity), siteUrl, "━━━━━━━━━━━━━━━━━━");
   }
 
   return lines.join("\n");
@@ -341,12 +363,17 @@ export function getStageStatus(stage: 1 | 2 | 3, finalRarity: GachaRarity): stri
 export function getResultMessage(rarity: GachaRarity, title: string, castName?: string): string {
   if (isGachaMiss(rarity)) {
     return castName
-      ? `${castName}が扉の向こうに現れました。`
-      : "扉の向こうから住人が現れました。もう一度扉を開けてみませんか？";
+      ? "もう一度挑戦して、★2以上の景品を狙いましょう。"
+      : "扉を開けて、景品を狙いましょう。";
   }
   if (rarity === 6) return `最高賞「${title}」の当選です！`;
   if (rarity === 5) return `「${title}」が当選しました！`;
-  if (rarity >= 4) return `「${title}」を獲得しました。`;
+  if (rarity >= 4) {
+    if (shouldIncludeCastNameInGachaDm(rarity)) {
+      return `「${title}」を獲得しました。当選カードと希望のキャスト名をDMでお送りください。`;
+    }
+    return `「${title}」を獲得しました。`;
+  }
   if (isGachaPrizeSiteDownloadable(rarity)) {
     return `「${title}」が当たりました。下のボタンから景品データをダウンロードできます。`;
   }

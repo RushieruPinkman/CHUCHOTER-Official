@@ -23,6 +23,7 @@ import {
   getStageDuration,
   getStageLabel,
   getStageStatus,
+  isGachaMiss,
   pickGachaPrize,
   RARITY_RATE,
   type GachaCastSnapshot,
@@ -31,6 +32,18 @@ import {
   type GachaPresentation,
   type GachaRarity,
 } from "@/lib/gacha";
+import {
+  formatGachaDevRatePercent,
+  GACHA_DEV_RATES,
+  isGachaDevEnabled,
+} from "@/lib/gacha-dev";
+
+type GachaMachineMode = "production" | "dev";
+
+interface GachaMachineProps {
+  casts: GachaCastSnapshot[];
+  mode?: GachaMachineMode;
+}
 
 type DrawPhase = "idle" | "stage1" | "stage2" | "stage3" | "impact" | "result";
 type PresentationStage = 1 | 2 | 3;
@@ -38,11 +51,10 @@ type PresentationStage = 1 | 2 | 3;
 const PRESENTING_PHASES: DrawPhase[] = ["stage1", "stage2", "stage3"];
 const DRAWING_PHASES: DrawPhase[] = [...PRESENTING_PHASES, "impact"];
 
-interface GachaMachineProps {
-  casts: GachaCastSnapshot[];
-}
+export default function GachaMachine({ casts, mode = "production" }: GachaMachineProps) {
+  const isDevMode = mode === "dev" && isGachaDevEnabled();
+  const activeRates = isDevMode ? GACHA_DEV_RATES : RARITY_RATE;
 
-export default function GachaMachine({ casts }: GachaMachineProps) {
   const [phase, setPhase] = useState<DrawPhase>("idle");
   const [previewPrize, setPreviewPrize] = useState<GachaPrize | null>(null);
   const [previewRarity, setPreviewRarity] = useState<GachaRarity | null>(null);
@@ -59,7 +71,7 @@ export default function GachaMachine({ casts }: GachaMachineProps) {
 
   const isDrawing = DRAWING_PHASES.includes(phase);
   const isPresenting = PRESENTING_PHASES.includes(phase);
-  const canDraw = !isDrawing && !dailyLocked && hydrated;
+  const canDraw = !isDrawing && (isDevMode || !dailyLocked) && hydrated;
   const finalRarity = pendingDraw?.rarity ?? result?.rarity ?? null;
   const vfxRarity = displayRarity ?? finalRarity;
 
@@ -87,15 +99,20 @@ export default function GachaMachine({ casts }: GachaMachineProps) {
   }, []);
 
   useEffect(() => {
+    if (isDevMode) {
+      setHydrated(true);
+      return;
+    }
+
     const record = restoreTodaysGachaRecord();
     if (record) {
       applyDailyRecord(record);
     }
     setHydrated(true);
-  }, [applyDailyRecord]);
+  }, [applyDailyRecord, isDevMode]);
 
   useEffect(() => {
-    if (!dailyLocked) return;
+    if (isDevMode || !dailyLocked) return;
 
     const updateCooldown = () => setCooldownMessage(formatGachaCooldownMessage());
     updateCooldown();
@@ -109,7 +126,7 @@ export default function GachaMachine({ casts }: GachaMachineProps) {
       window.clearInterval(interval);
       window.clearTimeout(timeout);
     };
-  }, [dailyLocked]);
+  }, [dailyLocked, isDevMode]);
 
   const runStage = useCallback(
     (draw: GachaDrawResult, script: GachaPresentation, stage: PresentationStage) => {
@@ -155,12 +172,15 @@ export default function GachaMachine({ casts }: GachaMachineProps) {
   );
 
   const handleDraw = () => {
-    if (!canDraw || !canDrawGachaToday()) return;
+    if (!canDraw) return;
+    if (!isDevMode && !canDrawGachaToday()) return;
 
-    const draw = pickGachaPrize(casts);
-    writeGachaDailyRecord(draw);
-    setDailyLocked(true);
-    setCooldownMessage(formatGachaCooldownMessage());
+    const draw = pickGachaPrize(casts, activeRates);
+    if (!isDevMode) {
+      writeGachaDailyRecord(draw);
+      setDailyLocked(true);
+      setCooldownMessage(formatGachaCooldownMessage());
+    }
     const script = buildGachaPresentation(draw.rarity);
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -231,7 +251,11 @@ export default function GachaMachine({ casts }: GachaMachineProps) {
     .join(" ");
 
   const rateSummary = [1, 2, 3, 4, 5, 6]
-    .map((r) => `★${r} ${RARITY_RATE[r as GachaRarity]}%`)
+    .map((r) => {
+      const rate = activeRates[r as GachaRarity];
+      const label = isDevMode ? formatGachaDevRatePercent(rate) : `${rate}%`;
+      return `★${r} ${label}`;
+    })
     .join(" / ");
 
   const statusText =
@@ -250,7 +274,12 @@ export default function GachaMachine({ casts }: GachaMachineProps) {
         <ScrollReveal>
           <div className="gacha-machine panel mx-auto max-w-xl overflow-hidden p-4 md:p-8">
             <div className="gacha-machine__frame relative z-10 border border-[var(--color-border)] bg-deep/90 p-5 text-center md:p-7">
-                <p className="section-label mb-2">Prize Draw</p>
+                {isDevMode && (
+                  <p className="mb-4 rounded border border-amber-500/35 bg-amber-500/10 px-3 py-2 text-[11px] leading-relaxed text-amber-100/90">
+                    開発用サンドボックス — 回数無制限・確率均等。本番（/gacha）には反映されません。
+                  </p>
+                )}
+                <p className="section-label mb-2">{isDevMode ? "Dev Draw" : "Prize Draw"}</p>
                 <h2 id="gacha-heading" className="sr-only">
                   景品ガチャ結果
                 </h2>
@@ -317,10 +346,20 @@ export default function GachaMachine({ casts }: GachaMachineProps) {
                   </div>
                 </div>
 
-                {phase === "result" && result && (
+                {phase === "result" && result && !isGachaMiss(result.rarity) && (
                   <div className={`gacha-machine__result-msg gacha-machine__result-msg--r${result.rarity} mt-5`}>
                     <p className="text-sm leading-relaxed text-cream-muted">
-                      {getResultMessage(result.rarity, result.prize.title, result.cast?.name)}
+                      {isDevMode
+                        ? `【試験】${getResultMessage(result.rarity, result.prize.title, result.cast?.name)}`
+                        : getResultMessage(result.rarity, result.prize.title, result.cast?.name)}
+                    </p>
+                  </div>
+                )}
+
+                {phase === "result" && result && isDevMode && isGachaMiss(result.rarity) && (
+                  <div className="gacha-machine__result-msg gacha-machine__result-msg--r1 mt-5">
+                    <p className="text-sm leading-relaxed text-cream-muted">
+                      【試験】{getResultMessage(result.rarity, result.prize.title, result.cast?.name)}
                     </p>
                   </div>
                 )}
@@ -332,13 +371,20 @@ export default function GachaMachine({ casts }: GachaMachineProps) {
                 )}
             </div>
 
-            {phase === "result" && result && <GachaSharePanel result={result} />}
+            {phase === "result" && result && !isDevMode && <GachaSharePanel result={result} />}
 
             <div className="relative z-10 mb-5 mt-6 px-1 space-y-1">
               <p className="text-[11px] leading-relaxed text-cream-faint">{rateSummary}</p>
-              <p className="text-[11px] leading-relaxed text-cream-faint">
-                1日1回まで（更新: 日本時間 毎日0:00）
-              </p>
+              {!isDevMode && (
+                <p className="text-[11px] leading-relaxed text-cream-faint">
+                  1日1回まで（更新: 日本時間 毎日0:00）
+                </p>
+              )}
+              {isDevMode && (
+                <p className="text-[11px] leading-relaxed text-cream-faint">
+                  試験モード：何度でも引き直せます（localStorage の本番記録は更新しません）
+                </p>
+              )}
             </div>
 
             <div className="gacha-machine__actions relative z-10 mt-6 px-1">
@@ -348,7 +394,7 @@ export default function GachaMachine({ casts }: GachaMachineProps) {
                   onClick={handleReset}
                   className="btn-ghost gacha-machine__action--primary"
                 >
-                  {dailyLocked ? "扉に戻る" : "もう一度引く"}
+                  {isDevMode ? "もう一度試す" : dailyLocked ? "扉に戻る" : "もう一度引く"}
                 </button>
               ) : (
                 <button
@@ -359,18 +405,20 @@ export default function GachaMachine({ casts }: GachaMachineProps) {
                 >
                   {!hydrated
                     ? "読み込み中…"
-                    : dailyLocked
+                    : !isDevMode && dailyLocked
                       ? "本日の抽選は完了"
                       : isPresenting
                         ? "演出中…"
                         : isDrawing
                           ? "抽選中…"
-                          : "扉を開ける"}
+                          : isDevMode
+                            ? "試験抽選を開始"
+                            : "扉を開ける"}
                 </button>
               )}
             </div>
 
-            {cooldownMessage && (
+            {!isDevMode && cooldownMessage && (
               <p className="relative z-10 mt-4 px-1 text-center text-xs leading-relaxed text-cream-muted" role="status">
                 {cooldownMessage}
               </p>
@@ -378,12 +426,26 @@ export default function GachaMachine({ casts }: GachaMachineProps) {
           </div>
         </ScrollReveal>
 
+        {!isDevMode && (
         <ScrollReveal delay={0.08} className="mx-auto mt-8 max-w-lg text-center">
           <div className="space-y-1.5 text-xs leading-relaxed text-cream-faint">
             <p>★1はランダムで住人が現れます。</p>
             <p>★2〜★3の景品は当選後にサイトからダウンロードできます。</p>
             <p>
-              ★4以上は
+              ★4・★5は
+              <a
+                href={SITE.xUrl}
+                className="link-gold inline-flex align-middle text-gold"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="@CHUCHOTER_VRC"
+              >
+                <XIcon className="h-3.5 w-3.5" />
+              </a>
+              へのDMに当選カードと希望のキャスト名をお送りください。
+            </p>
+            <p>
+              ★6は
               <a
                 href={SITE.xUrl}
                 className="link-gold inline-flex align-middle text-gold"
@@ -397,6 +459,7 @@ export default function GachaMachine({ casts }: GachaMachineProps) {
             </p>
           </div>
         </ScrollReveal>
+        )}
       </div>
     </section>
   );

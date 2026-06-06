@@ -1,5 +1,6 @@
 "use client";
 
+import { useLayoutEffect, useState, type CSSProperties } from "react";
 import { GachaRarityStars } from "@/components/GachaVfx";
 import type { GachaRarity } from "@/lib/gacha";
 
@@ -12,6 +13,12 @@ interface GachaDoorRevealProps {
   idle?: boolean;
 }
 
+const DOOR_ANGLES = {
+  closed: { left: 0, right: 0 },
+  half: { left: -58, right: 58 },
+  full: { left: -96, right: 96 },
+} as const;
+
 export default function GachaDoorReveal({
   stage,
   rarity,
@@ -20,6 +27,58 @@ export default function GachaDoorReveal({
   idle = false,
 }: GachaDoorRevealProps) {
   const stageClass = idle ? "gacha-door--idle" : `gacha-door--stage${stage}`;
+  const doorControlled = !idle && stage >= 2;
+  const [doorAngles, setDoorAngles] = useState(DOOR_ANGLES.closed);
+
+  useLayoutEffect(() => {
+    if (idle || stage === 1) {
+      setDoorAngles(DOOR_ANGLES.closed);
+      return;
+    }
+
+    let cancelled = false;
+    let raf1 = 0;
+    let raf2 = 0;
+
+    const applyAngles = (angles: (typeof DOOR_ANGLES)[keyof typeof DOOR_ANGLES]) => {
+      if (!cancelled) setDoorAngles(angles);
+    };
+
+    if (stage === 2) {
+      setDoorAngles(DOOR_ANGLES.closed);
+
+      raf1 = requestAnimationFrame(() => {
+        raf2 = requestAnimationFrame(() => {
+          applyAngles(DOOR_ANGLES.half);
+        });
+      });
+    } else {
+      raf1 = requestAnimationFrame(() => {
+        applyAngles(DOOR_ANGLES.full);
+      });
+    }
+
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(raf1);
+      cancelAnimationFrame(raf2);
+    };
+  }, [stage, idle]);
+
+  const leafClass = (side: "left" | "right") =>
+    [
+      "gacha-door__leaf",
+      `gacha-door__leaf--${side}`,
+      doorControlled ? "gacha-door__leaf--opening" : "",
+    ]
+      .filter(Boolean)
+      .join(" ");
+
+  const leafStyle = (side: "left" | "right"): CSSProperties | undefined => {
+    if (!doorControlled) return undefined;
+    const angle = side === "left" ? doorAngles.left : doorAngles.right;
+    return { transform: `rotateY(${angle}deg)` };
+  };
 
   return (
     <div className={`gacha-door ${stageClass} gacha-door--r${rarity}`}>
@@ -30,7 +89,7 @@ export default function GachaDoorReveal({
         <div className="gacha-door__jamb gacha-door__jamb--right" />
         <div className="gacha-door__light" />
         <div className="gacha-door__scene">
-          <div className="gacha-door__leaf gacha-door__leaf--left">
+          <div className={leafClass("left")} style={leafStyle("left")}>
             <div className="gacha-door__leaf-body">
               <span className="gacha-door__face gacha-door__face--front" />
               <span className="gacha-door__face gacha-door__face--back" />
@@ -38,7 +97,7 @@ export default function GachaDoorReveal({
               <span className="gacha-door__handle" />
             </div>
           </div>
-          <div className="gacha-door__leaf gacha-door__leaf--right">
+          <div className={leafClass("right")} style={leafStyle("right")}>
             <div className="gacha-door__leaf-body">
               <span className="gacha-door__face gacha-door__face--front" />
               <span className="gacha-door__face gacha-door__face--back" />

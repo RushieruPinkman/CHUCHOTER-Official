@@ -7,6 +7,7 @@ import {
   buildShareText,
   buildTweetUrl,
   getGachaPrizeDownload,
+  getGachaDmUiSuffix,
   isGachaMiss,
   isGachaPrizeSiteDownloadable,
   RARITY_COLORS,
@@ -138,9 +139,7 @@ export default function GachaSharePanel({ result }: GachaSharePanelProps) {
     <div className={`gacha-share mt-6 space-y-4 ${isMiss ? "gacha-share--cast-result" : ""}`}>
       <p className="text-center text-xs leading-relaxed text-cream-faint">
         {isMiss ? (
-          <>
-            {result.cast?.name ?? "住人"}が扉の向こうに現れました。もう一度挑戦して、★2以上の景品を狙いましょう。
-          </>
+          <>もう一度挑戦して、★2以上の景品を狙いましょう。</>
         ) : siteDownloadable ? (
           <>
             当選おめでとうございます。下のボタンから「{result.prize.title}」をダウンロードできます。
@@ -154,7 +153,7 @@ export default function GachaSharePanel({ result }: GachaSharePanelProps) {
             >
               <XIcon className="h-3.5 w-3.5" />
             </a>
-            へ当選カードをDMでお送りください。
+            へ当選カードをDMでお送りください。★4・★5は希望のキャスト名もあわせてお知らせください。
           </>
         ) : (
           <>
@@ -168,7 +167,7 @@ export default function GachaSharePanel({ result }: GachaSharePanelProps) {
             >
               <XIcon className="h-3.5 w-3.5" />
             </a>
-            へDMでお送りください。
+            {getGachaDmUiSuffix(result.rarity)}
           </>
         )}
       </p>

@@ -1,8 +1,8 @@
 import type { GachaDrawResult } from "@/lib/gacha";
 import {
   getRarityLabel,
+  getGachaReceiveLine,
   isGachaMiss,
-  isGachaPrizeSiteDownloadable,
   RARITY_COLORS,
   shouldShowGachaWonAt,
   formatGachaWonAt,
@@ -145,10 +145,8 @@ function drawShareCardCanvas(ctx: CanvasRenderingContext2D, result: GachaDrawRes
   ctx.font = "400 26px sans-serif";
   const footerText = isGachaMiss(rarity)
     ? "また扉を開けて、景品を狙いましょう"
-    : isGachaPrizeSiteDownloadable(rarity)
-      ? "景品データはサイトからダウンロードできます"
-      : "@CHUCHOTER_VRC へDMで当選カードを送信";
-  ctx.fillText(footerText, CARD_WIDTH / 2, CARD_HEIGHT - 120);
+    : getGachaReceiveLine(rarity).replace("@CHUCHOTER_VRC ", "");
+  wrapText(ctx, footerText, CARD_WIDTH / 2, CARD_HEIGHT - 120, CARD_WIDTH - 160, 36);
 }
 
 export async function renderGachaShareImageFromResult(result: GachaDrawResult): Promise<Blob> {
