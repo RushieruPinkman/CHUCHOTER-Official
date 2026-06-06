@@ -81,9 +81,9 @@ export const GACHA_PRIZES: Record<GachaRarity, GachaPrize> = {
   },
   4: {
     rarity: 4,
-    title: "デジタル記念カード",
+    title: "サイン入りデジタル記念カード",
     subtitle: "Signed Card",
-    description: "直筆サイン入りデジタル記念カード",
+    description: "サイン入りデジタル記念カード",
   },
   5: {
     rarity: 5,
