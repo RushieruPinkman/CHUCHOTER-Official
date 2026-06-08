@@ -3089,8 +3089,23 @@ html.theme-transition *::after {
 
   .gacha-share__actions .gacha-share__action--primary,
   .gacha-machine__actions .gacha-machine__action--primary,
+  .gacha-machine__actions .gacha-machine__auth,
   .gacha-share__actions .gacha-share__action--wide {
     grid-column: 1 / -1;
+  }
+
+  .gacha-machine__auth-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+  }
+
+  .gacha-machine__auth-actions .btn-primary,
+  .gacha-machine__auth-actions .btn-ghost {
+    width: auto;
+    min-width: 9rem;
   }
 
   .gacha-share__actions .btn-primary,

@@ -417,20 +417,20 @@ export default function GachaMachine({ casts, mode = "production" }: GachaMachin
                   {isDevMode ? "もう一度試す" : dailyLimitEnabled && dailyLocked ? "扉に戻る" : "もう一度引く"}
                 </button>
               ) : !isDevMode && authReady && !isLoggedIn ? (
-                <div className="space-y-4">
-                  <p className="text-center text-sm leading-relaxed text-cream-muted">
+                <div className="gacha-machine__auth space-y-4 text-center">
+                  <p className="text-sm leading-relaxed text-cream-muted">
                     運命の扉を開くにはログインが必要です。
                   </p>
-                  <div className="flex flex-wrap items-center justify-center gap-3">
+                  <div className="gacha-machine__auth-actions">
                     <Link
                       href={getAuthLoginHref(loginNextPath)}
-                      className="btn-primary inline-flex min-h-11 items-center px-6"
+                      className="btn-primary inline-flex min-h-11 items-center justify-center px-6"
                     >
                       ログインして引く
                     </Link>
                     <Link
                       href={getAuthRegisterHref(loginNextPath)}
-                      className="btn-ghost inline-flex min-h-11 items-center px-6"
+                      className="btn-ghost inline-flex min-h-11 items-center justify-center px-6"
                     >
                       新規登録
                     </Link>
