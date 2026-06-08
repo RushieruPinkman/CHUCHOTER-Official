@@ -93,6 +93,11 @@ export default function ProfilePanel({ profile, onDisplayNameChange }: ProfilePa
       )}
 
       <div className="space-y-6 text-center">
+        <p className="auth-status-badge auth-status-badge--panel" role="status">
+          <span className="auth-status-badge__dot" aria-hidden="true" />
+          ログイン中
+        </p>
+
         <div>
           <p className="section-label mb-2">Member</p>
           {!editing ? (

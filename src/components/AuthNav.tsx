@@ -176,6 +176,10 @@ export default function AuthNav({
     if (variant === "mobile") {
       return (
         <div className={`mobile-nav-panel__auth-member ${className}`.trim()}>
+          <p className="auth-status-badge mx-auto w-fit" role="status">
+            <span className="auth-status-badge__dot" aria-hidden="true" />
+            ログイン中
+          </p>
           <ProfileNavLink
             href={profileHref}
             label={label}
@@ -217,6 +221,10 @@ export default function AuthNav({
     if (variant === "mobile") {
       return (
         <div className={`mobile-nav-panel__auth-member ${className}`.trim()}>
+          <p className="auth-status-badge mx-auto w-fit" role="status">
+            <span className="auth-status-badge__dot" aria-hidden="true" />
+            ログイン中（開発）
+          </p>
           <ProfileNavLink
             href={profileHref}
             label={devSession.displayName}

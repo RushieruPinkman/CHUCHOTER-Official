@@ -5,41 +5,79 @@ import {
   buildAuthCollectionUserKey,
   buildDevCollectionUserKey,
 } from "@/lib/gacha-collection";
-import { AUTH_DEV_STORAGE_KEY, readDevSession } from "@/lib/auth-dev";
+import { getUserProfileLabel } from "@/lib/auth-messages";
+import {
+  AUTH_DEV_STORAGE_KEY,
+  AUTH_DEV_UPDATED_EVENT,
+  readDevSession,
+} from "@/lib/auth-dev";
 import { createClient } from "@/lib/supabase/client";
 import { isUserAuthEnabled } from "@/lib/supabase/config";
 
 export interface CollectionUserKeyState {
   userKey: string | null;
+  memberLabel: string | null;
   ready: boolean;
+}
+
+function resolveDevAuthState(): Pick<CollectionUserKeyState, "userKey" | "memberLabel"> {
+  const devSession = readDevSession();
+  if (!devSession?.email) {
+    return { userKey: null, memberLabel: null };
+  }
+
+  return {
+    userKey: buildDevCollectionUserKey(devSession.email),
+    memberLabel: devSession.displayName,
+  };
+}
+
+function resolveMemberLabel(user: {
+  email?: string | null;
+  user_metadata?: Record<string, unknown>;
+} | null): string | null {
+  if (!user) return null;
+  const displayName =
+    typeof user.user_metadata?.display_name === "string"
+      ? user.user_metadata.display_name
+      : null;
+  return getUserProfileLabel(user.email, displayName);
 }
 
 export function useCollectionUserKey(): CollectionUserKeyState {
   const [userKey, setUserKey] = useState<string | null>(null);
+  const [memberLabel, setMemberLabel] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    function resolveDevUserKey(): string | null {
-      const devSession = readDevSession();
-      return devSession?.email ? buildDevCollectionUserKey(devSession.email) : null;
-    }
-
-    const devKey = resolveDevUserKey();
-    if (devKey) {
-      setUserKey(devKey);
+    const devState = resolveDevAuthState();
+    if (devState.userKey) {
+      setUserKey(devState.userKey);
+      setMemberLabel(devState.memberLabel);
       setReady(true);
+
+      const refreshDev = () => {
+        const next = resolveDevAuthState();
+        setUserKey(next.userKey);
+        setMemberLabel(next.memberLabel);
+      };
 
       const onStorage = (event: StorageEvent) => {
         if (event.key !== AUTH_DEV_STORAGE_KEY) return;
-        setUserKey(resolveDevUserKey());
+        refreshDev();
       };
 
       window.addEventListener("storage", onStorage);
-      return () => window.removeEventListener("storage", onStorage);
+      window.addEventListener(AUTH_DEV_UPDATED_EVENT, refreshDev);
+      return () => {
+        window.removeEventListener("storage", onStorage);
+        window.removeEventListener(AUTH_DEV_UPDATED_EVENT, refreshDev);
+      };
     }
 
     if (!isUserAuthEnabled()) {
       setUserKey(null);
+      setMemberLabel(null);
       setReady(true);
       return;
     }
@@ -52,6 +90,7 @@ export function useCollectionUserKey(): CollectionUserKeyState {
       supabase.auth.getUser().then(({ data }) => {
         if (!mounted) return;
         setUserKey(data.user?.id ? buildAuthCollectionUserKey(data.user.id) : null);
+        setMemberLabel(resolveMemberLabel(data.user));
         setReady(true);
       });
 
@@ -60,6 +99,7 @@ export function useCollectionUserKey(): CollectionUserKeyState {
       } = supabase.auth.onAuthStateChange((_event, session) => {
         if (!mounted) return;
         setUserKey(session?.user?.id ? buildAuthCollectionUserKey(session.user.id) : null);
+        setMemberLabel(resolveMemberLabel(session?.user ?? null));
       });
 
       return () => {
@@ -69,10 +109,11 @@ export function useCollectionUserKey(): CollectionUserKeyState {
     } catch {
       if (mounted) {
         setUserKey(null);
+        setMemberLabel(null);
         setReady(true);
       }
     }
   }, []);
 
-  return { userKey, ready };
+  return { userKey, ready, memberLabel };
 }

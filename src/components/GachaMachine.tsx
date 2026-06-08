@@ -62,7 +62,7 @@ export default function GachaMachine({ casts, mode = "production" }: GachaMachin
   const isDevMode = mode === "dev" && isGachaDevEnabled();
   const dailyLimitEnabled = isGachaDailyLimitEnabled();
   const activeRates = isDevMode ? GACHA_DEV_RATES : RARITY_RATE;
-  const { userKey: collectionUserKey, ready: authReady } = useCollectionUserKey();
+  const { userKey: collectionUserKey, memberLabel, ready: authReady } = useCollectionUserKey();
   const historyKey = buildGachaHistoryKey(collectionUserKey);
   const loginNextPath = isDevMode ? "/gacha/dev" : "/gacha";
   const isLoggedIn = Boolean(collectionUserKey);
@@ -395,9 +395,16 @@ export default function GachaMachine({ casts, mode = "production" }: GachaMachin
                   1日1回まで（更新: 日本時間 毎日0:00）
                 </p>
               )}
-              {!isDevMode && (
+              {!isDevMode && authReady && !isLoggedIn && (
                 <p className="text-[11px] leading-relaxed text-cream-faint">
                   ログイン中のアカウントでのみ抽選できます。
+                </p>
+              )}
+              {!isDevMode && authReady && isLoggedIn && memberLabel && (
+                <p className="auth-status-badge mx-auto w-fit max-w-full" role="status">
+                  <span className="auth-status-badge__dot" aria-hidden="true" />
+                  <span>ログイン中</span>
+                  <span className="auth-status-badge__name truncate">{memberLabel}</span>
                 </p>
               )}
               {isDevMode && (

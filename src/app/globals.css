@@ -1360,6 +1360,12 @@ html.theme-transition *::after {
     color: var(--color-gold);
   }
 
+  .profile-nav-link__avatar-wrap {
+    position: relative;
+    display: inline-flex;
+    flex-shrink: 0;
+  }
+
   .profile-nav-link__avatar {
     display: inline-flex;
     flex-shrink: 0;
@@ -1394,8 +1400,57 @@ html.theme-transition *::after {
   .profile-nav-link--stacked .profile-nav-link__avatar {
     width: 2.75rem;
     height: 2.75rem;
-    margin-inline: auto;
     font-size: 1rem;
+  }
+
+  .profile-nav-link--stacked .profile-nav-link__avatar-wrap {
+    margin-inline: auto;
+  }
+
+  .profile-nav-link__status-dot {
+    position: absolute;
+    right: -0.0625rem;
+    bottom: -0.0625rem;
+    width: 0.5625rem;
+    height: 0.5625rem;
+    border: 2px solid var(--theme-deep);
+    border-radius: 9999px;
+    background: var(--color-gold-bright);
+    box-shadow: 0 0 8px rgba(201, 169, 98, 0.55);
+  }
+
+  .auth-status-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border: 1px solid color-mix(in srgb, var(--color-gold) 35%, var(--color-border));
+    border-radius: 9999px;
+    background: color-mix(in srgb, var(--color-gold) 10%, var(--theme-deep));
+    padding: 0.375rem 0.875rem;
+    color: var(--color-gold);
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+    line-height: 1.4;
+  }
+
+  .auth-status-badge--panel {
+    margin-bottom: 1rem;
+  }
+
+  .auth-status-badge__dot {
+    flex-shrink: 0;
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 9999px;
+    background: var(--color-gold-bright);
+    box-shadow: 0 0 8px rgba(201, 169, 98, 0.55);
+  }
+
+  .auth-status-badge__name {
+    color: var(--color-cream);
+    font-family: var(--font-serif-jp, var(--font-display));
+    letter-spacing: 0.04em;
   }
 
   .mobile-nav-panel__auth-member {

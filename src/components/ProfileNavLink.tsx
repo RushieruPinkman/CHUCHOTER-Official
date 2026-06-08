@@ -35,11 +35,14 @@ export default function ProfileNavLink({
           active ? "profile-nav-link--active text-gold" : "text-cream-muted hover:text-gold"
         } ${className}`.trim()}
         aria-current={active ? "page" : undefined}
-        aria-label={`${label} — プロフィール`}
+        aria-label={`ログイン中 — ${label} — プロフィール`}
         tabIndex={tabIndex}
       >
-        <span className="profile-nav-link__avatar" aria-hidden="true">
-          {initial}
+        <span className="profile-nav-link__avatar-wrap">
+          <span className="profile-nav-link__avatar" aria-hidden="true">
+            {initial}
+          </span>
+          <span className="profile-nav-link__status-dot" aria-hidden="true" />
         </span>
       </Link>
     );
@@ -54,19 +57,22 @@ export default function ProfileNavLink({
           : "inline-flex items-center gap-2.5 px-3 py-1.5"
       } ${active ? "profile-nav-link--active text-gold" : "text-cream-muted hover:text-gold"} ${className}`.trim()}
       aria-current={active ? "page" : undefined}
-      aria-label={`${label} — プロフィール`}
+      aria-label={`ログイン中 — ${label} — プロフィール`}
       tabIndex={tabIndex}
     >
-      <span className="profile-nav-link__avatar" aria-hidden="true">
-        {initial}
+      <span className="profile-nav-link__avatar-wrap">
+        <span className="profile-nav-link__avatar" aria-hidden="true">
+          {initial}
+        </span>
+        <span className="profile-nav-link__status-dot" aria-hidden="true" />
       </span>
       <span className={isStacked ? "mt-3 block" : "min-w-0 text-left"}>
         <span
-          className={`block tracking-[0.28em] uppercase opacity-60 ${
+          className={`block tracking-[0.12em] text-gold/80 ${
             isStacked ? "section-label mb-1" : "text-[10px]"
           }`}
         >
-          Profile
+          ログイン中
         </span>
         <span
           className={`block truncate ${isStacked ? "text-xl font-serif-jp" : "max-w-[5.5rem] text-[13px]"}`}
