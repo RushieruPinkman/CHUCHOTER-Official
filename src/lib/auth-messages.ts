@@ -25,6 +25,12 @@ export function translateAuthError(message: string): string {
   if (normalized.includes("for security purposes")) {
     return "セキュリティのため、同じ操作は一定時間後に再度お試しください。";
   }
+  if (
+    normalized.includes("error sending confirmation email") ||
+    normalized.includes("error sending confirmation mail")
+  ) {
+    return "確認メールの送信に失敗しました。Supabase の SMTP 設定（Resend のドメイン検証・送信元アドレス・API キー）をご確認ください。詳細は Supabase Dashboard → Logs → Auth logs を参照してください。";
+  }
 
   return message;
 }
