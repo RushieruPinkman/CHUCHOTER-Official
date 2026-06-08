@@ -9,7 +9,10 @@ import {
   readGachaCollection,
   type GachaCollectionEntry,
 } from "@/lib/gacha-collection";
+import { USER_HISTORY_MAX_ENTRIES } from "@/lib/history-limits";
 import type { Cast } from "@/types";
+
+const EXCHANGE_HISTORY_MAX_ENTRIES = USER_HISTORY_MAX_ENTRIES;
 
 export const GACHA_COLLECTION_EXCHANGE_UPDATED_EVENT =
   "chuchoter-gacha-collection-exchange-updated";
@@ -149,33 +152,56 @@ export function readCollectionExchangeHistory(userKey: string): CollectionExchan
     const raw = window.localStorage.getItem(getHistoryStorageKey(userKey));
     if (!raw) return [];
 
-    const parsed = JSON.parse(raw) as CollectionExchangeRecord[];
-    if (!Array.isArray(parsed)) return [];
+    const records = parseCollectionExchangeHistoryRecords(JSON.parse(raw));
+    const trimmed = trimExchangeHistoryRecords(records);
 
-    return parsed
-      .filter(
-        (record) =>
-          record &&
-          typeof record.id === "string" &&
-          typeof record.exchangedAt === "string" &&
-          (record.rarity === 4 || record.rarity === 5 || record.rarity === 6)
-      )
-      .sort(
-        (a, b) => new Date(b.exchangedAt).getTime() - new Date(a.exchangedAt).getTime()
-      );
+    if (trimmed.length !== records.length) {
+      writeCollectionExchangeHistory(userKey, trimmed);
+    }
+
+    return trimmed;
   } catch {
     return [];
   }
+}
+
+function parseCollectionExchangeHistoryRecords(parsed: unknown): CollectionExchangeRecord[] {
+  if (!Array.isArray(parsed)) return [];
+
+  return parsed
+    .filter(
+      (record) =>
+        record &&
+        typeof record.id === "string" &&
+        typeof record.exchangedAt === "string" &&
+        (record.rarity === 4 || record.rarity === 5 || record.rarity === 6)
+    )
+    .sort(
+      (a, b) => new Date(b.exchangedAt).getTime() - new Date(a.exchangedAt).getTime()
+    );
+}
+
+function trimExchangeHistoryRecords(
+  records: CollectionExchangeRecord[]
+): CollectionExchangeRecord[] {
+  return records.slice(0, EXCHANGE_HISTORY_MAX_ENTRIES);
 }
 
 function writeCollectionExchangeHistory(
   userKey: string,
   records: CollectionExchangeRecord[]
 ): void {
+  if (typeof window === "undefined" || !userKey) return;
+
   window.localStorage.setItem(getHistoryStorageKey(userKey), JSON.stringify(records));
   window.dispatchEvent(
     new CustomEvent(GACHA_COLLECTION_EXCHANGE_UPDATED_EVENT, { detail: { userKey } })
   );
+}
+
+export function clearCollectionExchangeHistory(userKey: string): void {
+  if (typeof window === "undefined" || !userKey) return;
+  writeCollectionExchangeHistory(userKey, []);
 }
 
 export type CollectionExchangeResult =
@@ -225,7 +251,10 @@ export function performCollectionExchange(
   };
 
   const history = readCollectionExchangeHistory(userKey);
-  writeCollectionExchangeHistory(userKey, [record, ...history]);
+  writeCollectionExchangeHistory(
+    userKey,
+    trimExchangeHistoryRecords([record, ...history])
+  );
 
   return { ok: true, record };
 }

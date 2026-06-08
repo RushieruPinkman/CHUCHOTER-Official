@@ -5,11 +5,13 @@ import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { signOutAction } from "@/app/login/actions";
 import LoginNavLink from "@/components/LoginNavLink";
+import ProfileNavLink from "@/components/ProfileNavLink";
 import { getAuthLoginHref, getAuthRegisterHref } from "@/lib/auth-routes";
-import { getUserDisplayLabel } from "@/lib/auth-messages";
+import { getUserProfileLabel } from "@/lib/auth-messages";
 import {
   AUTH_DEV_LOGIN_PATH,
   AUTH_DEV_PROFILE_PATH,
+  AUTH_DEV_UPDATED_EVENT,
   AUTH_PROFILE_PATH,
   clearDevSession,
   isAuthDevEnabled,
@@ -25,12 +27,12 @@ export default function AuthNav({
   menuOpen = true,
 }: {
   className?: string;
-  variant?: "header" | "mobile";
+  variant?: "header" | "mobile" | "mobile-header-icon";
   menuOpen?: boolean;
 }) {
   const pathname = usePathname();
   const router = useRouter();
-  const [email, setEmail] = useState<string | null>(null);
+  const [memberLabel, setMemberLabel] = useState<string | null>(null);
   const [devSession, setDevSession] = useState<AuthDevSession | null>(null);
   const [ready, setReady] = useState(false);
   const authEnabled = isUserAuthEnabled();
@@ -59,14 +61,34 @@ export default function AuthNav({
 
       supabase.auth.getUser().then(({ data }) => {
         if (!mounted) return;
-        setEmail(data.user?.email ?? null);
+        const user = data.user;
+        setMemberLabel(
+          user
+            ? getUserProfileLabel(
+                user.email,
+                typeof user.user_metadata?.display_name === "string"
+                  ? user.user_metadata.display_name
+                  : null
+              )
+            : null
+        );
         setReady(true);
       });
 
       const {
         data: { subscription },
       } = supabase.auth.onAuthStateChange((_event, session) => {
-        setEmail(session?.user?.email ?? null);
+        const user = session?.user;
+        setMemberLabel(
+          user
+            ? getUserProfileLabel(
+                user.email,
+                typeof user.user_metadata?.display_name === "string"
+                  ? user.user_metadata.display_name
+                  : null
+              )
+            : null
+        );
       });
 
       return () => {
@@ -86,6 +108,14 @@ export default function AuthNav({
     refreshDevSession();
   }, [pathname, refreshDevSession]);
 
+  useEffect(() => {
+    if (!authDevEnabled) return;
+
+    const onDevUpdated = () => refreshDevSession();
+    window.addEventListener(AUTH_DEV_UPDATED_EVENT, onDevUpdated);
+    return () => window.removeEventListener(AUTH_DEV_UPDATED_EVENT, onDevUpdated);
+  }, [authDevEnabled, refreshDevSession]);
+
   const handleDevLogout = () => {
     clearDevSession();
     setDevSession(null);
@@ -99,6 +129,37 @@ export default function AuthNav({
   const isLoginPage =
     pathname === "/login" || pathname === AUTH_DEV_LOGIN_PATH || pathname === "/register";
   const isRegisterPage = pathname === "/register";
+  const isProfilePage = pathname === AUTH_PROFILE_PATH || pathname === AUTH_DEV_PROFILE_PATH;
+
+  if (variant === "mobile-header-icon") {
+    if (!ready) return null;
+
+    if (memberLabel) {
+      return (
+        <ProfileNavLink
+          href={AUTH_PROFILE_PATH}
+          label={memberLabel}
+          active={isProfilePage}
+          layout="icon"
+          className={className}
+        />
+      );
+    }
+
+    if (devSession) {
+      return (
+        <ProfileNavLink
+          href={AUTH_DEV_PROFILE_PATH}
+          label={devSession.displayName}
+          active={isProfilePage}
+          layout="icon"
+          className={className}
+        />
+      );
+    }
+
+    return null;
+  }
 
   if (!ready) {
     return (
@@ -108,25 +169,25 @@ export default function AuthNav({
     );
   }
 
-  if (email) {
+  if (memberLabel) {
     const profileHref = AUTH_PROFILE_PATH;
-    const label = getUserDisplayLabel(email);
+    const label = memberLabel;
 
     if (variant === "mobile") {
       return (
-        <div className={`space-y-3 text-center ${className}`.trim()}>
-          <Link
+        <div className={`mobile-nav-panel__auth-member ${className}`.trim()}>
+          <ProfileNavLink
             href={profileHref}
-            className="block text-sm text-cream-muted transition-colors hover:text-gold"
+            label={label}
+            active={isProfilePage}
+            layout="stacked"
             tabIndex={menuOpen ? 0 : -1}
-          >
-            {label}
-          </Link>
+          />
           <form action={signOutAction}>
             <button
               type="submit"
               tabIndex={menuOpen ? 0 : -1}
-              className="btn-ghost min-h-11 w-full max-w-xs"
+              className="mobile-nav-panel__auth-button"
             >
               ログアウト
             </button>
@@ -137,12 +198,7 @@ export default function AuthNav({
 
     return (
       <div className={`flex items-center gap-2 ${className}`.trim()}>
-        <Link
-          href={profileHref}
-          className="hidden max-w-[9rem] truncate text-[11px] text-cream-muted transition-colors hover:text-gold xl:inline"
-        >
-          {label}
-        </Link>
+        <ProfileNavLink href={profileHref} label={label} active={isProfilePage} />
         <form action={signOutAction}>
           <button
             type="submit"
@@ -160,19 +216,19 @@ export default function AuthNav({
 
     if (variant === "mobile") {
       return (
-        <div className={`space-y-3 text-center ${className}`.trim()}>
-          <Link
+        <div className={`mobile-nav-panel__auth-member ${className}`.trim()}>
+          <ProfileNavLink
             href={profileHref}
-            className="block text-sm text-cream-muted transition-colors hover:text-gold"
+            label={devSession.displayName}
+            active={isProfilePage}
+            layout="stacked"
             tabIndex={menuOpen ? 0 : -1}
-          >
-            {devSession.displayName}
-          </Link>
+          />
           <button
             type="button"
             onClick={handleDevLogout}
             tabIndex={menuOpen ? 0 : -1}
-            className="btn-ghost min-h-11 w-full max-w-xs"
+            className="mobile-nav-panel__auth-button"
           >
             ログアウト
           </button>
@@ -182,12 +238,11 @@ export default function AuthNav({
 
     return (
       <div className={`flex items-center gap-2 ${className}`.trim()}>
-        <Link
+        <ProfileNavLink
           href={profileHref}
-          className="hidden max-w-[9rem] truncate text-[11px] text-cream-muted transition-colors hover:text-gold xl:inline"
-        >
-          {devSession.displayName}
-        </Link>
+          label={devSession.displayName}
+          active={isProfilePage}
+        />
         <button
           type="button"
           onClick={handleDevLogout}
@@ -201,24 +256,30 @@ export default function AuthNav({
 
   if (variant === "mobile") {
     return (
-      <div className={`space-y-3 text-center ${className}`.trim()}>
-        <LoginNavLink
+      <div className={`mobile-nav-panel__auth-grid ${className}`.trim()}>
+        <Link
           href={loginHref}
-          active={isLoginPage && !isRegisterPage}
-          layout="stacked"
+          className={`mobile-nav-panel__auth-link ${
+            isLoginPage && !isRegisterPage ? "mobile-nav-panel__auth-link--active" : ""
+          }`}
           tabIndex={menuOpen ? 0 : -1}
-        />
-        {authEnabled && (
+          aria-current={isLoginPage && !isRegisterPage ? "page" : undefined}
+        >
+          ログイン
+        </Link>
+        {authEnabled ? (
           <Link
             href={registerHref}
-            className={`block py-3 text-sm transition-colors ${
-              isRegisterPage ? "text-gold" : "text-cream-muted hover:text-gold"
+            className={`mobile-nav-panel__auth-link ${
+              isRegisterPage ? "mobile-nav-panel__auth-link--active" : ""
             }`}
             tabIndex={menuOpen ? 0 : -1}
             aria-current={isRegisterPage ? "page" : undefined}
           >
             新規登録
           </Link>
+        ) : (
+          <span className="mobile-nav-panel__auth-spacer" aria-hidden="true" />
         )}
       </div>
     );

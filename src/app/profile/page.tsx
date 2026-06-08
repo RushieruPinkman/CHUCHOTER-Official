@@ -5,7 +5,7 @@ import ProfilePanel from "@/components/ProfilePanel";
 import ProfileCollection from "@/components/ProfileCollection";
 import ProfileSignOut from "@/components/ProfileSignOut";
 import { AUTH_DEV_LOGIN_PATH } from "@/lib/auth-dev";
-import { getUserDisplayLabel } from "@/lib/auth-messages";
+import { getUserProfileLabel } from "@/lib/auth-messages";
 import { buildAuthCollectionUserKey } from "@/lib/gacha-collection";
 import { createClient } from "@/lib/supabase/server";
 import { isUserAuthEnabledOnServer } from "@/lib/supabase/config";
@@ -32,9 +32,10 @@ export default async function ProfilePage() {
     redirect("/login?next=/profile");
   }
 
-  const displayName =
-    (typeof user.user_metadata?.display_name === "string" && user.user_metadata.display_name) ||
-    getUserDisplayLabel(user.email);
+  const displayName = getUserProfileLabel(
+    user.email,
+    typeof user.user_metadata?.display_name === "string" ? user.user_metadata.display_name : null
+  );
 
   return (
     <>

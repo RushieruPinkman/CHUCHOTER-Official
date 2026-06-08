@@ -6,10 +6,11 @@ import {
   type GachaDrawResult,
   type GachaRarity,
 } from "@/lib/gacha";
+import { USER_HISTORY_MAX_ENTRIES } from "@/lib/history-limits";
 
 export const GACHA_HISTORY_UPDATED_EVENT = "chuchoter-gacha-history-updated";
 const GACHA_HISTORY_PREFIX = "chuchoter-gacha-history";
-const GACHA_HISTORY_MAX_ENTRIES = 100;
+const GACHA_HISTORY_MAX_ENTRIES = USER_HISTORY_MAX_ENTRIES;
 
 export interface GachaDrawHistoryRecord {
   id: string;
@@ -58,6 +59,36 @@ function normalizeDrawResult(value: unknown): GachaDrawResult | null {
   };
 }
 
+function parseGachaDrawHistoryRecords(parsed: unknown): GachaDrawHistoryRecord[] {
+  if (!Array.isArray(parsed)) return [];
+
+  return parsed
+    .map((record) => {
+      const result = normalizeDrawResult(record?.result);
+      if (!record?.id || !result) return null;
+      return { id: record.id, result };
+    })
+    .filter((record): record is GachaDrawHistoryRecord => record !== null)
+    .sort(
+      (a, b) => new Date(b.result.wonAt).getTime() - new Date(a.result.wonAt).getTime()
+    );
+}
+
+function trimGachaDrawHistoryRecords(
+  records: GachaDrawHistoryRecord[]
+): GachaDrawHistoryRecord[] {
+  return records.slice(0, GACHA_HISTORY_MAX_ENTRIES);
+}
+
+function writeGachaDrawHistory(historyKey: string, records: GachaDrawHistoryRecord[]): void {
+  if (typeof window === "undefined" || !historyKey) return;
+
+  window.localStorage.setItem(historyKey, JSON.stringify(records));
+  window.dispatchEvent(
+    new CustomEvent(GACHA_HISTORY_UPDATED_EVENT, { detail: { historyKey } })
+  );
+}
+
 export function readGachaDrawHistory(historyKey: string): GachaDrawHistoryRecord[] {
   if (typeof window === "undefined" || !historyKey) return [];
 
@@ -65,29 +96,17 @@ export function readGachaDrawHistory(historyKey: string): GachaDrawHistoryRecord
     const raw = window.localStorage.getItem(historyKey);
     if (!raw) return [];
 
-    const parsed = JSON.parse(raw) as GachaDrawHistoryRecord[];
-    if (!Array.isArray(parsed)) return [];
+    const records = parseGachaDrawHistoryRecords(JSON.parse(raw));
+    const trimmed = trimGachaDrawHistoryRecords(records);
 
-    return parsed
-      .map((record) => {
-        const result = normalizeDrawResult(record?.result);
-        if (!record?.id || !result) return null;
-        return { id: record.id, result };
-      })
-      .filter((record): record is GachaDrawHistoryRecord => record !== null)
-      .sort(
-        (a, b) => new Date(b.result.wonAt).getTime() - new Date(a.result.wonAt).getTime()
-      );
+    if (trimmed.length !== records.length) {
+      writeGachaDrawHistory(historyKey, trimmed);
+    }
+
+    return trimmed;
   } catch {
     return [];
   }
-}
-
-function writeGachaDrawHistory(historyKey: string, records: GachaDrawHistoryRecord[]): void {
-  window.localStorage.setItem(historyKey, JSON.stringify(records));
-  window.dispatchEvent(
-    new CustomEvent(GACHA_HISTORY_UPDATED_EVENT, { detail: { historyKey } })
-  );
 }
 
 export function appendGachaDrawHistory(
@@ -101,10 +120,15 @@ export function appendGachaDrawHistory(
     id: `draw-${Date.now()}`,
     result,
   };
-  const nextRecords = [record, ...records].slice(0, GACHA_HISTORY_MAX_ENTRIES);
+  const nextRecords = trimGachaDrawHistoryRecords([record, ...records]);
 
   writeGachaDrawHistory(historyKey, nextRecords);
   return nextRecords;
+}
+
+export function clearGachaDrawHistory(historyKey: string): void {
+  if (typeof window === "undefined" || !historyKey) return;
+  writeGachaDrawHistory(historyKey, []);
 }
 
 export function formatGachaHistoryTimestamp(iso: string): string {

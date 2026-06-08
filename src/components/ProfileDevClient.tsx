@@ -56,6 +56,9 @@ export default function ProfileDevClient() {
           loggedInAt: session.loggedInAt,
           mode: "dev",
         }}
+        onDisplayNameChange={(displayName) => {
+          setSession((current) => (current ? { ...current, displayName } : current));
+        }}
       />
       <ProfileCollection
         userKey={buildDevCollectionUserKey(session.email)}

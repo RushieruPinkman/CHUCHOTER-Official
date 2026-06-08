@@ -35,6 +35,15 @@ export function getUserDisplayLabel(email?: string | null): string {
   return local || "会員";
 }
 
+export function getUserProfileLabel(
+  email?: string | null,
+  displayName?: string | null
+): string {
+  const trimmed = displayName?.trim();
+  if (trimmed) return trimmed;
+  return getUserDisplayLabel(email);
+}
+
 export function getAuthCallbackErrorMessage(code: string | null): string | null {
   if (code === "auth_callback") {
     return "認証リンクが無効か期限切れです。再度ログインまたは登録をお試しください。";

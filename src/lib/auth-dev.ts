@@ -1,4 +1,5 @@
 export const AUTH_DEV_STORAGE_KEY = "chuchoter-auth-dev";
+export const AUTH_DEV_UPDATED_EVENT = "chuchoter-auth-dev-updated";
 
 export const AUTH_DEV_LOGIN_PATH = "/login/dev" as const;
 export const AUTH_DEV_PROFILE_PATH = "/profile/dev" as const;
@@ -42,7 +43,18 @@ export function readDevSession(): AuthDevSession | null {
 }
 
 export function writeDevSession(session: AuthDevSession): void {
+  if (typeof window === "undefined") return;
   localStorage.setItem(AUTH_DEV_STORAGE_KEY, JSON.stringify(session));
+  window.dispatchEvent(new CustomEvent(AUTH_DEV_UPDATED_EVENT));
+}
+
+export function updateDevSessionDisplayName(displayName: string): AuthDevSession | null {
+  const session = readDevSession();
+  if (!session) return null;
+  const nextSession = { ...session, displayName: displayName.trim() };
+  if (!nextSession.displayName) return null;
+  writeDevSession(nextSession);
+  return nextSession;
 }
 
 export function clearDevSession(): void {

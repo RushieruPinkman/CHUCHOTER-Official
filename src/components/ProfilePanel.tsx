@@ -1,5 +1,14 @@
+"use client";
+
 import Link from "next/link";
-import { AUTH_DEV_LOGIN_PATH, formatAuthTimestamp } from "@/lib/auth-dev";
+import { useRouter } from "next/navigation";
+import { useActionState, useEffect, useState } from "react";
+import { updateDisplayNameAction, type ProfileFormState } from "@/app/profile/actions";
+import {
+  AUTH_DEV_LOGIN_PATH,
+  formatAuthTimestamp,
+  updateDevSessionDisplayName,
+} from "@/lib/auth-dev";
 
 export interface ProfileView {
   displayName: string;
@@ -10,10 +19,70 @@ export interface ProfileView {
 
 interface ProfilePanelProps {
   profile: ProfileView;
+  onDisplayNameChange?: (displayName: string) => void;
 }
 
-export default function ProfilePanel({ profile }: ProfilePanelProps) {
+const inputClass =
+  "w-full border border-[var(--color-border)] bg-deep px-3 py-2.5 text-cream focus:border-gold focus:outline-none";
+
+const initialState: ProfileFormState = {};
+
+export default function ProfilePanel({ profile, onDisplayNameChange }: ProfilePanelProps) {
+  const router = useRouter();
   const isDev = profile.mode === "dev";
+  const [editing, setEditing] = useState(false);
+  const [displayName, setDisplayName] = useState(profile.displayName);
+  const [devError, setDevError] = useState<string | null>(null);
+  const [devSuccess, setDevSuccess] = useState<string | null>(null);
+  const [formState, formAction, pending] = useActionState(updateDisplayNameAction, initialState);
+
+  useEffect(() => {
+    setDisplayName(profile.displayName);
+  }, [profile.displayName]);
+
+  useEffect(() => {
+    if (formState.displayName) {
+      setDisplayName(formState.displayName);
+      setEditing(false);
+      router.refresh();
+    }
+  }, [formState.displayName, router]);
+
+  const handleDevSave = () => {
+    setDevError(null);
+    setDevSuccess(null);
+
+    const nextName = displayName.trim();
+    if (!nextName) {
+      setDevError("表示名を入力してください。");
+      return;
+    }
+    if (nextName.length > 32) {
+      setDevError("表示名は32文字以内で入力してください。");
+      return;
+    }
+
+    const updated = updateDevSessionDisplayName(nextName);
+    if (!updated) {
+      setDevError("表示名の更新に失敗しました。");
+      return;
+    }
+
+    onDisplayNameChange?.(updated.displayName);
+    setDisplayName(updated.displayName);
+    setEditing(false);
+    setDevSuccess("表示名を更新しました。");
+    router.refresh();
+  };
+
+  const handleCancel = () => {
+    setDisplayName(profile.displayName);
+    setEditing(false);
+    setDevError(null);
+  };
+
+  const activeError = isDev ? devError : formState.error;
+  const activeSuccess = isDev ? devSuccess : formState.success;
 
   return (
     <div className="auth-panel mx-auto max-w-lg border border-[var(--color-border)] bg-deep/90 p-6 md:p-8">
@@ -26,8 +95,97 @@ export default function ProfilePanel({ profile }: ProfilePanelProps) {
       <div className="space-y-6 text-center">
         <div>
           <p className="section-label mb-2">Member</p>
-          <h2 className="font-display text-2xl text-gold md:text-3xl">{profile.displayName}</h2>
+          {!editing ? (
+            <>
+              <h2 className="font-display text-2xl text-gold md:text-3xl">{displayName}</h2>
+              <button
+                type="button"
+                onClick={() => {
+                  setEditing(true);
+                  setDevError(null);
+                  setDevSuccess(null);
+                }}
+                className="btn-ghost mt-4 min-h-10 px-5 text-xs"
+              >
+                表示名を変更
+              </button>
+            </>
+          ) : isDev ? (
+            <div className="mx-auto max-w-sm text-left">
+              <label htmlFor="profile-display-name" className="mb-1.5 block text-xs text-cream-muted">
+                表示名
+              </label>
+              <input
+                id="profile-display-name"
+                name="displayName"
+                type="text"
+                value={displayName}
+                onChange={(event) => setDisplayName(event.target.value)}
+                autoComplete="nickname"
+                maxLength={32}
+                required
+                className={inputClass}
+              />
+              <div className="mt-4 flex flex-wrap gap-3">
+                <button
+                  type="button"
+                  onClick={handleDevSave}
+                  className="btn-primary min-h-10 px-5 text-xs"
+                >
+                  保存
+                </button>
+                <button type="button" onClick={handleCancel} className="btn-ghost min-h-10 px-5 text-xs">
+                  キャンセル
+                </button>
+              </div>
+            </div>
+          ) : (
+            <form action={formAction} className="mx-auto max-w-sm text-left">
+              <label htmlFor="profile-display-name" className="mb-1.5 block text-xs text-cream-muted">
+                表示名
+              </label>
+              <input
+                id="profile-display-name"
+                name="displayName"
+                type="text"
+                value={displayName}
+                onChange={(event) => setDisplayName(event.target.value)}
+                autoComplete="nickname"
+                maxLength={32}
+                required
+                className={inputClass}
+              />
+              <div className="mt-4 flex flex-wrap gap-3">
+                <button
+                  type="submit"
+                  disabled={pending}
+                  className="btn-primary min-h-10 px-5 text-xs disabled:opacity-40"
+                >
+                  {pending ? "保存中…" : "保存"}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCancel}
+                  disabled={pending}
+                  className="btn-ghost min-h-10 px-5 text-xs disabled:opacity-40"
+                >
+                  キャンセル
+                </button>
+              </div>
+            </form>
+          )}
         </div>
+
+        {activeError && (
+          <p className="text-sm leading-relaxed text-red-300" role="alert">
+            {activeError}
+          </p>
+        )}
+        {activeSuccess && (
+          <p className="text-sm leading-relaxed text-cream-muted" role="status">
+            {activeSuccess}
+          </p>
+        )}
 
         <dl className="space-y-4 text-left">
           <div className="border-b border-[var(--color-border)] pb-4">
