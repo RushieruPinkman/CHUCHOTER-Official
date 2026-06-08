@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
 import CollectionView from "@/components/CollectionView";
 import { useCollectionUserKey } from "@/hooks/useCollectionUserKey";
 import { getAuthLoginHref, getAuthRegisterHref } from "@/lib/auth-routes";
@@ -28,12 +27,7 @@ export default function GachaCollectionSection({
   showEmptyGachaLink = true,
   showExchange = true,
 }: GachaCollectionSectionProps) {
-  const userKey = useCollectionUserKey();
-  const [ready, setReady] = useState(false);
-
-  useEffect(() => {
-    setReady(true);
-  }, []);
+  const { userKey, ready } = useCollectionUserKey();
 
   if (!ready) {
     return (

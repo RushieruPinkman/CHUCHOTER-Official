@@ -27,7 +27,7 @@ export default async function GachaPage() {
       <PageHero
         titleEn="Fortune"
         titleJa="運命の扉"
-        description="扉の向こうに待つ景品を、運に委ねて。★1は住人がランダム登場。★2〜★3は当選後にサイトからダウンロード。★4以上は公式XアカウントへDMでご連絡ください。"
+        description="扉の向こうに待つ景品を、運に委ねて。ログイン後に1日1回抽選できます。★1は住人がランダム登場。"
       />
       <GachaMachine casts={gachaCasts} />
     </>

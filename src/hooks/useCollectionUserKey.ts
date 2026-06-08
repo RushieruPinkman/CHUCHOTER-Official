@@ -9,8 +9,14 @@ import { AUTH_DEV_STORAGE_KEY, readDevSession } from "@/lib/auth-dev";
 import { createClient } from "@/lib/supabase/client";
 import { isUserAuthEnabled } from "@/lib/supabase/config";
 
-export function useCollectionUserKey(): string | null {
+export interface CollectionUserKeyState {
+  userKey: string | null;
+  ready: boolean;
+}
+
+export function useCollectionUserKey(): CollectionUserKeyState {
   const [userKey, setUserKey] = useState<string | null>(null);
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
     function resolveDevUserKey(): string | null {
@@ -21,6 +27,7 @@ export function useCollectionUserKey(): string | null {
     const devKey = resolveDevUserKey();
     if (devKey) {
       setUserKey(devKey);
+      setReady(true);
 
       const onStorage = (event: StorageEvent) => {
         if (event.key !== AUTH_DEV_STORAGE_KEY) return;
@@ -33,6 +40,7 @@ export function useCollectionUserKey(): string | null {
 
     if (!isUserAuthEnabled()) {
       setUserKey(null);
+      setReady(true);
       return;
     }
 
@@ -44,6 +52,7 @@ export function useCollectionUserKey(): string | null {
       supabase.auth.getUser().then(({ data }) => {
         if (!mounted) return;
         setUserKey(data.user?.id ? buildAuthCollectionUserKey(data.user.id) : null);
+        setReady(true);
       });
 
       const {
@@ -58,9 +67,12 @@ export function useCollectionUserKey(): string | null {
         subscription.unsubscribe();
       };
     } catch {
-      if (mounted) setUserKey(null);
+      if (mounted) {
+        setUserKey(null);
+        setReady(true);
+      }
     }
   }, []);
 
-  return userKey;
+  return { userKey, ready };
 }

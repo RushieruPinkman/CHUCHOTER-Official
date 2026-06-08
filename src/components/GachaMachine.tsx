@@ -40,6 +40,7 @@ import {
   GACHA_DEV_RATES,
   isGachaDevEnabled,
 } from "@/lib/gacha-dev";
+import { getAuthLoginHref, getAuthRegisterHref } from "@/lib/auth-routes";
 import { registerGachaCollectionFromDraw } from "@/lib/gacha-collection";
 import { appendGachaDrawHistory, buildGachaHistoryKey } from "@/lib/gacha-history";
 import { useCollectionUserKey } from "@/hooks/useCollectionUserKey";
@@ -61,8 +62,10 @@ export default function GachaMachine({ casts, mode = "production" }: GachaMachin
   const isDevMode = mode === "dev" && isGachaDevEnabled();
   const dailyLimitEnabled = isGachaDailyLimitEnabled();
   const activeRates = isDevMode ? GACHA_DEV_RATES : RARITY_RATE;
-  const collectionUserKey = useCollectionUserKey();
+  const { userKey: collectionUserKey, ready: authReady } = useCollectionUserKey();
   const historyKey = buildGachaHistoryKey(collectionUserKey);
+  const loginNextPath = isDevMode ? "/gacha/dev" : "/gacha";
+  const isLoggedIn = Boolean(collectionUserKey);
 
   const [phase, setPhase] = useState<DrawPhase>("idle");
   const [previewPrize, setPreviewPrize] = useState<GachaPrize | null>(null);
@@ -81,7 +84,11 @@ export default function GachaMachine({ casts, mode = "production" }: GachaMachin
 
   const isDrawing = DRAWING_PHASES.includes(phase);
   const isPresenting = PRESENTING_PHASES.includes(phase);
-  const canDraw = !isDrawing && (isDevMode || !dailyLocked || !dailyLimitEnabled) && hydrated;
+  const canDraw =
+    !isDrawing &&
+    hydrated &&
+    (isDevMode || isLoggedIn) &&
+    (isDevMode || !dailyLocked || !dailyLimitEnabled);
   const finalRarity = pendingDraw?.rarity ?? result?.rarity ?? null;
   const vfxRarity = displayRarity ?? finalRarity;
 
@@ -114,12 +121,17 @@ export default function GachaMachine({ casts, mode = "production" }: GachaMachin
       return;
     }
 
-    const record = restoreTodaysGachaRecord();
-    if (record) {
-      applyDailyRecord(record);
+    if (!authReady) return;
+
+    if (collectionUserKey) {
+      const record = restoreTodaysGachaRecord();
+      if (record) {
+        applyDailyRecord(record);
+      }
     }
+
     setHydrated(true);
-  }, [applyDailyRecord, isDevMode]);
+  }, [applyDailyRecord, authReady, collectionUserKey, isDevMode]);
 
   useEffect(() => {
     if (isDevMode || !dailyLocked) return;
@@ -183,6 +195,7 @@ export default function GachaMachine({ casts, mode = "production" }: GachaMachin
 
   const handleDraw = () => {
     if (!canDraw) return;
+    if (!isDevMode && !collectionUserKey) return;
     if (!isDevMode && !canDrawGachaToday()) return;
 
     const draw = pickGachaPrize(casts, activeRates);
@@ -382,6 +395,11 @@ export default function GachaMachine({ casts, mode = "production" }: GachaMachin
                   1日1回まで（更新: 日本時間 毎日0:00）
                 </p>
               )}
+              {!isDevMode && (
+                <p className="text-[11px] leading-relaxed text-cream-faint">
+                  ログイン中のアカウントでのみ抽選できます。
+                </p>
+              )}
               {isDevMode && (
                 <p className="text-[11px] leading-relaxed text-cream-faint">
                   試験モード：何度でも引き直せます（localStorage の本番記録は更新しません）
@@ -398,6 +416,26 @@ export default function GachaMachine({ casts, mode = "production" }: GachaMachin
                 >
                   {isDevMode ? "もう一度試す" : dailyLimitEnabled && dailyLocked ? "扉に戻る" : "もう一度引く"}
                 </button>
+              ) : !isDevMode && authReady && !isLoggedIn ? (
+                <div className="space-y-4">
+                  <p className="text-center text-sm leading-relaxed text-cream-muted">
+                    運命の扉を開くにはログインが必要です。
+                  </p>
+                  <div className="flex flex-wrap items-center justify-center gap-3">
+                    <Link
+                      href={getAuthLoginHref(loginNextPath)}
+                      className="btn-primary inline-flex min-h-11 items-center px-6"
+                    >
+                      ログインして引く
+                    </Link>
+                    <Link
+                      href={getAuthRegisterHref(loginNextPath)}
+                      className="btn-ghost inline-flex min-h-11 items-center px-6"
+                    >
+                      新規登録
+                    </Link>
+                  </div>
+                </div>
               ) : (
                 <button
                   type="button"
@@ -405,7 +443,7 @@ export default function GachaMachine({ casts, mode = "production" }: GachaMachin
                   disabled={!canDraw}
                   className="gacha-draw-btn btn-primary gacha-machine__action--primary disabled:cursor-not-allowed disabled:opacity-40"
                 >
-                  {!hydrated
+                  {!hydrated || !authReady
                     ? "読み込み中…"
                     : !isDevMode && dailyLimitEnabled && dailyLocked
                       ? "本日の抽選は完了"
@@ -437,7 +475,7 @@ export default function GachaMachine({ casts, mode = "production" }: GachaMachin
         <ScrollReveal delay={0.06} className="mt-10">
           <GachaDrawHistory
             userKey={collectionUserKey}
-            loginNextPath={isDevMode ? "/gacha/dev" : "/gacha"}
+            loginNextPath={loginNextPath}
             onViewResult={setHistoryModalResult}
           />
         </ScrollReveal>
