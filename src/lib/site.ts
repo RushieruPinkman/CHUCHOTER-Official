@@ -29,10 +29,15 @@ export const NAV_ITEMS = [
   { href: "/schedule", label: "Schedule", labelJa: "予定表" },
   { href: "/media", label: "Lounge", labelJa: "ラウンジ" },
   { href: "/gacha", label: "Fortune", labelJa: "ガチャ" },
+  { href: "/collection", label: "Collection", labelJa: "コレクション" },
 ] as const;
 
 export function isGachaNavItem(href: string): boolean {
   return href === "/gacha";
+}
+
+export function isCollectionNavItem(href: string): boolean {
+  return href === "/collection";
 }
 
 export function formatJapaneseDate(dateStr: string): string {

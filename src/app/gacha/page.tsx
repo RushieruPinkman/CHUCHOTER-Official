@@ -19,6 +19,7 @@ export default async function GachaPage() {
     name: cast.name,
     nameEn: cast.nameEn,
     image: cast.image,
+    gender: cast.gender ?? "female",
   }));
 
   return (
@@ -26,7 +27,7 @@ export default async function GachaPage() {
       <PageHero
         titleEn="Fortune"
         titleJa="運命の扉"
-        description="扉の向こうに待つ景品を、運に委ねて。1日1回（日本時間0:00更新）。★1は住人がランダム登場。★2〜★3は当選後にサイトからダウンロード。★4以上は公式XアカウントへDMでご連絡ください。"
+        description="扉の向こうに待つ景品を、運に委ねて。★1は住人がランダム登場。★2〜★3は当選後にサイトからダウンロード。★4以上は公式XアカウントへDMでご連絡ください。"
       />
       <GachaMachine casts={gachaCasts} />
     </>

@@ -28,7 +28,7 @@ export default function GachaPrizeCard({
           alt={cast.name}
           fill
           sizes="(max-width: 260px) 260px, 320px"
-          className="gacha-prize-card__cast-image object-cover object-center"
+          className="gacha-prize-card__cast-image object-cover object-top"
           priority
         />
         <div className="gacha-prize-card__miss-overlay">

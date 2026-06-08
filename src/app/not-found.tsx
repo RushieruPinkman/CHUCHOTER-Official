@@ -3,7 +3,7 @@ import Logo from "@/components/Logo";
 
 export default function NotFound() {
   return (
-    <div className="flex min-h-[70svh] flex-col items-center justify-center px-5 pt-24 text-center">
+    <div className="site-header-offset flex min-h-[70svh] flex-col items-center justify-center px-5 text-center">
       <Logo size="md" className="mb-10 opacity-60" />
       <span className="section-label mb-4">404</span>
       <h1 className="section-title mb-4">ページが見つかりません</h1>

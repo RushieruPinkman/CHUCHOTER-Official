@@ -3,6 +3,13 @@ import type { GachaDrawResult } from "@/lib/gacha";
 export const GACHA_DAILY_STORAGE_KEY = "chuchoter-gacha-daily";
 export const GACHA_TIMEZONE = "Asia/Tokyo";
 
+/** いったん false — 1日1回制限を再開するとき true に戻す */
+export const GACHA_DAILY_LIMIT_ENABLED = false;
+
+export function isGachaDailyLimitEnabled(): boolean {
+  return GACHA_DAILY_LIMIT_ENABLED;
+}
+
 export interface GachaDailyRecord {
   /** 日本時間での抽選日（YYYY-MM-DD） */
   drawDate: string;
@@ -68,7 +75,7 @@ export function readGachaDailyRecord(): GachaDailyRecord | null {
 }
 
 export function writeGachaDailyRecord(result: GachaDrawResult): void {
-  if (typeof window === "undefined") return;
+  if (!GACHA_DAILY_LIMIT_ENABLED || typeof window === "undefined") return;
 
   const record: GachaDailyRecord = {
     drawDate: getGachaDayJst(),
@@ -78,10 +85,12 @@ export function writeGachaDailyRecord(result: GachaDrawResult): void {
 }
 
 export function canDrawGachaToday(now = new Date()): boolean {
+  if (!GACHA_DAILY_LIMIT_ENABLED) return true;
   return !hasDrawnGachaToday(readGachaDailyRecord(), now);
 }
 
 export function restoreTodaysGachaRecord(now = new Date()): GachaDailyRecord | null {
+  if (!GACHA_DAILY_LIMIT_ENABLED) return null;
   const record = readGachaDailyRecord();
   return hasDrawnGachaToday(record, now) ? record : null;
 }

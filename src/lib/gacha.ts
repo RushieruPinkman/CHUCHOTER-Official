@@ -25,6 +25,7 @@ export interface GachaCastSnapshot {
   name: string;
   nameEn: string;
   image: string;
+  gender?: "male" | "female";
 }
 
 /** サイト上で景品ファイルを配布する最大レアリティ（★1除く） */

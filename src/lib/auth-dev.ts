@@ -1,0 +1,62 @@
+export const AUTH_DEV_STORAGE_KEY = "chuchoter-auth-dev";
+
+export const AUTH_DEV_LOGIN_PATH = "/login/dev" as const;
+export const AUTH_DEV_PROFILE_PATH = "/profile/dev" as const;
+export const AUTH_PROFILE_PATH = "/profile" as const;
+
+export interface AuthDevSession {
+  userId: string;
+  email: string;
+  displayName: string;
+  loggedInAt: string;
+}
+
+/** 開発環境（next dev）でのみ true。本番ビルドでは常に false */
+export function isAuthDevEnabled(): boolean {
+  return process.env.NODE_ENV === "development";
+}
+
+export function createDevSession(email: string, displayName: string): AuthDevSession {
+  return {
+    userId: `dev-${Date.now()}`,
+    email,
+    displayName,
+    loggedInAt: new Date().toISOString(),
+  };
+}
+
+export function readDevSession(): AuthDevSession | null {
+  if (typeof window === "undefined") return null;
+
+  try {
+    const raw = localStorage.getItem(AUTH_DEV_STORAGE_KEY);
+    if (!raw) return null;
+
+    const parsed = JSON.parse(raw) as AuthDevSession;
+    if (!parsed.email?.trim() || !parsed.displayName?.trim()) return null;
+
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+export function writeDevSession(session: AuthDevSession): void {
+  localStorage.setItem(AUTH_DEV_STORAGE_KEY, JSON.stringify(session));
+}
+
+export function clearDevSession(): void {
+  localStorage.removeItem(AUTH_DEV_STORAGE_KEY);
+}
+
+export function formatAuthTimestamp(iso: string): string {
+  return new Intl.DateTimeFormat("ja-JP", {
+    timeZone: "Asia/Tokyo",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).format(new Date(iso));
+}

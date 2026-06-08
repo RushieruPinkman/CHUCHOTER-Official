@@ -8,7 +8,7 @@ interface PageHeroProps {
 
 export default function PageHero({ titleEn, titleJa, description }: PageHeroProps) {
   return (
-    <section className="relative overflow-hidden pt-24 pb-10 md:pt-28 md:pb-12">
+    <section className="site-header-offset relative overflow-hidden pb-10 md:pb-12">
       <div
         className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_70%_60%_at_50%_0%,rgba(201,169,98,0.06),transparent)]"
         aria-hidden="true"

@@ -25,6 +25,7 @@ export default async function GachaDevPage() {
     name: cast.name,
     nameEn: cast.nameEn,
     image: cast.image,
+    gender: cast.gender ?? "female",
   }));
 
   return (

@@ -34,7 +34,7 @@ export default async function HomePage() {
           <div className="hero-mv__scrim absolute" />
         </div>
 
-        <div className="hero-content relative z-10 flex flex-1 flex-col items-center justify-center px-4 pb-6 pt-24 text-center">
+        <div className="hero-content site-header-offset relative z-10 flex flex-1 flex-col items-center justify-center px-4 pb-6 text-center">
           <ScrollReveal immediate className="mb-6">
             <StatusBadge status={status} className="hero-status" />
           </ScrollReveal>

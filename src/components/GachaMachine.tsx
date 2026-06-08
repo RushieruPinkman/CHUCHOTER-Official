@@ -1,7 +1,10 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
+import GachaDrawHistory from "@/components/GachaDrawHistory";
 import GachaPrizeCard from "@/components/GachaPrizeCard";
+import GachaResultModal from "@/components/GachaResultModal";
 import GachaSharePanel from "@/components/GachaSharePanel";
 import GachaDoorReveal from "@/components/GachaDoorReveal";
 import GachaStageIndicator from "@/components/GachaStageIndicator";
@@ -13,6 +16,7 @@ import {
   canDrawGachaToday,
   formatGachaCooldownMessage,
   getMsUntilNextGachaReset,
+  isGachaDailyLimitEnabled,
   restoreTodaysGachaRecord,
   writeGachaDailyRecord,
 } from "@/lib/gacha-daily-limit";
@@ -36,6 +40,9 @@ import {
   GACHA_DEV_RATES,
   isGachaDevEnabled,
 } from "@/lib/gacha-dev";
+import { registerGachaCollectionFromDraw } from "@/lib/gacha-collection";
+import { appendGachaDrawHistory, buildGachaHistoryKey } from "@/lib/gacha-history";
+import { useCollectionUserKey } from "@/hooks/useCollectionUserKey";
 
 type GachaMachineMode = "production" | "dev";
 
@@ -52,7 +59,10 @@ const DRAWING_PHASES: DrawPhase[] = [...PRESENTING_PHASES, "impact"];
 
 export default function GachaMachine({ casts, mode = "production" }: GachaMachineProps) {
   const isDevMode = mode === "dev" && isGachaDevEnabled();
+  const dailyLimitEnabled = isGachaDailyLimitEnabled();
   const activeRates = isDevMode ? GACHA_DEV_RATES : RARITY_RATE;
+  const collectionUserKey = useCollectionUserKey();
+  const historyKey = buildGachaHistoryKey(collectionUserKey);
 
   const [phase, setPhase] = useState<DrawPhase>("idle");
   const [previewPrize, setPreviewPrize] = useState<GachaPrize | null>(null);
@@ -66,11 +76,12 @@ export default function GachaMachine({ casts, mode = "production" }: GachaMachin
   const [dailyLocked, setDailyLocked] = useState(false);
   const [cooldownMessage, setCooldownMessage] = useState<string | null>(null);
   const [hydrated, setHydrated] = useState(false);
+  const [historyModalResult, setHistoryModalResult] = useState<GachaDrawResult | null>(null);
   const timersRef = useRef<number[]>([]);
 
   const isDrawing = DRAWING_PHASES.includes(phase);
   const isPresenting = PRESENTING_PHASES.includes(phase);
-  const canDraw = !isDrawing && (isDevMode || !dailyLocked) && hydrated;
+  const canDraw = !isDrawing && (isDevMode || !dailyLocked || !dailyLimitEnabled) && hydrated;
   const finalRarity = pendingDraw?.rarity ?? result?.rarity ?? null;
   const vfxRarity = displayRarity ?? finalRarity;
 
@@ -175,7 +186,9 @@ export default function GachaMachine({ casts, mode = "production" }: GachaMachin
     if (!isDevMode && !canDrawGachaToday()) return;
 
     const draw = pickGachaPrize(casts, activeRates);
-    if (!isDevMode) {
+    registerGachaCollectionFromDraw(collectionUserKey, draw);
+    if (historyKey) appendGachaDrawHistory(historyKey, draw);
+    if (!isDevMode && dailyLimitEnabled) {
       writeGachaDailyRecord(draw);
       setDailyLocked(true);
       setCooldownMessage(formatGachaCooldownMessage());
@@ -364,7 +377,7 @@ export default function GachaMachine({ casts, mode = "production" }: GachaMachin
 
             <div className="relative z-10 mb-5 mt-6 px-1 space-y-1">
               <p className="text-[11px] leading-relaxed text-cream-faint">{rateSummary}</p>
-              {!isDevMode && (
+              {!isDevMode && dailyLimitEnabled && (
                 <p className="text-[11px] leading-relaxed text-cream-faint">
                   1日1回まで（更新: 日本時間 毎日0:00）
                 </p>
@@ -383,7 +396,7 @@ export default function GachaMachine({ casts, mode = "production" }: GachaMachin
                   onClick={handleReset}
                   className="btn-ghost gacha-machine__action--primary"
                 >
-                  {isDevMode ? "もう一度試す" : dailyLocked ? "扉に戻る" : "もう一度引く"}
+                  {isDevMode ? "もう一度試す" : dailyLimitEnabled && dailyLocked ? "扉に戻る" : "もう一度引く"}
                 </button>
               ) : (
                 <button
@@ -394,7 +407,7 @@ export default function GachaMachine({ casts, mode = "production" }: GachaMachin
                 >
                   {!hydrated
                     ? "読み込み中…"
-                    : !isDevMode && dailyLocked
+                    : !isDevMode && dailyLimitEnabled && dailyLocked
                       ? "本日の抽選は完了"
                       : isPresenting
                         ? "演出中…"
@@ -407,12 +420,26 @@ export default function GachaMachine({ casts, mode = "production" }: GachaMachin
               )}
             </div>
 
-            {!isDevMode && cooldownMessage && (
+            <div className="relative z-10 mt-4 flex justify-center px-1">
+              <Link href="/collection" className="btn-ghost min-h-11 px-6 text-center">
+                コレクションを見る
+              </Link>
+            </div>
+
+            {!isDevMode && dailyLimitEnabled && cooldownMessage && (
               <p className="relative z-10 mt-4 px-1 text-center text-xs leading-relaxed text-cream-muted" role="status">
                 {cooldownMessage}
               </p>
             )}
           </div>
+        </ScrollReveal>
+
+        <ScrollReveal delay={0.06} className="mt-10">
+          <GachaDrawHistory
+            userKey={collectionUserKey}
+            loginNextPath={isDevMode ? "/gacha/dev" : "/gacha"}
+            onViewResult={setHistoryModalResult}
+          />
         </ScrollReveal>
 
         {!isDevMode && (
@@ -450,6 +477,14 @@ export default function GachaMachine({ casts, mode = "production" }: GachaMachin
         </ScrollReveal>
         )}
       </div>
+      {historyModalResult && (
+        <GachaResultModal
+          result={historyModalResult}
+          onClose={() => setHistoryModalResult(null)}
+          titleEn="History"
+          titleJa="抽選結果"
+        />
+      )}
     </section>
   );
 }
