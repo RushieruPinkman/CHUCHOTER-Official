@@ -11,6 +11,10 @@ import {
   AUTH_DEV_UPDATED_EVENT,
   readDevSession,
 } from "@/lib/auth-dev";
+import {
+  AUTH_MEMBER_UPDATED_EVENT,
+  readAuthMemberUpdatedDisplayName,
+} from "@/lib/auth-client";
 import { createClient } from "@/lib/supabase/client";
 import { isUserAuthEnabled } from "@/lib/supabase/config";
 
@@ -113,6 +117,16 @@ export function useCollectionUserKey(): CollectionUserKeyState {
         setReady(true);
       }
     }
+  }, []);
+
+  useEffect(() => {
+    const onMemberUpdated = (event: Event) => {
+      const displayName = readAuthMemberUpdatedDisplayName(event);
+      if (displayName) setMemberLabel(displayName);
+    };
+
+    window.addEventListener(AUTH_MEMBER_UPDATED_EVENT, onMemberUpdated);
+    return () => window.removeEventListener(AUTH_MEMBER_UPDATED_EVENT, onMemberUpdated);
   }, []);
 
   return { userKey, ready, memberLabel };

@@ -4,11 +4,13 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useActionState, useEffect, useState } from "react";
 import { updateDisplayNameAction, type ProfileFormState } from "@/app/profile/actions";
+import { dispatchAuthMemberUpdated } from "@/lib/auth-client";
 import {
   AUTH_DEV_LOGIN_PATH,
   formatAuthTimestamp,
   updateDevSessionDisplayName,
 } from "@/lib/auth-dev";
+import { createClient } from "@/lib/supabase/client";
 
 export interface ProfileView {
   displayName: string;
@@ -44,7 +46,17 @@ export default function ProfilePanel({ profile, onDisplayNameChange }: ProfilePa
     if (formState.displayName) {
       setDisplayName(formState.displayName);
       setEditing(false);
+      dispatchAuthMemberUpdated(formState.displayName);
       router.refresh();
+
+      void (async () => {
+        try {
+          const supabase = createClient();
+          await supabase.auth.refreshSession();
+        } catch {
+          /* セッション更新に失敗しても表示名はイベントで反映済み */
+        }
+      })();
     }
   }, [formState.displayName, router]);
 
@@ -71,6 +83,7 @@ export default function ProfilePanel({ profile, onDisplayNameChange }: ProfilePa
     onDisplayNameChange?.(updated.displayName);
     setDisplayName(updated.displayName);
     setEditing(false);
+    dispatchAuthMemberUpdated(updated.displayName);
     setDevSuccess("表示名を更新しました。");
     router.refresh();
   };

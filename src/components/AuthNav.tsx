@@ -18,6 +18,10 @@ import {
   readDevSession,
   type AuthDevSession,
 } from "@/lib/auth-dev";
+import {
+  AUTH_MEMBER_UPDATED_EVENT,
+  readAuthMemberUpdatedDisplayName,
+} from "@/lib/auth-client";
 import { createClient } from "@/lib/supabase/client";
 import { isUserAuthEnabled } from "@/lib/supabase/config";
 
@@ -115,6 +119,23 @@ export default function AuthNav({
     window.addEventListener(AUTH_DEV_UPDATED_EVENT, onDevUpdated);
     return () => window.removeEventListener(AUTH_DEV_UPDATED_EVENT, onDevUpdated);
   }, [authDevEnabled, refreshDevSession]);
+
+  useEffect(() => {
+    const onMemberUpdated = (event: Event) => {
+      const displayName = readAuthMemberUpdatedDisplayName(event);
+      if (!displayName) return;
+
+      setMemberLabel(displayName);
+      if (authDevEnabled) {
+        setDevSession((current) =>
+          current ? { ...current, displayName } : readDevSession()
+        );
+      }
+    };
+
+    window.addEventListener(AUTH_MEMBER_UPDATED_EVENT, onMemberUpdated);
+    return () => window.removeEventListener(AUTH_MEMBER_UPDATED_EVENT, onMemberUpdated);
+  }, [authDevEnabled]);
 
   const handleDevLogout = () => {
     clearDevSession();
