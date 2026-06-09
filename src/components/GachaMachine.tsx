@@ -313,8 +313,8 @@ export default function GachaMachine({ casts, mode = "production" }: GachaMachin
   return (
     <section className="pb-14 md:pb-16" aria-labelledby="gacha-heading">
       <div className="site-container">
-        <ScrollReveal immediate>
           <div className="gacha-machine panel mx-auto max-w-xl overflow-hidden p-4 md:p-8">
+            <div className="gacha-machine__display">
             <div className="gacha-machine__frame border border-[var(--color-border)] bg-deep/90 p-5 text-center md:p-7">
                 {isDevMode && (
                   <p className="mb-4 rounded border border-amber-500/35 bg-amber-500/10 px-3 py-2 text-[11px] leading-relaxed text-amber-100/90">
@@ -403,6 +403,7 @@ export default function GachaMachine({ casts, mode = "production" }: GachaMachin
                     Reveal
                   </p>
                 )}
+            </div>
             </div>
 
             <div className="gacha-machine__controls">
@@ -507,7 +508,6 @@ export default function GachaMachine({ casts, mode = "production" }: GachaMachin
             )}
             </div>
           </div>
-        </ScrollReveal>
 
         <ScrollReveal delay={0.06} className="mt-10">
           <GachaDrawHistory

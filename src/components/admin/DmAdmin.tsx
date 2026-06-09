@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { readApiError } from "@/lib/api-error";
 import {
   DM_RETENTION_NOTICE,
@@ -12,6 +12,10 @@ import {
   type DmThreadSummary,
 } from "@/lib/dm";
 import { DM_UPDATED_EVENT } from "@/lib/dm-client";
+import {
+  buildDmMessageScrollKey,
+  useDmMessageListScroll,
+} from "@/hooks/useDmMessageListScroll";
 
 const inputClass =
   "w-full border border-[var(--color-border)] bg-deep px-3 py-2 text-sm text-cream focus:border-gold focus:outline-none";
@@ -34,7 +38,11 @@ export default function DmAdmin({ authJsonHeaders, remoteStorage }: DmAdminProps
   const [sending, setSending] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const scrollKey = buildDmMessageScrollKey(messages, loading);
+  const { containerRef, handleScroll, scrollToBottom } = useDmMessageListScroll(scrollKey, {
+    paused: loading || !activeThread,
+    resetKey: selectedId,
+  });
 
   const loadInbox = useCallback(async () => {
     const res = await fetch("/api/admin/dm", { headers: authJsonHeaders() });
@@ -105,10 +113,6 @@ export default function DmAdmin({ authJsonHeaders, remoteStorage }: DmAdminProps
   }, [refreshAll]);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
-
-  useEffect(() => {
     const interval = window.setInterval(() => {
       void refreshAll();
     }, 30000);
@@ -151,6 +155,7 @@ export default function DmAdmin({ authJsonHeaders, remoteStorage }: DmAdminProps
       setDraft("");
       setMessage("返信を送信しました。");
       window.dispatchEvent(new CustomEvent(DM_UPDATED_EVENT));
+      requestAnimationFrame(() => scrollToBottom("smooth"));
       await refreshAll();
     } catch (sendError) {
       setError(sendError instanceof Error ? sendError.message : "返信の送信に失敗しました");
@@ -325,8 +330,12 @@ export default function DmAdmin({ authJsonHeaders, remoteStorage }: DmAdminProps
                   )}
                 </div>
 
-                <div className="dm-panel__messages max-h-[24rem] overflow-y-auto px-4 py-4 md:px-5">
-                  <ul className="space-y-3">
+                <div
+                  ref={containerRef}
+                  onScroll={handleScroll}
+                  className="dm-panel__messages max-h-[24rem] overflow-y-auto overscroll-contain px-3 py-4 md:px-4"
+                >
+                  <ul className="dm-message-list">
                     {messages.map((message) => {
                       const isAdmin = message.sender === "admin";
                       return (
@@ -335,16 +344,16 @@ export default function DmAdmin({ authJsonHeaders, remoteStorage }: DmAdminProps
                           className={`dm-message ${isAdmin ? "dm-message--admin" : "dm-message--user"}`}
                         >
                           <div className="dm-message__bubble">
-                            <p className="dm-message__meta">
-                              {getDmSenderLabel(message.sender)} · {formatDmTimestamp(message.createdAt)}
-                            </p>
                             <p className="dm-message__body whitespace-pre-wrap break-words">{message.body}</p>
                           </div>
+                          <p className="dm-message__meta">
+                            {!isAdmin && `${getDmSenderLabel(message.sender)} · `}
+                            {formatDmTimestamp(message.createdAt)}
+                          </p>
                         </li>
                       );
                     })}
                   </ul>
-                  <div ref={bottomRef} />
                 </div>
 
                 <form onSubmit={handleSend} className="border-t border-[var(--color-border)] p-4 md:p-5">

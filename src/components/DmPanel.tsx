@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useCollectionUserKey } from "@/hooks/useCollectionUserKey";
 import { getAuthLoginHref, getAuthRegisterHref } from "@/lib/auth-routes";
@@ -14,6 +14,10 @@ import {
   type DmThreadSummary,
 } from "@/lib/dm";
 import { fetchUserDmThread, sendUserDmMessage } from "@/lib/dm-client";
+import {
+  buildDmMessageScrollKey,
+  useDmMessageListScroll,
+} from "@/hooks/useDmMessageListScroll";
 
 interface DmPanelProps {
   loginNextPath?: string;
@@ -31,7 +35,11 @@ export default function DmPanel({ loginNextPath = "/dm" }: DmPanelProps) {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const scrollKey = buildDmMessageScrollKey(messages, loading);
+  const { containerRef, handleScroll, scrollToBottom } = useDmMessageListScroll(scrollKey, {
+    paused: loading,
+    resetKey: userKey,
+  });
 
   const refresh = useCallback(async () => {
     if (!userKey) {
@@ -60,10 +68,6 @@ export default function DmPanel({ loginNextPath = "/dm" }: DmPanelProps) {
     void refresh();
   }, [authReady, refresh]);
 
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
-
   const handleSend = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!userKey || !draft.trim() || sending) return;
@@ -76,6 +80,7 @@ export default function DmPanel({ loginNextPath = "/dm" }: DmPanelProps) {
       setThread(detail.thread);
       setMessages(detail.messages);
       setDraft("");
+      requestAnimationFrame(() => scrollToBottom("smooth"));
     } catch (sendError) {
       setError(sendError instanceof Error ? sendError.message : "DM の送信に失敗しました");
     } finally {
@@ -118,7 +123,11 @@ export default function DmPanel({ loginNextPath = "/dm" }: DmPanelProps) {
       </div>
 
       <div className="dm-panel__chat border border-[var(--color-border)] bg-deep/70">
-        <div className="dm-panel__messages max-h-[28rem] overflow-y-auto px-4 py-4 md:px-5">
+        <div
+          ref={containerRef}
+          onScroll={handleScroll}
+          className="dm-panel__messages max-h-[28rem] overflow-y-auto overscroll-contain px-3 py-4 md:px-4"
+        >
           {loading ? (
             <p className="py-8 text-center text-sm text-cream-faint" role="status">
               読み込み中…
@@ -131,7 +140,7 @@ export default function DmPanel({ loginNextPath = "/dm" }: DmPanelProps) {
               </p>
             </div>
           ) : (
-            <ul className="space-y-3">
+            <ul className="dm-message-list">
               {messages.map((message) => {
                 const isUser = message.sender === "user";
                 return (
@@ -140,17 +149,17 @@ export default function DmPanel({ loginNextPath = "/dm" }: DmPanelProps) {
                     className={`dm-message ${isUser ? "dm-message--user" : "dm-message--admin"}`}
                   >
                     <div className="dm-message__bubble">
-                      <p className="dm-message__meta">
-                        {getDmSenderLabel(message.sender)} · {formatDmTimestamp(message.createdAt)}
-                      </p>
                       <p className="dm-message__body whitespace-pre-wrap break-words">{message.body}</p>
                     </div>
+                    <p className="dm-message__meta">
+                      {!isUser && `${getDmSenderLabel(message.sender)} · `}
+                      {formatDmTimestamp(message.createdAt)}
+                    </p>
                   </li>
                 );
               })}
             </ul>
           )}
-          <div ref={bottomRef} />
         </div>
 
         <form onSubmit={handleSend} className="border-t border-[var(--color-border)] p-4 md:p-5">

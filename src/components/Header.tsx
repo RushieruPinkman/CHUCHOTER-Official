@@ -57,7 +57,7 @@ export default function Header() {
   return (
     <>
       <header
-        className={`header-bar fixed inset-x-0 top-0 z-50 transition-[background-color,border-color,backdrop-filter] duration-300 ${
+        className={`header-bar fixed inset-x-0 top-0 z-[100] isolate pointer-events-auto transition-[background-color,border-color,backdrop-filter] duration-300 ${
           scrolled || menuOpen ? "header-glass" : "bg-transparent"
         }`}
       >
