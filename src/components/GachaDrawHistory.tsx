@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import HistoryDisclosure from "@/components/HistoryDisclosure";
 import { getAuthLoginHref, getAuthRegisterHref } from "@/lib/auth-routes";
 import {
@@ -33,9 +33,13 @@ export default function GachaDrawHistory({
   const historyKey = buildGachaHistoryKey(userKey);
   const [records, setRecords] = useState<GachaDrawHistoryRecord[]>([]);
   const [hydrated, setHydrated] = useState(false);
-  const serials = records
-    .map((record) => record.result.serialNumber?.trim())
-    .filter((serial): serial is string => Boolean(serial));
+  const serials = useMemo(
+    () =>
+      records
+        .map((record) => record.result.serialNumber?.trim())
+        .filter((serial): serial is string => Boolean(serial)),
+    [records]
+  );
   const serialStatusMap = useGachaSerialStatusMap(serials);
 
   const refresh = useCallback(() => {

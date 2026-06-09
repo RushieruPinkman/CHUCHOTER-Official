@@ -13,34 +13,49 @@ import {
   updateGachaDrawHistorySerialStatus,
 } from "@/lib/gacha-history";
 
+function buildSerialsKey(serials: string[]): string {
+  return [...new Set(serials.map((serial) => serial.trim()).filter(Boolean))].sort().join("\0");
+}
+
+function statusMapsEqual(
+  left: Record<string, GachaSerialStatus>,
+  right: Record<string, GachaSerialStatus>
+): boolean {
+  const leftKeys = Object.keys(left);
+  const rightKeys = Object.keys(right);
+  if (leftKeys.length !== rightKeys.length) return false;
+  return rightKeys.every((key) => left[key] === right[key]);
+}
+
 export function useGachaSerialStatusSync(
   draw: GachaDrawResult | null,
   userKey: string | null
 ): GachaDrawResult | null {
   const [syncedDraw, setSyncedDraw] = useState(draw);
+  const drawSerial = draw?.serialNumber?.trim() ?? "";
 
   useEffect(() => {
     setSyncedDraw(draw);
   }, [draw]);
 
   const refreshStatus = useCallback(async () => {
-    const serial = draw?.serialNumber?.trim();
-    if (!serial) return;
+    if (!drawSerial) return;
 
-    const statusMap = await fetchGachaSerialStatuses([serial]);
-    const status = statusMap[serial];
+    const statusMap = await fetchGachaSerialStatuses([drawSerial]);
+    const status = statusMap[drawSerial];
     if (!status) return;
 
     setSyncedDraw((current) => {
       if (!current) return current;
-      return applySerialStatusToDraw(current, statusMap);
+      const next = applySerialStatusToDraw(current, statusMap);
+      return next === current ? current : next;
     });
 
     const historyKey = buildGachaHistoryKey(userKey);
     if (historyKey) {
-      updateGachaDrawHistorySerialStatus(historyKey, serial, status);
+      updateGachaDrawHistorySerialStatus(historyKey, drawSerial, status);
     }
-  }, [draw, userKey]);
+  }, [drawSerial, userKey]);
 
   useEffect(() => {
     void refreshStatus();
@@ -67,17 +82,18 @@ export function useGachaSerialStatusSync(
 
 export function useGachaSerialStatusMap(serials: string[]): Record<string, GachaSerialStatus> {
   const [statusMap, setStatusMap] = useState<Record<string, GachaSerialStatus>>({});
+  const serialsKey = buildSerialsKey(serials);
 
   const refresh = useCallback(async () => {
-    const unique = [...new Set(serials.map((serial) => serial.trim()).filter(Boolean))];
+    const unique = serialsKey ? serialsKey.split("\0") : [];
     if (unique.length === 0) {
-      setStatusMap({});
+      setStatusMap((prev) => (Object.keys(prev).length === 0 ? prev : {}));
       return;
     }
 
     const nextMap = await fetchGachaSerialStatuses(unique);
-    setStatusMap(nextMap);
-  }, [serials]);
+    setStatusMap((prev) => (statusMapsEqual(prev, nextMap) ? prev : nextMap));
+  }, [serialsKey]);
 
   useEffect(() => {
     void refresh();
