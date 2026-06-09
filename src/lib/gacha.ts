@@ -1,4 +1,5 @@
 import { SITE } from "@/lib/site";
+import { formatGachaSerialLabel, getGachaReportSerial, type GachaSerialStatus } from "@/lib/gacha-serial";
 
 export type GachaRarity = 1 | 2 | 3 | 4 | 5 | 6;
 
@@ -105,6 +106,10 @@ export interface GachaDrawResult {
   prize: GachaPrize;
   /** 抽選確定時刻（ISO 8601） */
   wonAt: string;
+  /** 当選報告用シリアル（★2以上の当選時） */
+  serialNumber?: string;
+  /** サーバー管理の使用状態 */
+  serialStatus?: GachaSerialStatus;
   /** ★1時に表示するキャスト */
   cast?: GachaCastSnapshot;
 }
@@ -149,17 +154,17 @@ export function shouldIncludeCastNameInGachaDm(rarity: GachaRarity): boolean {
 
 export function getGachaDmReceiveLine(rarity: GachaRarity): string {
   if (shouldIncludeCastNameInGachaDm(rarity)) {
-    return "当選カードと希望のキャスト名を @CHUCHOTER_VRC へDMでお送りください。";
+    return "当選カード・シリアルNo.・希望のキャスト名を @CHUCHOTER_VRC へDMでお送りください。";
   }
-  return "当選カードを @CHUCHOTER_VRC へDMでお送りください。";
+  return "当選カードとシリアルNo.を @CHUCHOTER_VRC へDMでお送りください。";
 }
 
 /** Xアイコン直後に続けるDM案内（画面表示用） */
 export function getGachaDmUiSuffix(rarity: GachaRarity): string {
   if (shouldIncludeCastNameInGachaDm(rarity)) {
-    return "へのDMに当選カードと希望のキャスト名をお送りください。";
+    return "へのDMに当選カード・シリアルNo.・希望のキャスト名をお送りください。";
   }
-  return "へのDMに当選カードを添付してご連絡ください。";
+  return "へのDMに当選カードとシリアルNo.を添付してご連絡ください。";
 }
 
 export function getGachaReceiveLine(rarity: GachaRarity): string {
@@ -255,10 +260,11 @@ export function buildShareText(result: GachaDrawResult, siteUrl: string): string
   }
 
   const receiveLine = getGachaReceiveLine(result.rarity);
+  const serial = getGachaReportSerial(result);
 
   return [
     `CHUCHOTER 運命の扉で${getRarityLabel(result.rarity)}【${result.prize.title}】が当選しました！`,
-    "",
+    ...(serial ? [formatGachaSerialLabel(serial), ""] : [""]),
     receiveLine,
     siteUrl,
     "#CHUCHOTER",
@@ -285,6 +291,11 @@ export function buildShareCardText(result: GachaDrawResult, siteUrl: string): st
 
   if (shouldShowGachaWonAt(result.rarity)) {
     lines.push(`獲得日時: ${formatGachaWonAt(result.wonAt)}`, "");
+  }
+
+  const serial = getGachaReportSerial(result);
+  if (serial) {
+    lines.push(formatGachaSerialLabel(serial), "");
   }
 
   if (isGachaMiss(result.rarity)) {

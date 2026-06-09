@@ -8,6 +8,7 @@ import {
   RARITY_COLORS,
   shouldShowGachaWonAt,
 } from "@/lib/gacha";
+import { formatGachaSerialLabel, getGachaReportSerial } from "@/lib/gacha-serial";
 
 const CARD_WIDTH = 1080;
 const CARD_HEIGHT = 1350;
@@ -289,6 +290,14 @@ function drawPrizeShareCard(ctx: CanvasRenderingContext2D, result: GachaDrawResu
     ctx.fillStyle = "#9c9890";
     ctx.font = "400 28px sans-serif";
     ctx.fillText(`獲得日時: ${formatGachaWonAt(result.wonAt)}`, CARD_WIDTH / 2, nextY);
+  }
+
+  const serial = getGachaReportSerial(result);
+  if (serial) {
+    nextY += 48;
+    ctx.fillStyle = "#c9a962";
+    ctx.font = "600 30px monospace";
+    ctx.fillText(formatGachaSerialLabel(serial), CARD_WIDTH / 2, nextY);
   }
 
   drawCardFooter(ctx, result);

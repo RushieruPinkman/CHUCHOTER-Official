@@ -6,6 +6,7 @@ import { useCallback, useEffect, useState } from "react";
 import { signOutAction } from "@/app/login/actions";
 import LoginNavLink from "@/components/LoginNavLink";
 import ProfileNavLink from "@/components/ProfileNavLink";
+import { useDmUnreadSummary } from "@/hooks/useDmUnread";
 import { getAuthLoginHref, getAuthRegisterHref } from "@/lib/auth-routes";
 import { getUserProfileLabel } from "@/lib/auth-messages";
 import {
@@ -41,6 +42,15 @@ export default function AuthNav({
   const [ready, setReady] = useState(false);
   const authEnabled = isUserAuthEnabled();
   const authDevEnabled = isAuthDevEnabled();
+  const { unreadCount: dmUnreadCount, ready: dmReady } = useDmUnreadSummary();
+  const showDmNotice = dmReady && dmUnreadCount > 0;
+
+  const dmNoticeLink = showDmNotice ? (
+    <Link href="/dm" className="auth-dm-notice" aria-label={`運営から未読返信 ${dmUnreadCount} 件`}>
+      運営返信
+      <span className="dm-nav-badge">{dmUnreadCount > 99 ? "99+" : dmUnreadCount}</span>
+    </Link>
+  ) : null;
 
   const refreshDevSession = useCallback(() => {
     if (!authDevEnabled) {
@@ -201,6 +211,17 @@ export default function AuthNav({
             <span className="auth-status-badge__dot" aria-hidden="true" />
             ログイン中
           </p>
+          {showDmNotice && (
+            <Link
+              href="/dm"
+              className="auth-dm-notice mx-auto w-fit"
+              tabIndex={menuOpen ? 0 : -1}
+              aria-label={`運営から未読返信 ${dmUnreadCount} 件`}
+            >
+              運営返信
+              <span className="dm-nav-badge">{dmUnreadCount > 99 ? "99+" : dmUnreadCount}</span>
+            </Link>
+          )}
           <ProfileNavLink
             href={profileHref}
             label={label}
@@ -223,6 +244,7 @@ export default function AuthNav({
 
     return (
       <div className={`flex items-center gap-2 ${className}`.trim()}>
+        {dmNoticeLink}
         <ProfileNavLink href={profileHref} label={label} active={isProfilePage} />
         <form action={signOutAction}>
           <button
@@ -246,6 +268,17 @@ export default function AuthNav({
             <span className="auth-status-badge__dot" aria-hidden="true" />
             ログイン中（開発）
           </p>
+          {showDmNotice && (
+            <Link
+              href="/dm"
+              className="auth-dm-notice mx-auto w-fit"
+              tabIndex={menuOpen ? 0 : -1}
+              aria-label={`運営から未読返信 ${dmUnreadCount} 件`}
+            >
+              運営返信
+              <span className="dm-nav-badge">{dmUnreadCount > 99 ? "99+" : dmUnreadCount}</span>
+            </Link>
+          )}
           <ProfileNavLink
             href={profileHref}
             label={devSession.displayName}
@@ -267,6 +300,7 @@ export default function AuthNav({
 
     return (
       <div className={`flex items-center gap-2 ${className}`.trim()}>
+        {dmNoticeLink}
         <ProfileNavLink
           href={profileHref}
           label={devSession.displayName}

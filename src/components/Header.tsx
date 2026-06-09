@@ -4,10 +4,11 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import AuthNav from "@/components/AuthNav";
+import DmNavLink from "@/components/DmNavLink";
 import Logo from "@/components/Logo";
 import ThemeToggle from "@/components/ThemeToggle";
 import { lockBodyScroll, unlockBodyScroll } from "@/lib/body-scroll-lock";
-import { isGachaNavItem, NAV_ITEMS } from "@/lib/site";
+import { isGachaNavItem, isDmNavItem, NAV_ITEMS } from "@/lib/site";
 
 export default function Header() {
   const pathname = usePathname();
@@ -112,6 +113,20 @@ export default function Header() {
                 {NAV_ITEMS.map((item) => {
                   const isActive = pathname === item.href;
                   const isGacha = isGachaNavItem(item.href);
+                  const isDm = isDmNavItem(item.href);
+
+                  if (isDm) {
+                    return (
+                      <span key={item.href} className="inline-flex">
+                        <DmNavLink
+                          href={item.href}
+                          label={item.label}
+                          labelJa={item.labelJa}
+                          active={isActive}
+                        />
+                      </span>
+                    );
+                  }
 
                   return (
                     <span
@@ -153,21 +168,40 @@ export default function Header() {
             {NAV_ITEMS.map((item) => {
               const isActive = pathname === item.href;
               const isGacha = isGachaNavItem(item.href);
+              const isDm = isDmNavItem(item.href);
 
               return (
                 <li
                   key={item.href}
-                  className={isGacha ? "mobile-nav-item--gacha mobile-nav-panel__item" : "mobile-nav-panel__item"}
+                  className={
+                    isGacha
+                      ? "mobile-nav-item--gacha mobile-nav-panel__item"
+                      : isDm
+                        ? "mobile-nav-panel__item mobile-nav-item--dm"
+                        : "mobile-nav-panel__item"
+                  }
                 >
-                  <Link
-                    href={item.href}
-                    onClick={() => setMenuOpen(false)}
-                    className={`mobile-nav-panel__link ${isActive ? "mobile-nav-panel__link--active" : ""}`}
-                    aria-current={isActive ? "page" : undefined}
-                  >
-                    <span className="mobile-nav-panel__label-en">{item.label}</span>
-                    <span className="mobile-nav-panel__label-ja">{item.labelJa}</span>
-                  </Link>
+                  {isDm ? (
+                    <DmNavLink
+                      href={item.href}
+                      label={item.label}
+                      labelJa={item.labelJa}
+                      active={isActive}
+                      compact
+                      onClick={() => setMenuOpen(false)}
+                      tabIndex={menuOpen ? 0 : -1}
+                    />
+                  ) : (
+                    <Link
+                      href={item.href}
+                      onClick={() => setMenuOpen(false)}
+                      className={`mobile-nav-panel__link ${isActive ? "mobile-nav-panel__link--active" : ""}`}
+                      aria-current={isActive ? "page" : undefined}
+                    >
+                      <span className="mobile-nav-panel__label-en">{item.label}</span>
+                      <span className="mobile-nav-panel__label-ja">{item.labelJa}</span>
+                    </Link>
+                  )}
                 </li>
               );
             })}

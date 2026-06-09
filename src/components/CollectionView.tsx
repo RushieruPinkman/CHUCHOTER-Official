@@ -65,6 +65,7 @@ export default function CollectionView({
         <GachaResultModal
           result={modalResult}
           onClose={closeModal}
+          userKey={userKey}
           titleEn="Exchange"
           titleJa="交換完了"
         />

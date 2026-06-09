@@ -13,6 +13,7 @@ import {
   RARITY_COLORS,
   type GachaDrawResult,
 } from "@/lib/gacha";
+import { getGachaReportSerial, getGachaSerialStatusLabel, isGachaSerialUsed } from "@/lib/gacha-serial";
 import { renderGachaShareImageFromResult } from "@/lib/gacha-share-image";
 import { SITE } from "@/lib/site";
 import GachaPrizeTextCard from "@/components/GachaPrizeTextCard";
@@ -36,6 +37,8 @@ export default function GachaSharePanel({ result }: GachaSharePanelProps) {
   const siteDownloadable = isGachaPrizeSiteDownloadable(result.rarity) && prizeDownload !== null;
   const isMiss = isGachaMiss(result.rarity);
   const needsDm = !siteDownloadable && !isMiss;
+  const reportSerial = getGachaReportSerial(result);
+  const serialUsed = isGachaSerialUsed(result);
 
   const getBlob = useCallback(async () => {
     return renderGachaShareImageFromResult(result);
@@ -115,6 +118,17 @@ export default function GachaSharePanel({ result }: GachaSharePanelProps) {
     }
   };
 
+  const copySerialNumber = async () => {
+    if (!reportSerial) return;
+
+    try {
+      await navigator.clipboard.writeText(reportSerial);
+      setStatus("シリアルNo.をコピーしました。DM本文に貼り付けてご連絡ください。");
+    } catch {
+      setStatus("シリアルNo.のコピーに失敗しました。");
+    }
+  };
+
   const nativeShare = async () => {
     setBusy(true);
     setStatus(null);
@@ -153,7 +167,7 @@ export default function GachaSharePanel({ result }: GachaSharePanelProps) {
             >
               <XIcon className="h-3.5 w-3.5" />
             </a>
-            へ当選カードをDMでお送りください。★4・★5は希望のキャスト名もあわせてお知らせください。
+            へ当選カードとシリアルNo.をDMでお送りください。★4・★5は希望のキャスト名もあわせてお知らせください。
           </>
         ) : (
           <>
@@ -173,15 +187,48 @@ export default function GachaSharePanel({ result }: GachaSharePanelProps) {
       </p>
 
       {!isMiss && (
-        <div className={`gacha-share-card gacha-share-card--r${result.rarity}`} data-rarity={result.rarity}>
-          <GachaPrizeTextCard
-            prize={result.prize}
-            rarity={result.rarity}
-            showProofHeader
-            footer={footer}
-            wonAt={result.wonAt}
-          />
-        </div>
+        <>
+          {reportSerial && (
+            <div className="gacha-serial mx-auto max-w-md text-center">
+              <p className="text-[11px] tracking-[0.08em] text-cream-faint">当選報告用シリアルNo.</p>
+              <p className="gacha-serial__code mt-2 font-mono text-sm tracking-[0.14em] text-gold md:text-base">
+                {reportSerial}
+              </p>
+              <p
+                className={`mt-2 text-xs tracking-[0.08em] ${
+                  serialUsed ? "text-amber-200/90" : "text-cream-faint"
+                }`}
+              >
+                {getGachaSerialStatusLabel(result.serialStatus ?? "issued")}
+              </p>
+              <button
+                type="button"
+                onClick={copySerialNumber}
+                disabled={serialUsed}
+                className="btn-ghost mt-3 min-h-10 px-5 text-xs disabled:opacity-40"
+              >
+                シリアルNo.をコピー
+              </button>
+              {serialUsed && (
+                <p className="mt-2 text-[11px] leading-relaxed text-cream-faint">
+                  このシリアルNo.は使用済みです。再報告は不要です。
+                </p>
+              )}
+            </div>
+          )}
+
+          <div className={`gacha-share-card gacha-share-card--r${result.rarity}`} data-rarity={result.rarity}>
+            <GachaPrizeTextCard
+              prize={result.prize}
+              rarity={result.rarity}
+              showProofHeader
+              footer={footer}
+              wonAt={result.wonAt}
+              serialNumber={result.serialNumber}
+              serialStatus={result.serialStatus}
+            />
+          </div>
+        </>
       )}
 
       <div className="gacha-share__actions">

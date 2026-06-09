@@ -55,6 +55,12 @@ function normalizeDrawResult(value: unknown): GachaDrawResult | null {
     rarity: raw.rarity,
     prize,
     wonAt: raw.wonAt,
+    serialNumber:
+      typeof raw.serialNumber === "string" && raw.serialNumber.trim()
+        ? raw.serialNumber.trim()
+        : undefined,
+    serialStatus:
+      raw.serialStatus === "used" || raw.serialStatus === "issued" ? raw.serialStatus : undefined,
     cast: normalizeCastSnapshot(raw.cast),
   };
 }
@@ -141,6 +147,36 @@ export function formatGachaHistoryTimestamp(iso: string): string {
     minute: "2-digit",
     hour12: false,
   }).format(new Date(iso));
+}
+
+export function updateGachaDrawHistorySerialStatus(
+  historyKey: string,
+  serialNumber: string,
+  serialStatus: import("@/lib/gacha-serial").GachaSerialStatus
+): void {
+  if (typeof window === "undefined" || !historyKey) return;
+
+  const normalized = serialNumber.trim();
+  if (!normalized) return;
+
+  const records = readGachaDrawHistory(historyKey);
+  let changed = false;
+
+  const nextRecords = records.map((record) => {
+    if (record.result.serialNumber?.trim() !== normalized) return record;
+    changed = true;
+    return {
+      ...record,
+      result: {
+        ...record.result,
+        serialStatus,
+      },
+    };
+  });
+
+  if (changed) {
+    writeGachaDrawHistory(historyKey, nextRecords);
+  }
 }
 
 export function getGachaHistorySummary(result: GachaDrawResult): string {

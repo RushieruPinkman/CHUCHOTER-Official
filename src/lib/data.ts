@@ -78,6 +78,18 @@ export async function saveAnnouncements(items: Announcement[]): Promise<void> {
   await writeJsonFile("announcements.json", items);
 }
 
+export async function getDmSettings(): Promise<{ discordWebhookUrl: string }> {
+  return readJsonFile<{ discordWebhookUrl: string }>("dm-settings.json", {
+    discordWebhookUrl: "",
+  });
+}
+
+export async function saveDmSettings(settings: { discordWebhookUrl: string }): Promise<void> {
+  await writeJsonFile("dm-settings.json", {
+    discordWebhookUrl: settings.discordWebhookUrl.trim(),
+  });
+}
+
 export function getTodayScheduleEntry(
   schedule: ScheduleEntry[],
   date = new Date()

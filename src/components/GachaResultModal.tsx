@@ -5,13 +5,16 @@ import { createPortal } from "react-dom";
 import GachaPrizeCard from "@/components/GachaPrizeCard";
 import GachaSharePanel from "@/components/GachaSharePanel";
 import { lockBodyScroll, unlockBodyScroll } from "@/lib/body-scroll-lock";
-import { getRarityLabel, type GachaDrawResult } from "@/lib/gacha";
+import { useGachaSerialStatusSync } from "@/hooks/useGachaSerialStatus";
+import { getRarityLabel } from "@/lib/gacha";
+import type { GachaDrawResult } from "@/lib/gacha";
 
 interface GachaResultModalProps {
   result: GachaDrawResult;
   onClose: () => void;
   titleEn?: string;
   titleJa?: string;
+  userKey?: string | null;
 }
 
 export default function GachaResultModal({
@@ -19,7 +22,9 @@ export default function GachaResultModal({
   onClose,
   titleEn = "Prize",
   titleJa = "当選",
+  userKey = null,
 }: GachaResultModalProps) {
+  const syncedResult = useGachaSerialStatusSync(result, userKey) ?? result;
   const [mounted, setMounted] = useState(false);
   const closeBtnRef = useRef<HTMLButtonElement>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
@@ -114,22 +119,24 @@ export default function GachaResultModal({
 
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-5 md:px-6">
           <p className="mb-4 text-center text-xs tracking-[0.12em] text-cream-faint">
-            {getRarityLabel(result.rarity)} · {result.prize.title}
+            {getRarityLabel(syncedResult.rarity)} · {syncedResult.prize.title}
           </p>
 
           <div
-            className={`gacha-result-modal__preview relative mx-auto mb-6 aspect-[4/5] w-full max-w-[280px] border border-[var(--color-border)] gacha-result-modal__preview--r${result.rarity}`}
+            className={`gacha-result-modal__preview relative mx-auto mb-6 aspect-[4/5] w-full max-w-[280px] border border-[var(--color-border)] gacha-result-modal__preview--r${syncedResult.rarity}`}
           >
             <GachaPrizeCard
-              prize={result.prize}
-              rarity={result.rarity}
-              cast={result.cast}
+              prize={syncedResult.prize}
+              rarity={syncedResult.rarity}
+              cast={syncedResult.cast}
               showDetails
-              wonAt={result.wonAt}
+              wonAt={syncedResult.wonAt}
+              serialNumber={syncedResult.serialNumber}
+              serialStatus={syncedResult.serialStatus}
             />
           </div>
 
-          <GachaSharePanel result={result} />
+          <GachaSharePanel result={syncedResult} />
         </div>
       </div>
     </div>,

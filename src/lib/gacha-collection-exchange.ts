@@ -38,6 +38,9 @@ export interface CollectionExchangeRecord {
   prizeSubtitle: string;
   consumedCasts: CollectionExchangeConsumedCast[];
   exchangedAt: string;
+  serialNumber?: string;
+  /** 表示用。交換履歴から開く際は API 同期で上書き */
+  serialStatus?: import("@/lib/gacha-serial").GachaSerialStatus;
 }
 
 export interface CollectionExchangeRule {
@@ -237,6 +240,7 @@ export function performCollectionExchange(
   }
 
   const prize = getPrizeByRarity(status.rarity);
+  const exchangedAt = new Date().toISOString();
   const record: CollectionExchangeRecord = {
     id: `exchange-${Date.now()}`,
     tier,
@@ -247,7 +251,7 @@ export function performCollectionExchange(
       castId: resident.id,
       name: resident.name,
     })),
-    exchangedAt: new Date().toISOString(),
+    exchangedAt,
   };
 
   const history = readCollectionExchangeHistory(userKey);
@@ -259,6 +263,28 @@ export function performCollectionExchange(
   return { ok: true, record };
 }
 
+export function updateCollectionExchangeRecordSerial(
+  userKey: string,
+  recordId: string,
+  serialNumber: string
+): CollectionExchangeRecord | null {
+  if (typeof window === "undefined" || !userKey) return null;
+
+  const history = readCollectionExchangeHistory(userKey);
+  let updated: CollectionExchangeRecord | null = null;
+
+  const nextHistory = history.map((record) => {
+    if (record.id !== recordId) return record;
+    updated = { ...record, serialNumber };
+    return updated;
+  });
+
+  if (!updated) return null;
+
+  writeCollectionExchangeHistory(userKey, nextHistory);
+  return updated;
+}
+
 export function exchangeRecordToGachaDrawResult(
   record: CollectionExchangeRecord
 ): GachaDrawResult {
@@ -266,6 +292,8 @@ export function exchangeRecordToGachaDrawResult(
     rarity: record.rarity,
     prize: getPrizeByRarity(record.rarity),
     wonAt: record.exchangedAt,
+    serialNumber: record.serialNumber,
+    serialStatus: record.serialNumber ? "issued" : undefined,
   };
 }
 

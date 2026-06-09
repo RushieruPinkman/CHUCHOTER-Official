@@ -11,6 +11,8 @@ interface GachaPrizeCardProps {
   cast?: GachaCastSnapshot;
   showDetails?: boolean;
   wonAt?: string;
+  serialNumber?: string;
+  serialStatus?: import("@/lib/gacha-serial").GachaSerialStatus;
 }
 
 export default function GachaPrizeCard({
@@ -19,6 +21,8 @@ export default function GachaPrizeCard({
   cast,
   showDetails = true,
   wonAt,
+  serialNumber,
+  serialStatus,
 }: GachaPrizeCardProps) {
   if (isGachaMiss(rarity) && cast) {
     return (
@@ -51,7 +55,14 @@ export default function GachaPrizeCard({
 
   return (
     <div className={`gacha-prize-card gacha-prize-card--r${rarity} absolute inset-0 flex flex-col overflow-hidden bg-void`}>
-      <GachaPrizeTextCard prize={prize} rarity={rarity} compact={!showDetails} wonAt={wonAt} />
+      <GachaPrizeTextCard
+        prize={prize}
+        rarity={rarity}
+        compact={!showDetails}
+        wonAt={wonAt}
+        serialNumber={serialNumber}
+        serialStatus={serialStatus}
+      />
       {rarity === 6 && <div className="gacha-prize-art__shine" aria-hidden="true" />}
     </div>
   );

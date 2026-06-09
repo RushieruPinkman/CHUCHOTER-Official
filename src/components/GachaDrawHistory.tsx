@@ -14,6 +14,8 @@ import {
   type GachaDrawHistoryRecord,
 } from "@/lib/gacha-history";
 import { getRarityLabel, type GachaDrawResult } from "@/lib/gacha";
+import { formatGachaSerialLabel, getGachaReportSerial, getGachaSerialStatusLabel } from "@/lib/gacha-serial";
+import { useGachaSerialStatusMap } from "@/hooks/useGachaSerialStatus";
 
 interface GachaDrawHistoryProps {
   userKey: string | null;
@@ -31,6 +33,10 @@ export default function GachaDrawHistory({
   const historyKey = buildGachaHistoryKey(userKey);
   const [records, setRecords] = useState<GachaDrawHistoryRecord[]>([]);
   const [hydrated, setHydrated] = useState(false);
+  const serials = records
+    .map((record) => record.result.serialNumber?.trim())
+    .filter((serial): serial is string => Boolean(serial));
+  const serialStatusMap = useGachaSerialStatusMap(serials);
 
   const refresh = useCallback(() => {
     if (!historyKey) {
@@ -109,7 +115,11 @@ export default function GachaDrawHistory({
           </div>
         ) : (
           <ul className="space-y-3">
-            {records.map((record) => (
+            {records.map((record) => {
+              const reportSerial = record.result.serialNumber?.trim() ?? "";
+              const serialStatus = reportSerial ? serialStatusMap[reportSerial] : undefined;
+
+              return (
               <li
                 key={record.id}
                 className="history-record-item collection-exchange-history__item border border-[var(--color-border)] bg-deep/70 px-4 py-4 md:px-5"
@@ -135,6 +145,16 @@ export default function GachaDrawHistory({
                         {record.result.prize.subtitle}
                       </p>
                     )}
+                    {reportSerial && (
+                      <p className="mt-1 font-mono text-[10px] tracking-[0.08em] text-gold/90">
+                        {formatGachaSerialLabel(reportSerial)}
+                        {serialStatus && (
+                          <span className="ml-2 text-cream-faint">
+                            ({getGachaSerialStatusLabel(serialStatus)})
+                          </span>
+                        )}
+                      </p>
+                    )}
                   </div>
                   <button
                     type="button"
@@ -145,7 +165,8 @@ export default function GachaDrawHistory({
                   </button>
                 </div>
               </li>
-            ))}
+              );
+            })}
           </ul>
         )}
     </HistoryDisclosure>

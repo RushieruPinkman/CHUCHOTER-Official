@@ -10,6 +10,7 @@ import {
   type GachaPrize,
   type GachaRarity,
 } from "@/lib/gacha";
+import { formatGachaSerialLabel, getGachaSerialStatusLabel } from "@/lib/gacha-serial";
 
 interface GachaPrizeTextCardProps {
   prize: GachaPrize;
@@ -22,6 +23,9 @@ interface GachaPrizeTextCardProps {
   footer?: string;
   /** ★4以上の獲得日時（ISO 8601） */
   wonAt?: string;
+  /** 当選報告用シリアル */
+  serialNumber?: string;
+  serialStatus?: import("@/lib/gacha-serial").GachaSerialStatus;
 }
 
 export default function GachaPrizeTextCard({
@@ -31,9 +35,13 @@ export default function GachaPrizeTextCard({
   showProofHeader = false,
   footer,
   wonAt,
+  serialNumber,
+  serialStatus,
 }: GachaPrizeTextCardProps) {
   const colors = RARITY_COLORS[rarity];
   const showWonAt = shouldShowGachaWonAt(rarity) && wonAt;
+  const showSerial = Boolean(serialNumber?.trim()) && rarity >= 2;
+  const serialUsed = serialStatus === "used";
   const isShareCard = showProofHeader;
   const display = isShareCard ? getGachaPrizeCardDisplay(prize, rarity) : null;
 
@@ -91,6 +99,21 @@ export default function GachaPrizeTextCard({
       <p className={`relative z-[1] tracking-widest text-cream-faint ${compact ? "text-[10px]" : "text-[11px]"}`}>
         {getRarityLabel(rarity)} · {colors.label}
       </p>
+
+      {showSerial && (
+        <p
+          className={`gacha-prize-text__serial relative z-[1] font-mono ${
+            serialUsed ? "text-amber-200/90" : "text-gold"
+          } ${compact ? "text-[10px]" : "text-xs md:text-sm"}`}
+        >
+          {formatGachaSerialLabel(serialNumber!)}
+          {serialStatus && (
+            <span className="mt-1 block text-[10px] tracking-[0.08em] text-cream-faint">
+              {getGachaSerialStatusLabel(serialStatus)}
+            </span>
+          )}
+        </p>
+      )}
 
       {showWonAt && (
         <p className={`gacha-prize-text__won-at relative z-[1] text-cream-muted ${compact ? "text-[10px]" : "text-xs"}`}>
