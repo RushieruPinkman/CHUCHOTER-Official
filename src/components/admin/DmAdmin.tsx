@@ -35,14 +35,18 @@ export default function DmAdmin({ authJsonHeaders, remoteStorage }: DmAdminProps
   const [webhookDraft, setWebhookDraft] = useState("");
   const [unreadTotal, setUnreadTotal] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [sending, setSending] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const scrollKey = buildDmMessageScrollKey(messages, loading);
-  const { containerRef, handleScroll, scrollToBottom } = useDmMessageListScroll(scrollKey, {
-    paused: loading || !activeThread,
-    resetKey: selectedId,
-  });
+  const scrollKey = buildDmMessageScrollKey(messages, loading && messages.length === 0);
+  const { containerRef, bottomSentinelRef, handleScroll, scrollToBottom } = useDmMessageListScroll(
+    scrollKey,
+    {
+      paused: loading && messages.length === 0,
+      resetKey: selectedId,
+    }
+  );
 
   const loadInbox = useCallback(async () => {
     const res = await fetch("/api/admin/dm", { headers: authJsonHeaders() });
@@ -86,27 +90,39 @@ export default function DmAdmin({ authJsonHeaders, remoteStorage }: DmAdminProps
     [authJsonHeaders]
   );
 
-  const refreshAll = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const nextThreads = await loadInbox();
-      if (selectedId) {
-        const stillExists = nextThreads.some((thread) => thread.id === selectedId);
-        if (stillExists) {
-          await loadThread(selectedId);
+  const refreshAll = useCallback(
+    async (options?: { silent?: boolean }) => {
+      const silent = options?.silent ?? false;
+      if (silent) {
+        setRefreshing(true);
+      } else {
+        setLoading(true);
+      }
+      setError(null);
+      try {
+        const nextThreads = await loadInbox();
+        if (selectedId) {
+          const stillExists = nextThreads.some((thread) => thread.id === selectedId);
+          if (stillExists) {
+            await loadThread(selectedId);
+          } else {
+            setSelectedId(null);
+            setActiveThread(null);
+            setMessages([]);
+          }
+        }
+      } catch (refreshError) {
+        setError(refreshError instanceof Error ? refreshError.message : "DM の更新に失敗しました");
+      } finally {
+        if (silent) {
+          setRefreshing(false);
         } else {
-          setSelectedId(null);
-          setActiveThread(null);
-          setMessages([]);
+          setLoading(false);
         }
       }
-    } catch (refreshError) {
-      setError(refreshError instanceof Error ? refreshError.message : "DM の更新に失敗しました");
-    } finally {
-      setLoading(false);
-    }
-  }, [loadInbox, loadThread, selectedId]);
+    },
+    [loadInbox, loadThread, selectedId]
+  );
 
   useEffect(() => {
     void refreshAll();
@@ -114,7 +130,7 @@ export default function DmAdmin({ authJsonHeaders, remoteStorage }: DmAdminProps
 
   useEffect(() => {
     const interval = window.setInterval(() => {
-      void refreshAll();
+      void refreshAll({ silent: true });
     }, 30000);
     return () => window.clearInterval(interval);
   }, [refreshAll]);
@@ -155,8 +171,8 @@ export default function DmAdmin({ authJsonHeaders, remoteStorage }: DmAdminProps
       setDraft("");
       setMessage("返信を送信しました。");
       window.dispatchEvent(new CustomEvent(DM_UPDATED_EVENT));
-      requestAnimationFrame(() => scrollToBottom("smooth"));
-      await refreshAll();
+      requestAnimationFrame(() => scrollToBottom("auto", true));
+      await refreshAll({ silent: true });
     } catch (sendError) {
       setError(sendError instanceof Error ? sendError.message : "返信の送信に失敗しました");
     } finally {
@@ -354,6 +370,7 @@ export default function DmAdmin({ authJsonHeaders, remoteStorage }: DmAdminProps
                       );
                     })}
                   </ul>
+                  <div ref={bottomSentinelRef} className="dm-panel__scroll-sentinel" aria-hidden="true" />
                 </div>
 
                 <form onSubmit={handleSend} className="border-t border-[var(--color-border)] p-4 md:p-5">
@@ -372,7 +389,7 @@ export default function DmAdmin({ authJsonHeaders, remoteStorage }: DmAdminProps
                   <div className="mt-3 flex justify-end">
                     <button
                       type="submit"
-                      disabled={sending || !draft.trim() || loading}
+                      disabled={sending || !draft.trim() || loading || refreshing}
                       className="btn-primary min-h-10 px-5 text-sm disabled:opacity-40"
                     >
                       {sending ? "送信中…" : "返信する"}

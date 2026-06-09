@@ -13,7 +13,7 @@ import {
   type DmMessage,
   type DmThreadSummary,
 } from "@/lib/dm";
-import { fetchUserDmThread, sendUserDmMessage } from "@/lib/dm-client";
+import { fetchUserDmThread, sendUserDmMessage, DM_UPDATED_EVENT } from "@/lib/dm-client";
 import {
   buildDmMessageScrollKey,
   useDmMessageListScroll,
@@ -35,13 +35,16 @@ export default function DmPanel({ loginNextPath = "/dm" }: DmPanelProps) {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const scrollKey = buildDmMessageScrollKey(messages, loading);
-  const { containerRef, handleScroll, scrollToBottom } = useDmMessageListScroll(scrollKey, {
-    paused: loading,
-    resetKey: userKey,
-  });
+  const scrollKey = buildDmMessageScrollKey(messages, loading && messages.length === 0);
+  const { containerRef, bottomSentinelRef, handleScroll, scrollToBottom } = useDmMessageListScroll(
+    scrollKey,
+    {
+      paused: loading && messages.length === 0,
+      resetKey: userKey,
+    }
+  );
 
-  const refresh = useCallback(async () => {
+  const refresh = useCallback(async (options?: { silent?: boolean }) => {
     if (!userKey) {
       setThread(null);
       setMessages([]);
@@ -49,7 +52,10 @@ export default function DmPanel({ loginNextPath = "/dm" }: DmPanelProps) {
       return;
     }
 
-    setLoading(true);
+    const silent = options?.silent ?? false;
+    if (!silent) {
+      setLoading(true);
+    }
     setError(null);
 
     try {
@@ -59,7 +65,9 @@ export default function DmPanel({ loginNextPath = "/dm" }: DmPanelProps) {
     } catch (fetchError) {
       setError(fetchError instanceof Error ? fetchError.message : "DM の読み込みに失敗しました");
     } finally {
-      setLoading(false);
+      if (!silent) {
+        setLoading(false);
+      }
     }
   }, [devMode, userKey]);
 
@@ -67,6 +75,24 @@ export default function DmPanel({ loginNextPath = "/dm" }: DmPanelProps) {
     if (!authReady) return;
     void refresh();
   }, [authReady, refresh]);
+
+  useEffect(() => {
+    if (!userKey) return;
+
+    const onUpdated = () => {
+      void refresh({ silent: true });
+    };
+
+    window.addEventListener(DM_UPDATED_EVENT, onUpdated);
+    const interval = window.setInterval(() => {
+      void refresh({ silent: true });
+    }, 30000);
+
+    return () => {
+      window.removeEventListener(DM_UPDATED_EVENT, onUpdated);
+      window.clearInterval(interval);
+    };
+  }, [refresh, userKey]);
 
   const handleSend = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -80,7 +106,7 @@ export default function DmPanel({ loginNextPath = "/dm" }: DmPanelProps) {
       setThread(detail.thread);
       setMessages(detail.messages);
       setDraft("");
-      requestAnimationFrame(() => scrollToBottom("smooth"));
+      requestAnimationFrame(() => scrollToBottom("auto", true));
     } catch (sendError) {
       setError(sendError instanceof Error ? sendError.message : "DM の送信に失敗しました");
     } finally {
@@ -128,7 +154,7 @@ export default function DmPanel({ loginNextPath = "/dm" }: DmPanelProps) {
           onScroll={handleScroll}
           className="dm-panel__messages max-h-[28rem] overflow-y-auto overscroll-contain px-3 py-4 md:px-4"
         >
-          {loading ? (
+          {loading && messages.length === 0 ? (
             <p className="py-8 text-center text-sm text-cream-faint" role="status">
               読み込み中…
             </p>
@@ -140,25 +166,28 @@ export default function DmPanel({ loginNextPath = "/dm" }: DmPanelProps) {
               </p>
             </div>
           ) : (
-            <ul className="dm-message-list">
-              {messages.map((message) => {
-                const isUser = message.sender === "user";
-                return (
-                  <li
-                    key={message.id}
-                    className={`dm-message ${isUser ? "dm-message--user" : "dm-message--admin"}`}
-                  >
-                    <div className="dm-message__bubble">
-                      <p className="dm-message__body whitespace-pre-wrap break-words">{message.body}</p>
-                    </div>
-                    <p className="dm-message__meta">
-                      {!isUser && `${getDmSenderLabel(message.sender)} · `}
-                      {formatDmTimestamp(message.createdAt)}
-                    </p>
-                  </li>
-                );
-              })}
-            </ul>
+            <>
+              <ul className="dm-message-list">
+                {messages.map((message) => {
+                  const isUser = message.sender === "user";
+                  return (
+                    <li
+                      key={message.id}
+                      className={`dm-message ${isUser ? "dm-message--user" : "dm-message--admin"}`}
+                    >
+                      <div className="dm-message__bubble">
+                        <p className="dm-message__body whitespace-pre-wrap break-words">{message.body}</p>
+                      </div>
+                      <p className="dm-message__meta">
+                        {!isUser && `${getDmSenderLabel(message.sender)} · `}
+                        {formatDmTimestamp(message.createdAt)}
+                      </p>
+                    </li>
+                  );
+                })}
+              </ul>
+              <div ref={bottomSentinelRef} className="dm-panel__scroll-sentinel" aria-hidden="true" />
+            </>
           )}
         </div>
 

@@ -3742,6 +3742,14 @@ html.theme-transition *::after {
 
 .dm-panel__messages {
   background: color-mix(in srgb, var(--theme-deep) 55%, transparent);
+  overflow-anchor: none;
+}
+
+.dm-panel__scroll-sentinel {
+  height: 1px;
+  width: 100%;
+  pointer-events: none;
+  flex-shrink: 0;
 }
 
 .dm-message-list {
