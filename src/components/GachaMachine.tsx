@@ -10,8 +10,7 @@ import GachaDoorReveal from "@/components/GachaDoorReveal";
 import GachaStageIndicator from "@/components/GachaStageIndicator";
 import GachaVfx, { GachaRateList } from "@/components/GachaVfx";
 import ScrollReveal from "@/components/ScrollReveal";
-import XIcon from "@/components/XIcon";
-import { SITE } from "@/lib/site";
+import { useCollectionUserKey } from "@/hooks/useCollectionUserKey";
 import {
   canDrawGachaToday,
   formatGachaCooldownMessage,
@@ -44,7 +43,6 @@ import { getAuthLoginHref, getAuthRegisterHref } from "@/lib/auth-routes";
 import { attachSerialToDrawResult } from "@/lib/gacha-serial-client";
 import { registerGachaCollectionFromDraw } from "@/lib/gacha-collection";
 import { appendGachaDrawHistory, buildGachaHistoryKey } from "@/lib/gacha-history";
-import { useCollectionUserKey } from "@/hooks/useCollectionUserKey";
 import { useGachaSerialStatusSync } from "@/hooks/useGachaSerialStatus";
 
 type GachaMachineMode = "production" | "dev";
@@ -315,9 +313,9 @@ export default function GachaMachine({ casts, mode = "production" }: GachaMachin
   return (
     <section className="pb-14 md:pb-16" aria-labelledby="gacha-heading">
       <div className="site-container">
-        <ScrollReveal>
+        <ScrollReveal immediate>
           <div className="gacha-machine panel mx-auto max-w-xl overflow-hidden p-4 md:p-8">
-            <div className="gacha-machine__frame relative z-10 border border-[var(--color-border)] bg-deep/90 p-5 text-center md:p-7">
+            <div className="gacha-machine__frame border border-[var(--color-border)] bg-deep/90 p-5 text-center md:p-7">
                 {isDevMode && (
                   <p className="mb-4 rounded border border-amber-500/35 bg-amber-500/10 px-3 py-2 text-[11px] leading-relaxed text-amber-100/90">
                     開発用サンドボックス — 回数無制限・確率均等。本番（/gacha）には反映されません。
@@ -407,11 +405,12 @@ export default function GachaMachine({ casts, mode = "production" }: GachaMachin
                 )}
             </div>
 
+            <div className="gacha-machine__controls">
             {phase === "result" && displayResult && !isDevMode && (
-              <GachaSharePanel result={displayResult} />
+              <GachaSharePanel result={displayResult} loginNextPath={loginNextPath} />
             )}
 
-            <div className="relative z-10 mb-5 mt-6 px-1 space-y-1">
+            <div className="mb-5 mt-6 px-1 space-y-1">
               <p className="text-[11px] leading-relaxed text-cream-faint">{rateSummary}</p>
               {!isDevMode && dailyLimitEnabled && (
                 <p className="text-[11px] leading-relaxed text-cream-faint">
@@ -437,7 +436,7 @@ export default function GachaMachine({ casts, mode = "production" }: GachaMachin
               )}
             </div>
 
-            <div className="gacha-machine__actions relative z-10 mt-6 px-1">
+            <div className="gacha-machine__actions mt-6 px-1">
               {phase === "result" ? (
                 <button
                   type="button"
@@ -490,22 +489,23 @@ export default function GachaMachine({ casts, mode = "production" }: GachaMachin
               )}
             </div>
 
-            <div className="relative z-10 mt-4 flex justify-center px-1">
+            <div className="mt-4 flex justify-center px-1">
               <Link href="/collection" className="btn-ghost min-h-11 px-6 text-center">
                 コレクションを見る
               </Link>
             </div>
 
             {!isDevMode && dailyLimitEnabled && cooldownMessage && (
-              <p className="relative z-10 mt-4 px-1 text-center text-xs leading-relaxed text-cream-muted" role="status">
+              <p className="mt-4 px-1 text-center text-xs leading-relaxed text-cream-muted" role="status">
                 {cooldownMessage}
               </p>
             )}
             {drawError && (
-              <p className="relative z-10 mt-4 px-1 text-center text-sm leading-relaxed text-red-300" role="alert">
+              <p className="mt-4 px-1 text-center text-sm leading-relaxed text-red-300" role="alert">
                 {drawError}
               </p>
             )}
+            </div>
           </div>
         </ScrollReveal>
 
@@ -524,29 +524,17 @@ export default function GachaMachine({ casts, mode = "production" }: GachaMachin
             <p>★2〜★3の景品は当選後にサイトからダウンロードできます。</p>
             <p>
               ★4・★5は
-              <a
-                href={SITE.xUrl}
-                className="link-gold inline-flex align-middle text-gold"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="@CHUCHOTER_VRC"
-              >
-                <XIcon className="h-3.5 w-3.5" />
-              </a>
-              へのDMに当選カードと希望のキャスト名をお送りください。
+              <Link href="/dm" className="link-gold text-gold">
+                運営DM
+              </Link>
+              に当選内容・シリアルNo.と希望のキャスト名をお送りください。
             </p>
             <p>
               ★6は
-              <a
-                href={SITE.xUrl}
-                className="link-gold inline-flex align-middle text-gold"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="@CHUCHOTER_VRC"
-              >
-                <XIcon className="h-3.5 w-3.5" />
-              </a>
-              へのDMに当選カードを添付してご連絡ください。
+              <Link href="/dm" className="link-gold text-gold">
+                運営DM
+              </Link>
+              に当選内容とシリアルNo.をお送りください。
             </p>
           </div>
         </ScrollReveal>

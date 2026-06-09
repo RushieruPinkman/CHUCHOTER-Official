@@ -9,7 +9,7 @@ export const revalidate = 300;
 export const metadata: Metadata = {
   title: "ガチャ",
   description:
-    "CHUCHOTERの運命の扉 — 景品抽選。★1は住人がランダム登場。★2〜★3はサイトからダウンロード。★4以上は当選カードを @CHUCHOTER_VRC へDMでお送りください。",
+    "CHUCHOTERの運命の扉 — 景品抽選。★1は住人がランダム登場。★2〜★3はサイトからダウンロード。★4以上は運営DMに当選内容をお送りください。",
 };
 
 export default async function GachaPage() {

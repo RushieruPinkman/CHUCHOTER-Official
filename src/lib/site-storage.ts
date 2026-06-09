@@ -103,6 +103,11 @@ export async function readJsonFile<T>(filename: string, fallback: T): Promise<T>
   return cached();
 }
 
+/** 管理画面保存直後・Discord 通知など、キャッシュを経由しない読み取り */
+export async function readJsonFileFresh<T>(filename: string, fallback: T): Promise<T> {
+  return readJsonFileUncached(filename, fallback);
+}
+
 export async function writeJsonFile<T>(filename: string, data: T): Promise<void> {
   if (!shouldUseRemoteStorage()) {
     await writeLocalJsonFile(filename, data);

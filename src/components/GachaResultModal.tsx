@@ -136,7 +136,7 @@ export default function GachaResultModal({
             />
           </div>
 
-          <GachaSharePanel result={syncedResult} />
+          <GachaSharePanel result={syncedResult} loginNextPath="/gacha" />
         </div>
       </div>
     </div>,

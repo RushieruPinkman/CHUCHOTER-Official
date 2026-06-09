@@ -1,5 +1,5 @@
 import "server-only";
-import { readJsonFile, writeJsonFile } from "@/lib/site-storage";
+import { readJsonFile, readJsonFileFresh, writeJsonFile } from "@/lib/site-storage";
 import { normalizeCast } from "@/lib/cast-roles";
 import type { Announcement, Cast, MediaArchive, ScheduleEntry, SiteStatus } from "@/types";
 
@@ -82,6 +82,19 @@ export async function getDmSettings(): Promise<{ discordWebhookUrl: string }> {
   return readJsonFile<{ discordWebhookUrl: string }>("dm-settings.json", {
     discordWebhookUrl: "",
   });
+}
+
+/** Discord 通知用 — キャッシュ・環境変数を反映した最新設定 */
+export async function getDmSettingsFresh(): Promise<{ discordWebhookUrl: string }> {
+  const envUrl = process.env.DISCORD_DM_WEBHOOK_URL?.trim();
+  if (envUrl) {
+    return { discordWebhookUrl: envUrl };
+  }
+
+  const settings = await readJsonFileFresh<{ discordWebhookUrl: string }>("dm-settings.json", {
+    discordWebhookUrl: "",
+  });
+  return { discordWebhookUrl: settings.discordWebhookUrl.trim() };
 }
 
 export async function saveDmSettings(settings: { discordWebhookUrl: string }): Promise<void> {

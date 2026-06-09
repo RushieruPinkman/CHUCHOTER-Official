@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyAdminRequest } from "@/lib/admin-auth";
 import { storageErrorResponse } from "@/lib/api-error";
 import { getDmSettings, saveDmSettings } from "@/lib/data";
+import { sendDiscordDmTestWebhook } from "@/lib/dm-discord";
+import { revalidateSiteContent } from "@/lib/revalidate-site";
 import {
   getAdminDmThreadDetail,
   getTotalAdminUnreadCount,
@@ -64,11 +66,22 @@ export async function POST(request: NextRequest) {
     };
 
     if (body.action === "save_settings") {
-      await saveDmSettings({
-        discordWebhookUrl: String(body.discordWebhookUrl ?? ""),
-      });
-      const settings = await getDmSettings();
+      const settings = {
+        discordWebhookUrl: String(body.discordWebhookUrl ?? "").trim(),
+      };
+      await saveDmSettings(settings);
+      revalidateSiteContent();
       return NextResponse.json({ settings });
+    }
+
+    if (body.action === "test_webhook") {
+      const result = await sendDiscordDmTestWebhook(
+        String(body.discordWebhookUrl ?? "").trim() || undefined
+      );
+      if (!result.ok) {
+        return NextResponse.json({ error: result.detail }, { status: 400 });
+      }
+      return NextResponse.json({ ok: true });
     }
 
     const threadId = String(body.threadId ?? "").trim();

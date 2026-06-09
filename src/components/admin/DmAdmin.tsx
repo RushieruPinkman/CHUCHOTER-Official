@@ -218,8 +218,37 @@ export default function DmAdmin({ authJsonHeaders, remoteStorage }: DmAdminProps
           <button type="submit" className="btn-primary min-h-10 px-5 text-sm">
             Webhook を保存
           </button>
+          <button
+            type="button"
+            disabled={!webhookDraft.trim()}
+            onClick={async () => {
+              setError(null);
+              setMessage(null);
+              try {
+                const res = await fetch("/api/admin/dm", {
+                  method: "POST",
+                  headers: authJsonHeaders(),
+                  body: JSON.stringify({
+                    action: "test_webhook",
+                    discordWebhookUrl: webhookDraft,
+                  }),
+                });
+                if (!res.ok) {
+                  throw new Error(await readApiError(res, "テスト通知の送信に失敗しました"));
+                }
+                setMessage("Discord にテスト通知を送信しました。");
+              } catch (testError) {
+                setError(
+                  testError instanceof Error ? testError.message : "テスト通知の送信に失敗しました"
+                );
+              }
+            }}
+            className="btn-ghost min-h-10 px-5 text-sm disabled:opacity-40"
+          >
+            テスト通知を送る
+          </button>
           {settings.discordWebhookUrl && (
-            <p className="text-[11px] text-cream-faint">通知先: 設定済み</p>
+            <p className="text-[11px] text-cream-faint">通知先: 設定済み（保存後すぐ反映されます）</p>
           )}
         </form>
       </div>

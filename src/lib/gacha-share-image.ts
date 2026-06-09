@@ -183,7 +183,7 @@ function drawCardFooter(ctx: CanvasRenderingContext2D, result: GachaDrawResult):
   ctx.textAlign = "center";
   const footerText = isGachaMiss(rarity)
     ? "また扉を開けて、景品を狙いましょう"
-    : getGachaReceiveLine(rarity).replace("@CHUCHOTER_VRC ", "");
+    : getGachaReceiveLine(rarity);
   wrapText(ctx, footerText, CARD_WIDTH / 2, CARD_HEIGHT - 120, CARD_WIDTH - 160, 36);
 }
 

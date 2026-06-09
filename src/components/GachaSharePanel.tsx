@@ -1,44 +1,60 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useState } from "react";
+import { useCollectionUserKey } from "@/hooks/useCollectionUserKey";
+import { getAuthLoginHref } from "@/lib/auth-routes";
+import { isAuthDevEnabled } from "@/lib/auth-dev";
 import {
   buildDmUrl,
+  buildGachaOperationsDmText,
   buildShareCardText,
   buildShareText,
   buildTweetUrl,
+  getGachaOperationsDmHint,
   getGachaPrizeDownload,
-  getGachaDmUiSuffix,
   isGachaMiss,
   isGachaPrizeSiteDownloadable,
   RARITY_COLORS,
+  shouldIncludeCastNameInGachaDm,
   type GachaDrawResult,
 } from "@/lib/gacha";
 import { getGachaReportSerial, getGachaSerialStatusLabel, isGachaSerialUsed } from "@/lib/gacha-serial";
 import { renderGachaShareImageFromResult } from "@/lib/gacha-share-image";
+import { sendUserDmMessage } from "@/lib/dm-client";
+import { isUserAuthEnabled } from "@/lib/supabase/config";
 import { SITE } from "@/lib/site";
 import GachaPrizeTextCard from "@/components/GachaPrizeTextCard";
 import XIcon from "@/components/XIcon";
 
 interface GachaSharePanelProps {
   result: GachaDrawResult;
+  loginNextPath?: string;
 }
 
-export default function GachaSharePanel({ result }: GachaSharePanelProps) {
+export default function GachaSharePanel({
+  result,
+  loginNextPath = "/gacha",
+}: GachaSharePanelProps) {
+  const { userKey, ready: authReady } = useCollectionUserKey();
+  const devMode = isAuthDevEnabled() && !isUserAuthEnabled();
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
+  const [castNameDraft, setCastNameDraft] = useState("");
 
   const shareText = buildShareText(result, SITE.url);
   const cardText = buildShareCardText(result, SITE.url);
-  const dmUrl = buildDmUrl(cardText);
+  const xDmUrl = buildDmUrl(cardText);
   const tweetUrl = buildTweetUrl(shareText);
   const colors = RARITY_COLORS[result.rarity];
   const footer = `${colors.label} · ${SITE.url.replace(/^https?:\/\//, "")}`;
   const prizeDownload = getGachaPrizeDownload(result.prize);
   const siteDownloadable = isGachaPrizeSiteDownloadable(result.rarity) && prizeDownload !== null;
   const isMiss = isGachaMiss(result.rarity);
-  const needsDm = !siteDownloadable && !isMiss;
+  const needsOperationsDm = !siteDownloadable && !isMiss;
   const reportSerial = getGachaReportSerial(result);
   const serialUsed = isGachaSerialUsed(result);
+  const needsCastName = shouldIncludeCastNameInGachaDm(result.rarity);
 
   const getBlob = useCallback(async () => {
     return renderGachaShareImageFromResult(result);
@@ -101,7 +117,7 @@ export default function GachaSharePanel({ result }: GachaSharePanelProps) {
           "image/png": Promise.resolve(blob),
         }),
       ]);
-      setStatus("当選カード（画像）をコピーしました。XのDMなどに貼り付けて送信できます。");
+      setStatus("当選カード（画像）をコピーしました。");
     } catch {
       setStatus("画像のコピーに失敗しました。「当選カードを保存」をお試しください。");
     } finally {
@@ -123,9 +139,30 @@ export default function GachaSharePanel({ result }: GachaSharePanelProps) {
 
     try {
       await navigator.clipboard.writeText(reportSerial);
-      setStatus("シリアルNo.をコピーしました。DM本文に貼り付けてご連絡ください。");
+      setStatus("シリアルNo.をコピーしました。");
     } catch {
       setStatus("シリアルNo.のコピーに失敗しました。");
+    }
+  };
+
+  const sendToOperationsDm = async () => {
+    if (!userKey) return;
+
+    setBusy(true);
+    setStatus(null);
+
+    try {
+      const message = buildGachaOperationsDmText(result, SITE.url, {
+        castName: castNameDraft,
+      });
+      await sendUserDmMessage(userKey, devMode, message);
+      setStatus(
+        "運営DMに当選内容を送信しました。返信は運営DMページ（/dm）でご確認ください。"
+      );
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : "運営DMへの送信に失敗しました。");
+    } finally {
+      setBusy(false);
     }
   };
 
@@ -158,30 +195,15 @@ export default function GachaSharePanel({ result }: GachaSharePanelProps) {
           <>
             当選おめでとうございます。下のボタンから「{result.prize.title}」をダウンロードできます。
             ★4以上の景品は
-            <a
-              href={SITE.xUrl}
-              className="link-gold inline-flex align-middle text-gold"
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="@CHUCHOTER_VRC"
-            >
-              <XIcon className="h-3.5 w-3.5" />
-            </a>
-            へ当選カードとシリアルNo.をDMでお送りください。★4・★5は希望のキャスト名もあわせてお知らせください。
+            <Link href="/dm" className="link-gold text-gold">
+              運営DM
+            </Link>
+            から当選内容とシリアルNo.をお送りください。★4・★5は希望のキャスト名もあわせてお知らせください。
           </>
         ) : (
           <>
-            当選おめでとうございます。「当選カードをコピー」で画像をコピーするか保存し、
-            <a
-              href={SITE.xUrl}
-              className="link-gold inline-flex align-middle text-gold"
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="@CHUCHOTER_VRC"
-            >
-              <XIcon className="h-3.5 w-3.5" />
-            </a>
-            {getGachaDmUiSuffix(result.rarity)}
+            当選おめでとうございます。下の「運営DMで送信」から当選内容を運営へお送りください。
+            {needsCastName && " ★4・★5は希望のキャスト名も入力してください。"}
           </>
         )}
       </p>
@@ -217,6 +239,23 @@ export default function GachaSharePanel({ result }: GachaSharePanelProps) {
             </div>
           )}
 
+          {needsOperationsDm && needsCastName && !serialUsed && (
+            <label className="mx-auto block max-w-md text-left">
+              <span className="mb-1.5 block text-xs text-cream-muted">希望キャスト名</span>
+              <input
+                value={castNameDraft}
+                onChange={(event) => setCastNameDraft(event.target.value)}
+                maxLength={80}
+                className="w-full border border-[var(--color-border)] bg-deep px-3 py-2 text-sm text-cream focus:border-gold focus:outline-none"
+                placeholder="例: 黒糖アメ"
+                autoComplete="off"
+              />
+              <span className="mt-1 block text-[11px] text-cream-faint">
+                {getGachaOperationsDmHint(result.rarity)}
+              </span>
+            </label>
+          )}
+
           <div className={`gacha-share-card gacha-share-card--r${result.rarity}`} data-rarity={result.rarity}>
             <GachaPrizeTextCard
               prize={result.prize}
@@ -232,24 +271,39 @@ export default function GachaSharePanel({ result }: GachaSharePanelProps) {
       )}
 
       <div className="gacha-share__actions">
+        {needsOperationsDm && !serialUsed && (
+          authReady && userKey ? (
+            <button
+              type="button"
+              onClick={sendToOperationsDm}
+              disabled={busy}
+              className="btn-primary gacha-share__action--primary"
+            >
+              {busy ? "送信中…" : "運営DMで送信"}
+            </button>
+          ) : (
+            <Link
+              href={getAuthLoginHref(loginNextPath)}
+              className="btn-primary gacha-share__action--primary inline-flex min-h-11 items-center justify-center"
+            >
+              ログインして運営DMで送信
+            </Link>
+          )
+        )}
+
         {siteDownloadable && prizeDownload && (
           <button
             type="button"
             onClick={downloadPrize}
             disabled={busy}
-            className="btn-primary gacha-share__action--primary"
+            className={`btn-primary ${needsOperationsDm && !serialUsed ? "" : "gacha-share__action--primary"}`}
           >
             景品をダウンロード
           </button>
         )}
 
-        {!siteDownloadable && needsDm && (
-          <button
-            type="button"
-            onClick={copyShareCard}
-            disabled={busy}
-            className="btn-primary gacha-share__action--primary"
-          >
+        {needsOperationsDm && (
+          <button type="button" onClick={copyShareCard} disabled={busy} className="btn-ghost">
             当選カードをコピー
           </button>
         )}
@@ -262,16 +316,22 @@ export default function GachaSharePanel({ result }: GachaSharePanelProps) {
           {isMiss ? "結果文をコピー" : "当選文をコピー"}
         </button>
 
-        {needsDm && (
+        {needsOperationsDm && userKey && (
+          <Link href="/dm" className="btn-ghost inline-flex items-center justify-center">
+            運営DMを開く
+          </Link>
+        )}
+
+        {needsOperationsDm && (
           <a
-            href={dmUrl}
+            href={xDmUrl}
             target="_blank"
             rel="noopener noreferrer"
             className="btn-ghost inline-flex items-center justify-center gap-1.5"
             aria-label="公式XのDMを開く"
           >
             <XIcon className="h-4 w-4 shrink-0" />
-            <span>公式X DM</span>
+            <span>公式X DM（任意）</span>
           </a>
         )}
 
