@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { readApiError } from "@/lib/api-error";
 import {
   DM_RETENTION_NOTICE,
@@ -45,6 +45,8 @@ export default function DmAdmin({ authJsonHeaders, remoteStorage }: DmAdminProps
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [mobileChatOpen, setMobileChatOpen] = useState(false);
+  const selectedIdRef = useRef<string | null>(null);
+  const loadThreadRequestRef = useRef(0);
   const scrollKey = buildDmMessageScrollKey(messages, loading && messages.length === 0);
   const { containerRef, bottomSentinelRef, handleScroll, scrollToBottom } = useDmMessageListScroll(
     scrollKey,
@@ -73,8 +75,13 @@ export default function DmAdmin({ authJsonHeaders, remoteStorage }: DmAdminProps
     return body.threads;
   }, [authJsonHeaders]);
 
+  useEffect(() => {
+    selectedIdRef.current = selectedId;
+  }, [selectedId]);
+
   const loadThread = useCallback(
     async (threadId: string) => {
+      const requestId = ++loadThreadRequestRef.current;
       const res = await fetch(`/api/admin/dm?threadId=${encodeURIComponent(threadId)}`, {
         headers: authJsonHeaders(),
       });
@@ -83,10 +90,15 @@ export default function DmAdmin({ authJsonHeaders, remoteStorage }: DmAdminProps
         throw new Error(await readApiError(res, "DM の取得に失敗しました"));
       }
 
+      if (requestId !== loadThreadRequestRef.current) {
+        return;
+      }
+
       const body = (await res.json()) as { thread: DmThreadSummary; messages: DmMessage[] };
       setActiveThread(body.thread);
       setMessages(body.messages);
       setSelectedId(threadId);
+      selectedIdRef.current = threadId;
       setThreads((current) =>
         current.map((thread) =>
           thread.id === threadId ? { ...thread, adminUnreadCount: 0 } : thread
@@ -107,12 +119,14 @@ export default function DmAdmin({ authJsonHeaders, remoteStorage }: DmAdminProps
       setError(null);
       try {
         const nextThreads = await loadInbox();
-        if (selectedId) {
-          const stillExists = nextThreads.some((thread) => thread.id === selectedId);
+        const activeId = selectedIdRef.current;
+        if (activeId) {
+          const stillExists = nextThreads.some((thread) => thread.id === activeId);
           if (stillExists) {
-            await loadThread(selectedId);
-          } else {
+            await loadThread(activeId);
+          } else if (selectedIdRef.current === activeId) {
             setSelectedId(null);
+            selectedIdRef.current = null;
             setActiveThread(null);
             setMessages([]);
             setMobileChatOpen(false);
@@ -128,7 +142,7 @@ export default function DmAdmin({ authJsonHeaders, remoteStorage }: DmAdminProps
         }
       }
     },
-    [loadInbox, loadThread, selectedId]
+    [loadInbox, loadThread]
   );
 
   useEffect(() => {
