@@ -7,11 +7,14 @@ import {
   formatDmListTimestamp,
   formatDmTimestamp,
   getDmSenderLabel,
+  type DmAttachmentPayload,
   type DmMessage,
   type DmSettings,
   type DmThreadSummary,
 } from "@/lib/dm";
 import { DM_UPDATED_EVENT } from "@/lib/dm-client";
+import DmAttachmentComposer from "@/components/DmAttachmentComposer";
+import DmMessageContent from "@/components/DmMessageContent";
 import {
   buildDmMessageScrollKey,
   useDmMessageListScroll,
@@ -37,8 +40,11 @@ export default function DmAdmin({ authJsonHeaders, remoteStorage }: DmAdminProps
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [sending, setSending] = useState(false);
+  const [uploadingAttachment, setUploadingAttachment] = useState(false);
+  const [pendingAttachment, setPendingAttachment] = useState<DmAttachmentPayload | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [mobileChatOpen, setMobileChatOpen] = useState(false);
   const scrollKey = buildDmMessageScrollKey(messages, loading && messages.length === 0);
   const { containerRef, bottomSentinelRef, handleScroll, scrollToBottom } = useDmMessageListScroll(
     scrollKey,
@@ -109,6 +115,7 @@ export default function DmAdmin({ authJsonHeaders, remoteStorage }: DmAdminProps
             setSelectedId(null);
             setActiveThread(null);
             setMessages([]);
+            setMobileChatOpen(false);
           }
         }
       } catch (refreshError) {
@@ -137,9 +144,11 @@ export default function DmAdmin({ authJsonHeaders, remoteStorage }: DmAdminProps
 
   const handleSelectThread = async (threadId: string) => {
     setError(null);
+    setPendingAttachment(null);
     setLoading(true);
     try {
       await loadThread(threadId);
+      setMobileChatOpen(true);
     } catch (selectError) {
       setError(selectError instanceof Error ? selectError.message : "DM の取得に失敗しました");
     } finally {
@@ -147,9 +156,14 @@ export default function DmAdmin({ authJsonHeaders, remoteStorage }: DmAdminProps
     }
   };
 
+  const handleBackToList = () => {
+    setMobileChatOpen(false);
+  };
+
   const handleSend = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (!selectedId || !draft.trim() || sending) return;
+    if (!selectedId || sending || uploadingAttachment) return;
+    if (!draft.trim() && !pendingAttachment) return;
 
     setSending(true);
     setError(null);
@@ -158,7 +172,11 @@ export default function DmAdmin({ authJsonHeaders, remoteStorage }: DmAdminProps
       const res = await fetch("/api/admin/dm", {
         method: "POST",
         headers: authJsonHeaders(),
-        body: JSON.stringify({ threadId: selectedId, message: draft }),
+        body: JSON.stringify({
+          threadId: selectedId,
+          message: draft,
+          attachment: pendingAttachment,
+        }),
       });
 
       if (!res.ok) {
@@ -169,6 +187,7 @@ export default function DmAdmin({ authJsonHeaders, remoteStorage }: DmAdminProps
       setActiveThread(body.thread);
       setMessages(body.messages);
       setDraft("");
+      setPendingAttachment(null);
       setMessage("返信を送信しました。");
       window.dispatchEvent(new CustomEvent(DM_UPDATED_EVENT));
       requestAnimationFrame(() => scrollToBottom("auto", true));
@@ -177,6 +196,35 @@ export default function DmAdmin({ authJsonHeaders, remoteStorage }: DmAdminProps
       setError(sendError instanceof Error ? sendError.message : "返信の送信に失敗しました");
     } finally {
       setSending(false);
+    }
+  };
+
+  const handleSelectAttachment = async (file: File) => {
+    if (!selectedId) return;
+
+    setUploadingAttachment(true);
+    setError(null);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("filename", file.name);
+      formData.append("threadId", selectedId);
+
+      const authHeaders = authJsonHeaders() as Record<string, string>;
+      const res = await fetch("/api/admin/dm/upload", {
+        method: "POST",
+        headers: { Authorization: authHeaders.Authorization },
+        body: formData,
+      });
+
+      if (!res.ok) {
+        throw new Error(await readApiError(res, "添付ファイルのアップロードに失敗しました"));
+      }
+
+      const body = (await res.json()) as { attachment: DmAttachmentPayload };
+      setPendingAttachment(body.attachment);
+    } finally {
+      setUploadingAttachment(false);
     }
   };
 
@@ -275,7 +323,11 @@ export default function DmAdmin({ authJsonHeaders, remoteStorage }: DmAdminProps
       </div>
 
       <div className="panel overflow-hidden p-0 md:p-0">
-        <div className="border-b border-[var(--color-border)] px-5 py-4 md:px-6">
+        <div
+          className={`border-b border-[var(--color-border)] px-5 py-4 md:px-6 ${
+            mobileChatOpen ? "hidden lg:block" : "block"
+          }`}
+        >
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <p className="section-label mb-1">Inbox</p>
@@ -295,12 +347,20 @@ export default function DmAdmin({ authJsonHeaders, remoteStorage }: DmAdminProps
           <p className="mt-2 text-xs leading-relaxed text-cream-faint">{DM_RETENTION_NOTICE}</p>
         </div>
 
-        <div className="dm-admin__layout grid lg:grid-cols-[minmax(16rem,18rem)_1fr]">
-          <aside className="dm-admin__threads border-b border-[var(--color-border)] lg:border-b-0 lg:border-r">
+        <div
+          className={`dm-admin__layout grid lg:grid-cols-[minmax(16rem,18rem)_1fr] ${
+            mobileChatOpen ? "dm-admin__layout--chat-open" : ""
+          }`}
+        >
+          <aside
+            className={`dm-admin__threads border-b border-[var(--color-border)] lg:border-b-0 lg:border-r ${
+              mobileChatOpen ? "hidden lg:block" : "block"
+            }`}
+          >
             {threads.length === 0 ? (
               <p className="px-4 py-8 text-center text-sm text-cream-faint">DM はまだありません。</p>
             ) : (
-              <ul className="max-h-[32rem] overflow-y-auto">
+              <ul className="dm-admin__thread-list lg:max-h-[32rem] lg:overflow-y-auto">
                 {threads.map((thread) => {
                   const active = thread.id === selectedId;
                   return (
@@ -332,24 +392,42 @@ export default function DmAdmin({ authJsonHeaders, remoteStorage }: DmAdminProps
             )}
           </aside>
 
-          <section className="dm-admin__conversation min-h-[24rem]">
+          <section
+            className={`dm-admin__conversation min-h-[24rem] flex-col ${
+              mobileChatOpen && activeThread ? "flex" : "hidden lg:flex"
+            }`}
+          >
             {!activeThread ? (
-              <p className="flex h-full min-h-[24rem] items-center justify-center px-6 text-sm text-cream-faint">
+              <p className="hidden h-full min-h-[24rem] items-center justify-center px-6 text-sm text-cream-faint lg:flex">
                 左の一覧から会話を選択してください。
               </p>
             ) : (
               <>
-                <div className="border-b border-[var(--color-border)] px-5 py-4">
-                  <p className="font-serif-jp text-base text-cream">{activeThread.userDisplayName}</p>
-                  {activeThread.userEmail && (
-                    <p className="mt-1 break-all text-xs text-cream-faint">{activeThread.userEmail}</p>
-                  )}
+                <div className="dm-admin__conversation-header border-b border-[var(--color-border)] px-4 py-3 md:px-5 md:py-4">
+                  <div className="flex items-start gap-3">
+                    <button
+                      type="button"
+                      onClick={handleBackToList}
+                      className="dm-admin__back-btn btn-ghost shrink-0 px-3 py-2 text-xs lg:hidden"
+                      aria-label="ユーザー一覧に戻る"
+                    >
+                      ← 一覧
+                    </button>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate font-serif-jp text-base text-cream">
+                        {activeThread.userDisplayName}
+                      </p>
+                      {activeThread.userEmail && (
+                        <p className="mt-1 break-all text-xs text-cream-faint">{activeThread.userEmail}</p>
+                      )}
+                    </div>
+                  </div>
                 </div>
 
                 <div
                   ref={containerRef}
                   onScroll={handleScroll}
-                  className="dm-panel__messages max-h-[24rem] overflow-y-auto overscroll-contain px-3 py-4 md:px-4"
+                  className="dm-panel__messages dm-panel__messages--fill min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 py-4 md:max-h-[24rem] md:flex-none md:px-4"
                 >
                   <ul className="dm-message-list">
                     {messages.map((message) => {
@@ -360,7 +438,10 @@ export default function DmAdmin({ authJsonHeaders, remoteStorage }: DmAdminProps
                           className={`dm-message ${isAdmin ? "dm-message--admin" : "dm-message--user"}`}
                         >
                           <div className="dm-message__bubble">
-                            <p className="dm-message__body whitespace-pre-wrap break-words">{message.body}</p>
+                            <DmMessageContent
+                              message={message}
+                              downloadHeaders={{ Authorization: (authJsonHeaders() as Record<string, string>).Authorization }}
+                            />
                           </div>
                           <p className="dm-message__meta">
                             {!isAdmin && `${getDmSenderLabel(message.sender)} · `}
@@ -373,7 +454,10 @@ export default function DmAdmin({ authJsonHeaders, remoteStorage }: DmAdminProps
                   <div ref={bottomSentinelRef} className="dm-panel__scroll-sentinel" aria-hidden="true" />
                 </div>
 
-                <form onSubmit={handleSend} className="border-t border-[var(--color-border)] p-4 md:p-5">
+                <form
+                  onSubmit={handleSend}
+                  className="dm-admin__reply-form shrink-0 border-t border-[var(--color-border)] p-4 pb-[max(1rem,env(safe-area-inset-bottom))] md:p-5"
+                >
                   <label htmlFor="admin-dm-reply" className="mb-1.5 block text-xs text-cream-muted">
                     返信
                   </label>
@@ -384,12 +468,28 @@ export default function DmAdmin({ authJsonHeaders, remoteStorage }: DmAdminProps
                     rows={4}
                     maxLength={2000}
                     className={`${inputClass} min-h-[6rem] resize-y`}
-                    placeholder="返信メッセージを入力…"
+                    placeholder="返信メッセージを入力…（画像・音声も添付できます）"
                   />
+
+                  <DmAttachmentComposer
+                    disabled={sending || !selectedId}
+                    uploading={uploadingAttachment}
+                    pendingAttachment={pendingAttachment}
+                    onSelectFile={handleSelectAttachment}
+                    onClear={() => setPendingAttachment(null)}
+                  />
+
                   <div className="mt-3 flex justify-end">
                     <button
                       type="submit"
-                      disabled={sending || !draft.trim() || loading || refreshing}
+                      disabled={
+                        sending ||
+                        uploadingAttachment ||
+                        !selectedId ||
+                        loading ||
+                        refreshing ||
+                        (!draft.trim() && !pendingAttachment)
+                      }
                       className="btn-primary min-h-10 px-5 text-sm disabled:opacity-40"
                     >
                       {sending ? "送信中…" : "返信する"}

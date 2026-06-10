@@ -1,7 +1,22 @@
 import "server-only";
 
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
-import type { DmMessage, DmSender, DmThreadDetail, DmThreadSummary, DmUnreadSummary } from "@/lib/dm";
+import type {
+  DmAttachmentKind,
+  DmAttachmentPayload,
+  DmMessage,
+  DmSender,
+  DmThreadDetail,
+  DmThreadSummary,
+  DmUnreadSummary,
+} from "@/lib/dm";
+import {
+  buildAdminAttachmentPathPrefix,
+  buildDmAttachmentPreview,
+  buildUserAttachmentPathPrefix,
+  isAttachmentPathAllowed,
+  resolveDmMessageAttachment,
+} from "@/lib/dm-attachments";
 
 const DM_INACTIVITY_MS = 7 * 24 * 60 * 60 * 1000;
 const MESSAGE_MAX_LENGTH = 2000;
@@ -25,6 +40,10 @@ interface DmMessageRow {
   sender: DmSender;
   body: string;
   created_at: string;
+  attachment_type: DmAttachmentKind | null;
+  attachment_path: string | null;
+  attachment_name: string | null;
+  attachment_mime: string | null;
 }
 
 function mapThread(row: DmThreadRow): DmThreadSummary {
@@ -41,14 +60,65 @@ function mapThread(row: DmThreadRow): DmThreadSummary {
   };
 }
 
-function mapMessage(row: DmMessageRow): DmMessage {
-  return {
-    id: row.id,
-    threadId: row.thread_id,
-    sender: row.sender,
-    body: row.body,
-    createdAt: row.created_at,
-  };
+async function mapMessagesWithAttachments(
+  rows: DmMessageRow[],
+  downloadBasePath: string
+): Promise<DmMessage[]> {
+  return Promise.all(
+    rows.map(async (row) => {
+      const attachment = await resolveDmMessageAttachment(row.id, row, downloadBasePath);
+      return {
+        id: row.id,
+        threadId: row.thread_id,
+        sender: row.sender,
+        body: row.body,
+        createdAt: row.created_at,
+        attachment,
+      };
+    })
+  );
+}
+
+function validateAttachmentForUser(userKey: string, attachment?: DmAttachmentPayload | null): DmAttachmentPayload | null {
+  if (!attachment) return null;
+
+  const prefix = buildUserAttachmentPathPrefix(userKey);
+  if (
+    !isAttachmentPathAllowed(attachment.path, prefix) ||
+    (attachment.type !== "image" && attachment.type !== "audio")
+  ) {
+    throw new Error("添付ファイルが無効です。");
+  }
+
+  return attachment;
+}
+
+function validateAttachmentForAdmin(
+  threadId: string,
+  attachment?: DmAttachmentPayload | null
+): DmAttachmentPayload | null {
+  if (!attachment) return null;
+
+  const prefix = buildAdminAttachmentPathPrefix(threadId);
+  if (
+    !isAttachmentPathAllowed(attachment.path, prefix) ||
+    (attachment.type !== "image" && attachment.type !== "audio")
+  ) {
+    throw new Error("添付ファイルが無効です。");
+  }
+
+  return attachment;
+}
+
+function validateMessageInput(body: string, attachment?: DmAttachmentPayload | null): string {
+  const trimmed = body.trim();
+  if (!trimmed && !attachment) {
+    throw new Error("メッセージまたは添付ファイルを入力してください。");
+  }
+  if (trimmed.length > MESSAGE_MAX_LENGTH) {
+    throw new Error(`メッセージは${MESSAGE_MAX_LENGTH}文字以内で入力してください。`);
+  }
+  return trimmed;
 }
 
 function isMissingTableError(error: { message?: string; code?: string } | null): boolean {
@@ -56,10 +126,10 @@ function isMissingTableError(error: { message?: string; code?: string } | null):
   return error.code === "42P01" || /dm_threads|dm_messages/.test(error.message ?? "");
 }
 
-function buildPreview(body: string): string {
-  const trimmed = body.trim().replace(/\s+/g, " ");
-  if (trimmed.length <= PREVIEW_MAX_LENGTH) return trimmed;
-  return `${trimmed.slice(0, PREVIEW_MAX_LENGTH - 1)}…`;
+function buildPreview(body: string, attachment?: DmAttachmentPayload | null): string {
+  const preview = buildDmAttachmentPreview(body, attachment ?? undefined).replace(/\s+/g, " ");
+  if (preview.length <= PREVIEW_MAX_LENGTH) return preview;
+  return `${preview.slice(0, PREVIEW_MAX_LENGTH - 1)}…`;
 }
 
 function createId(prefix: string): string {
@@ -123,11 +193,14 @@ export async function getUserDmThreadDetail(userKey: string): Promise<DmThreadDe
   const thread = await getUserDmThread(userKey);
   if (!thread) return null;
 
-  const messages = await getThreadMessages(thread.id);
+  const messages = await getThreadMessages(thread.id, "/api/dm/attachments");
   return { thread, messages };
 }
 
-export async function getThreadMessages(threadId: string): Promise<DmMessage[]> {
+export async function getThreadMessages(
+  threadId: string,
+  downloadBasePath = "/api/dm/attachments"
+): Promise<DmMessage[]> {
   const supabase = getSupabaseAdmin();
   if (!supabase) return [];
 
@@ -142,7 +215,43 @@ export async function getThreadMessages(threadId: string): Promise<DmMessage[]> 
     throw new Error(error.message);
   }
 
-  return ((data as DmMessageRow[] | null) ?? []).map(mapMessage);
+  const rows = (data as DmMessageRow[] | null) ?? [];
+  return mapMessagesWithAttachments(rows, downloadBasePath);
+}
+
+export async function getDmMessageForDownload(messageId: string): Promise<{
+  message: DmMessageRow;
+  thread: DmThreadRow;
+} | null> {
+  const supabase = getSupabaseAdmin();
+  if (!supabase) return null;
+
+  const { data: message, error: messageError } = await supabase
+    .from("dm_messages")
+    .select("*")
+    .eq("id", messageId)
+    .maybeSingle();
+
+  if (messageError) {
+    if (isMissingTableError(messageError)) return null;
+    throw new Error(messageError.message);
+  }
+  if (!message) return null;
+
+  const { data: thread, error: threadError } = await supabase
+    .from("dm_threads")
+    .select("*")
+    .eq("id", (message as DmMessageRow).thread_id)
+    .maybeSingle();
+
+  if (threadError || !thread) {
+    return null;
+  }
+
+  return {
+    message: message as DmMessageRow,
+    thread: thread as DmThreadRow,
+  };
 }
 
 export async function markThreadReadByUser(threadId: string, userKey: string): Promise<void> {
@@ -232,15 +341,11 @@ export async function sendUserDmMessage(
   userKey: string,
   body: string,
   userDisplayName: string,
-  userEmail: string | null
+  userEmail: string | null,
+  attachmentInput?: DmAttachmentPayload | null
 ): Promise<DmThreadDetail> {
-  const trimmed = body.trim();
-  if (!trimmed) {
-    throw new Error("メッセージを入力してください。");
-  }
-  if (trimmed.length > MESSAGE_MAX_LENGTH) {
-    throw new Error(`メッセージは${MESSAGE_MAX_LENGTH}文字以内で入力してください。`);
-  }
+  const attachment = validateAttachmentForUser(userKey, attachmentInput);
+  const trimmed = validateMessageInput(body, attachment);
 
   const supabase = getSupabaseAdmin();
   if (!supabase) {
@@ -255,6 +360,10 @@ export async function sendUserDmMessage(
     sender: "user" as const,
     body: trimmed,
     created_at: now,
+    attachment_type: attachment?.type ?? null,
+    attachment_path: attachment?.path ?? null,
+    attachment_name: attachment?.name ?? null,
+    attachment_mime: attachment?.mime ?? null,
   };
 
   const { error: messageError } = await supabase.from("dm_messages").insert(messageRow);
@@ -266,7 +375,7 @@ export async function sendUserDmMessage(
     .from("dm_threads")
     .update({
       last_message_at: now,
-      last_message_preview: buildPreview(trimmed),
+      last_message_preview: buildPreview(trimmed, attachment),
       admin_unread_count: thread.adminUnreadCount + 1,
       user_display_name: userDisplayName,
       user_email: userEmail,
@@ -279,21 +388,20 @@ export async function sendUserDmMessage(
     throw new Error(threadError?.message || "DM スレッドの更新に失敗しました。");
   }
 
-  const messages = await getThreadMessages(thread.id);
+  const messages = await getThreadMessages(thread.id, "/api/dm/attachments");
   return {
     thread: mapThread(updatedThread as DmThreadRow),
     messages,
   };
 }
 
-export async function sendAdminDmMessage(threadId: string, body: string): Promise<DmThreadDetail> {
-  const trimmed = body.trim();
-  if (!trimmed) {
-    throw new Error("メッセージを入力してください。");
-  }
-  if (trimmed.length > MESSAGE_MAX_LENGTH) {
-    throw new Error(`メッセージは${MESSAGE_MAX_LENGTH}文字以内で入力してください。`);
-  }
+export async function sendAdminDmMessage(
+  threadId: string,
+  body: string,
+  attachmentInput?: DmAttachmentPayload | null
+): Promise<DmThreadDetail> {
+  const attachment = validateAttachmentForAdmin(threadId, attachmentInput);
+  const trimmed = validateMessageInput(body, attachment);
 
   const supabase = getSupabaseAdmin();
   if (!supabase) {
@@ -318,6 +426,10 @@ export async function sendAdminDmMessage(threadId: string, body: string): Promis
     sender: "admin" as const,
     body: trimmed,
     created_at: now,
+    attachment_type: attachment?.type ?? null,
+    attachment_path: attachment?.path ?? null,
+    attachment_name: attachment?.name ?? null,
+    attachment_mime: attachment?.mime ?? null,
   };
 
   const { error: messageError } = await supabase.from("dm_messages").insert(messageRow);
@@ -329,7 +441,7 @@ export async function sendAdminDmMessage(threadId: string, body: string): Promis
     .from("dm_threads")
     .update({
       last_message_at: now,
-      last_message_preview: buildPreview(trimmed),
+      last_message_preview: buildPreview(trimmed, attachment),
       user_unread_count: thread.userUnreadCount + 1,
       admin_unread_count: 0,
     })
@@ -341,7 +453,7 @@ export async function sendAdminDmMessage(threadId: string, body: string): Promis
     throw new Error(threadError?.message || "DM スレッドの更新に失敗しました。");
   }
 
-  const messages = await getThreadMessages(thread.id);
+  const messages = await getThreadMessages(thread.id, "/api/admin/dm/attachments");
   return {
     thread: mapThread(updatedThread as DmThreadRow),
     messages,
@@ -381,7 +493,7 @@ export async function getAdminDmThreadDetail(threadId: string): Promise<DmThread
   }
   if (!data) return null;
 
-  const messages = await getThreadMessages(threadId);
+  const messages = await getThreadMessages(threadId, "/api/admin/dm/attachments");
   return {
     thread: mapThread(data as DmThreadRow),
     messages,

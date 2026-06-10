@@ -3740,6 +3740,40 @@ html.theme-transition *::after {
   border-radius: 1rem;
 }
 
+.dm-panel--user .dm-panel__chat {
+  min-height: min(68dvh, 36rem);
+}
+
+@media (max-width: 1023px) {
+  .dm-panel--user .dm-panel__messages--user {
+    min-height: min(46dvh, 22rem);
+    max-height: none;
+  }
+
+  .dm-admin__conversation {
+    min-height: min(72dvh, 40rem);
+  }
+
+  .dm-admin__thread-list {
+    max-height: none;
+  }
+
+  .dm-admin__thread-item {
+    min-height: 4.5rem;
+  }
+
+  .dm-admin__back-btn {
+    min-height: 2.75rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .dm-admin__thread-list {
+    max-height: 32rem;
+    overflow-y: auto;
+  }
+}
+
 .dm-panel__messages {
   background: color-mix(in srgb, var(--theme-deep) 55%, transparent);
   overflow-anchor: none;
@@ -3843,4 +3877,20 @@ html.theme-transition *::after {
 
 .mobile-nav-item--dm .dm-nav-badge {
   margin-left: 0.25rem;
+}
+
+.dm-attachment__image {
+  border: 1px solid rgb(212 175 55 / 0.15);
+}
+
+.dm-attachment__audio {
+  max-width: 100%;
+}
+
+.dm-attachment__download {
+  min-height: 2rem;
+}
+
+.dm-attachment-composer {
+  margin-top: 0.75rem;
 }

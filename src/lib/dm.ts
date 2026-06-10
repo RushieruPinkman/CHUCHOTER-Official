@@ -1,4 +1,14 @@
 export type DmSender = "user" | "admin";
+export type DmAttachmentKind = "image" | "audio";
+
+export interface DmMessageAttachment {
+  type: DmAttachmentKind;
+  path: string;
+  name: string;
+  mime: string;
+  url: string;
+  downloadUrl: string;
+}
 
 export interface DmMessage {
   id: string;
@@ -6,6 +16,14 @@ export interface DmMessage {
   sender: DmSender;
   body: string;
   createdAt: string;
+  attachment?: DmMessageAttachment | null;
+}
+
+export interface DmAttachmentPayload {
+  type: DmAttachmentKind;
+  path: string;
+  name: string;
+  mime: string;
 }
 
 export interface DmThreadSummary {

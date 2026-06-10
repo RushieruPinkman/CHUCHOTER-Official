@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import DmAttachmentComposer from "@/components/DmAttachmentComposer";
+import DmMessageContent from "@/components/DmMessageContent";
 import { useCollectionUserKey } from "@/hooks/useCollectionUserKey";
 import { getAuthLoginHref, getAuthRegisterHref } from "@/lib/auth-routes";
 import { isAuthDevEnabled } from "@/lib/auth-dev";
@@ -10,10 +12,17 @@ import {
   DM_RETENTION_NOTICE,
   formatDmTimestamp,
   getDmSenderLabel,
+  type DmAttachmentPayload,
   type DmMessage,
   type DmThreadSummary,
 } from "@/lib/dm";
-import { fetchUserDmThread, sendUserDmMessage, DM_UPDATED_EVENT } from "@/lib/dm-client";
+import {
+  fetchUserDmThread,
+  sendUserDmMessage,
+  uploadUserDmAttachment,
+  buildDmUploadHeaders,
+  DM_UPDATED_EVENT,
+} from "@/lib/dm-client";
 import {
   buildDmMessageScrollKey,
   useDmMessageListScroll,
@@ -34,6 +43,8 @@ export default function DmPanel({ loginNextPath = "/dm" }: DmPanelProps) {
   const [draft, setDraft] = useState("");
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [uploadingAttachment, setUploadingAttachment] = useState(false);
+  const [pendingAttachment, setPendingAttachment] = useState<DmAttachmentPayload | null>(null);
   const [error, setError] = useState<string | null>(null);
   const scrollKey = buildDmMessageScrollKey(messages, loading && messages.length === 0);
   const { containerRef, bottomSentinelRef, handleScroll, scrollToBottom } = useDmMessageListScroll(
@@ -96,21 +107,35 @@ export default function DmPanel({ loginNextPath = "/dm" }: DmPanelProps) {
 
   const handleSend = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (!userKey || !draft.trim() || sending) return;
+    if (!userKey || sending || uploadingAttachment) return;
+    if (!draft.trim() && !pendingAttachment) return;
 
     setSending(true);
     setError(null);
 
     try {
-      const detail = await sendUserDmMessage(userKey, devMode, draft);
+      const detail = await sendUserDmMessage(userKey, devMode, draft, pendingAttachment);
       setThread(detail.thread);
       setMessages(detail.messages);
       setDraft("");
+      setPendingAttachment(null);
       requestAnimationFrame(() => scrollToBottom("auto", true));
     } catch (sendError) {
       setError(sendError instanceof Error ? sendError.message : "DM の送信に失敗しました");
     } finally {
       setSending(false);
+    }
+  };
+
+  const handleSelectAttachment = async (file: File) => {
+    if (!userKey) return;
+    setUploadingAttachment(true);
+    setError(null);
+    try {
+      const attachment = await uploadUserDmAttachment(userKey, devMode, file);
+      setPendingAttachment(attachment);
+    } finally {
+      setUploadingAttachment(false);
     }
   };
 
@@ -142,17 +167,17 @@ export default function DmPanel({ loginNextPath = "/dm" }: DmPanelProps) {
   }
 
   return (
-    <div className="dm-panel mx-auto max-w-2xl">
-      <div className="dm-panel__notice mb-5 border border-[var(--color-border)] bg-deep/60 px-4 py-3 text-center text-xs leading-relaxed text-cream-faint">
+    <div className="dm-panel dm-panel--user mx-auto max-w-2xl">
+      <div className="dm-panel__notice mb-4 border border-[var(--color-border)] bg-deep/60 px-4 py-3 text-center text-xs leading-relaxed text-cream-faint md:mb-5">
         {memberLabel && <span className="block text-cream-muted">{memberLabel} として送信されます。</span>}
         <span className="mt-1 block">{DM_RETENTION_NOTICE}</span>
       </div>
 
-      <div className="dm-panel__chat border border-[var(--color-border)] bg-deep/70">
+      <div className="dm-panel__chat flex flex-col border border-[var(--color-border)] bg-deep/70">
         <div
           ref={containerRef}
           onScroll={handleScroll}
-          className="dm-panel__messages max-h-[28rem] overflow-y-auto overscroll-contain px-3 py-4 md:px-4"
+          className="dm-panel__messages dm-panel__messages--user min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 py-4 md:max-h-[28rem] md:flex-none md:px-4"
         >
           {loading && messages.length === 0 ? (
             <p className="py-8 text-center text-sm text-cream-faint" role="status">
@@ -176,8 +201,11 @@ export default function DmPanel({ loginNextPath = "/dm" }: DmPanelProps) {
                       className={`dm-message ${isUser ? "dm-message--user" : "dm-message--admin"}`}
                     >
                       <div className="dm-message__bubble">
-                        <p className="dm-message__body whitespace-pre-wrap break-words">{message.body}</p>
-                      </div>
+                      <DmMessageContent
+                        message={message}
+                        downloadHeaders={buildDmUploadHeaders(userKey, devMode)}
+                      />
+                    </div>
                       <p className="dm-message__meta">
                         {!isUser && `${getDmSenderLabel(message.sender)} · `}
                         {formatDmTimestamp(message.createdAt)}
@@ -191,7 +219,10 @@ export default function DmPanel({ loginNextPath = "/dm" }: DmPanelProps) {
           )}
         </div>
 
-        <form onSubmit={handleSend} className="border-t border-[var(--color-border)] p-4 md:p-5">
+        <form
+          onSubmit={handleSend}
+          className="dm-panel__composer shrink-0 border-t border-[var(--color-border)] p-4 pb-[max(1rem,env(safe-area-inset-bottom))] md:p-5"
+        >
           <label htmlFor="dm-message" className="mb-1.5 block text-xs text-cream-muted">
             メッセージ
           </label>
@@ -202,11 +233,24 @@ export default function DmPanel({ loginNextPath = "/dm" }: DmPanelProps) {
             rows={4}
             maxLength={2000}
             className={`${inputClass} min-h-[6rem] resize-y`}
-            placeholder="運営へのメッセージを入力…"
+            placeholder="運営へのメッセージを入力…（画像・音声も添付できます）"
           />
+
+          <DmAttachmentComposer
+            disabled={sending}
+            uploading={uploadingAttachment}
+            pendingAttachment={pendingAttachment}
+            onSelectFile={handleSelectAttachment}
+            onClear={() => setPendingAttachment(null)}
+          />
+
           <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
             <p className="text-[11px] text-cream-faint">{draft.length}/2000</p>
-            <button type="submit" disabled={sending || !draft.trim()} className="btn-primary min-h-11 px-6 disabled:opacity-40">
+            <button
+              type="submit"
+              disabled={sending || uploadingAttachment || (!draft.trim() && !pendingAttachment)}
+              className="btn-primary min-h-11 px-6 disabled:opacity-40"
+            >
               {sending ? "送信中…" : "送信する"}
             </button>
           </div>

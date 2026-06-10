@@ -17,7 +17,7 @@ export default function DmPage() {
         titleJa="運営DM"
         description={`CHUCHOTER 運営への連絡窓口です。${DM_RETENTION_NOTICE}`}
       />
-      <section className="site-container pb-16">
+      <section className="site-container pb-[max(4rem,env(safe-area-inset-bottom))] md:pb-16">
         <Suspense fallback={<div className="py-8 text-center text-sm text-cream-faint">読み込み中…</div>}>
           <DmPanel loginNextPath="/dm" />
         </Suspense>

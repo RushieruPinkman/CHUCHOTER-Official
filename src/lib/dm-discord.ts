@@ -57,6 +57,7 @@ export async function notifyDiscordDmMessage(params: {
   userEmail: string | null;
   body: string;
   threadId: string;
+  attachmentType?: "image" | "audio" | null;
 }): Promise<void> {
   const settings = await getDmSettingsFresh();
   const webhookUrl = normalizeDiscordWebhookUrl(settings.discordWebhookUrl);
@@ -65,11 +66,19 @@ export async function notifyDiscordDmMessage(params: {
     return;
   }
 
+  const attachmentLabel =
+    params.attachmentType === "image"
+      ? "[画像]"
+      : params.attachmentType === "audio"
+        ? "[音声]"
+        : null;
+  const description = [params.body.trim(), attachmentLabel].filter(Boolean).join("\n").slice(0, 4000) || "（添付のみ）";
+
   await postDiscordWebhook(webhookUrl, {
     embeds: [
       {
         title: "【CHUCHOTER】運営DM — 新着メッセージ",
-        description: params.body.slice(0, 4000),
+        description,
         color: 0xc9a962,
         fields: [
           { name: "会員名", value: params.userDisplayName, inline: true },

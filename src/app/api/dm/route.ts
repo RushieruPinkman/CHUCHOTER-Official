@@ -53,19 +53,41 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "ログインが必要です。" }, { status: 401 });
     }
 
-    const body = (await request.json()) as { message?: string };
+    const body = (await request.json()) as {
+      message?: string;
+      attachment?: {
+        type?: string;
+        path?: string;
+        name?: string;
+        mime?: string;
+      } | null;
+    };
+
+    const attachment =
+      body.attachment?.path && body.attachment.type && body.attachment.name && body.attachment.mime
+        ? {
+            type: body.attachment.type as "image" | "audio",
+            path: body.attachment.path,
+            name: body.attachment.name,
+            mime: body.attachment.mime,
+          }
+        : null;
+
     const detail = await sendUserDmMessage(
       user.userKey,
       String(body.message ?? ""),
       user.displayName,
-      user.email
+      user.email,
+      attachment
     );
 
+    const lastMessage = detail.messages.at(-1);
     await notifyDiscordDmMessage({
       userDisplayName: user.displayName,
       userEmail: user.email,
-      body: detail.messages.at(-1)?.body ?? "",
+      body: lastMessage?.body ?? "",
       threadId: detail.thread.id,
+      attachmentType: lastMessage?.attachment?.type ?? null,
     });
 
     return NextResponse.json(detail);

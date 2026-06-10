@@ -63,6 +63,12 @@ export async function POST(request: NextRequest) {
       threadId?: string;
       message?: string;
       discordWebhookUrl?: string;
+      attachment?: {
+        type?: string;
+        path?: string;
+        name?: string;
+        mime?: string;
+      } | null;
     };
 
     if (body.action === "save_settings") {
@@ -89,7 +95,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "スレッドIDが必要です。" }, { status: 400 });
     }
 
-    const detail = await sendAdminDmMessage(threadId, String(body.message ?? ""));
+    const attachment =
+      body.attachment?.path && body.attachment.type && body.attachment.name && body.attachment.mime
+        ? {
+            type: body.attachment.type as "image" | "audio",
+            path: body.attachment.path,
+            name: body.attachment.name,
+            mime: body.attachment.mime,
+          }
+        : null;
+
+    const detail = await sendAdminDmMessage(threadId, String(body.message ?? ""), attachment);
     return NextResponse.json(detail);
   } catch (error) {
     return storageErrorResponse(error, "DM の更新に失敗しました");
