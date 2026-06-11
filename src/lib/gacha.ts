@@ -251,12 +251,14 @@ export function pickGachaPrize(
   return { rarity: 1, prize: GACHA_PRIZES[1], wonAt };
 }
 
+const GACHA_TWEET_HASHTAGS = "#vrc_シュシュテ\n#シュシュテガチャ";
+
 export function buildShareText(result: GachaDrawResult, siteUrl: string): string {
   if (isGachaMiss(result.rarity)) {
     const castLine = result.cast
       ? `${result.cast.name}が扉の向こうに現れました`
       : "扉の向こうから住人が現れました";
-    return ["CHUCHOTER 運命の扉", castLine, siteUrl, "#CHUCHOTER"].join("\n");
+    return ["CHUCHOTER 運命の扉", castLine, siteUrl, GACHA_TWEET_HASHTAGS].join("\n");
   }
 
   const receiveLine = getGachaReceiveLine(result.rarity);
@@ -267,7 +269,7 @@ export function buildShareText(result: GachaDrawResult, siteUrl: string): string
     ...(serial ? [formatGachaSerialLabel(serial), ""] : [""]),
     receiveLine,
     siteUrl,
-    "#CHUCHOTER",
+    GACHA_TWEET_HASHTAGS,
   ].join("\n");
 }
 

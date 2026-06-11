@@ -1,3 +1,5 @@
+export const DEFAULT_SITE_URL = "https://chuchoter-official.com";
+
 export const SITE = {
   name: "CHUCHOTER",
   logo: "/images/logo.svg",
@@ -8,7 +10,7 @@ export const SITE = {
   tagline: "あなたに最高の癒しを。",
   description:
     "VRChatで静かで質の高い1対1コミュニケーションを提供する、高級隠れ家マンション。Le Ciel Blanc・黒糖アメへのRequest Inviteはこちら。",
-  url: process.env.NEXT_PUBLIC_SITE_URL || "https://club-chuchoter.example.com",
+  url: process.env.NEXT_PUBLIC_SITE_URL || DEFAULT_SITE_URL,
   xHandle: "CHUCHOTER_VRC",
   xUrl: "https://x.com/CHUCHOTER_VRC?s=20",
   /** X DM deep link 用（ハンドル変更後も不変） */

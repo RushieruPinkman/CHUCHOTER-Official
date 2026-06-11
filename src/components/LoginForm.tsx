@@ -263,6 +263,12 @@ export default function LoginForm({
           <p className="text-[11px] leading-relaxed text-cream-faint">
             登録後、確認メールのリンクを開くと本登録が完了します。迷惑メールフォルダもご確認ください。
           </p>
+          <p className="text-center text-[11px] text-cream-faint">
+            メールが届かない場合は{" "}
+            <button type="button" onClick={() => setMode("resend")} className="link-gold text-gold">
+              確認メール再送
+            </button>
+          </p>
         </form>
       )}
 

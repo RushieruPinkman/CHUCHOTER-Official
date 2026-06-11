@@ -1,7 +1,12 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { translateAuthError } from "@/lib/auth-messages";
+import {
+  getDuplicateSignUpMessage,
+  getSignUpPendingMessage,
+  translateAuthError,
+} from "@/lib/auth-messages";
+import { getAuthCallbackUrl } from "@/lib/auth-url";
 import { createClient } from "@/lib/supabase/server";
 import { isUserAuthEnabledOnServer } from "@/lib/supabase/config";
 
@@ -9,18 +14,6 @@ export type AuthFormState = {
   error?: string;
   success?: string;
 };
-
-function getSiteOrigin(): string {
-  return (
-    process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ||
-    "http://localhost:3000"
-  );
-}
-
-function getAuthCallbackUrl(nextPath = "/profile"): string {
-  const next = nextPath.startsWith("/") ? nextPath : "/profile";
-  return `${getSiteOrigin()}/auth/callback?next=${encodeURIComponent(next)}`;
-}
 
 function validatePasswordPair(password: string, passwordConfirm: string): string | null {
   if (password.length < 6) {
@@ -92,21 +85,19 @@ export async function signUpAction(
     return { error: translateAuthError(error.message) };
   }
 
+  if (data.user?.identities?.length === 0) {
+    return { error: getDuplicateSignUpMessage() };
+  }
+
   if (data.user && !data.session) {
-    return {
-      success:
-        "確認メールを送信しました。メール内のリンクを開くと登録が完了し、ログインできます。",
-    };
+    return { success: getSignUpPendingMessage() };
   }
 
   if (data.session) {
     redirect("/profile");
   }
 
-  return {
-    success:
-      "確認メールを送信しました。メール内のリンクを開くと登録が完了します。",
-  };
+  return { success: getSignUpPendingMessage() };
 }
 
 export async function resendConfirmationAction(

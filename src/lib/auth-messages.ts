@@ -31,8 +31,19 @@ export function translateAuthError(message: string): string {
   ) {
     return "確認メールの送信に失敗しました。Supabase の SMTP 設定（Resend のドメイン検証・送信元アドレス・API キー）をご確認ください。詳細は Supabase Dashboard → Logs → Auth logs を参照してください。";
   }
+  if (normalized.includes("redirect") && normalized.includes("not allowed")) {
+    return "認証用 URL が Supabase に登録されていません。Dashboard → Authentication → URL Configuration で Site URL と Redirect URLs（/auth/callback）を設定してください。";
+  }
 
   return message;
+}
+
+export function getSignUpPendingMessage(): string {
+  return "確認メールを送信しました。メール内のリンクを開くと登録が完了し、ログインできます。数分経っても届かない場合は迷惑メールを確認するか、「確認メール再送」をお試しください。";
+}
+
+export function getDuplicateSignUpMessage(): string {
+  return "このメールアドレスはすでに登録されています。ログインしてください。確認メールが届いていない場合は、ログイン画面の「確認メール再送」から再送できます。";
 }
 
 export function getUserDisplayLabel(email?: string | null): string {

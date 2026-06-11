@@ -60,7 +60,7 @@ Git がない場合は [GitHub Desktop](https://desktop.github.com/) が便利�
 
 | 名前 | 値 |
 |------|-----|
-| `NEXT_PUBLIC_SITE_URL` | `https://あなたのプロジェクト.vercel.app` |
+| `NEXT_PUBLIC_SITE_URL` | `https://chuchoter-official.com` |
 | `ADMIN_PASSWORD` | 共有する管理用パスワード |
 | `SUPABASE_URL` | Supabase の Project URL |
 | `SUPABASE_SERVICE_ROLE_KEY` | Supabase の service_role key |
