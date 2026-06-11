@@ -10,7 +10,7 @@ import {
   type GachaPrize,
   type GachaRarity,
 } from "@/lib/gacha";
-import { formatGachaSerialLabel, getGachaSerialStatusLabel } from "@/lib/gacha-serial";
+import { formatGachaSerialLabel, getGachaSerialStatusLabel, shouldIssueGachaSerialNumber } from "@/lib/gacha-serial";
 
 interface GachaPrizeTextCardProps {
   prize: GachaPrize;
@@ -40,7 +40,7 @@ export default function GachaPrizeTextCard({
 }: GachaPrizeTextCardProps) {
   const colors = RARITY_COLORS[rarity];
   const showWonAt = shouldShowGachaWonAt(rarity) && wonAt;
-  const showSerial = Boolean(serialNumber?.trim()) && rarity >= 2;
+  const showSerial = Boolean(serialNumber?.trim()) && shouldIssueGachaSerialNumber(rarity);
   const serialUsed = serialStatus === "used";
   const isShareCard = showProofHeader;
   const display = isShareCard ? getGachaPrizeCardDisplay(prize, rarity) : null;

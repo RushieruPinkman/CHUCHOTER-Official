@@ -4,7 +4,7 @@
 create table if not exists public.gacha_serials (
   serial text primary key,
   status text not null default 'issued' check (status in ('issued', 'used')),
-  rarity smallint not null check (rarity between 2 and 6),
+  rarity smallint not null check (rarity between 5 and 6),
   source text not null check (source in ('draw', 'exchange')),
   won_at timestamptz not null,
   user_key text not null,
@@ -30,3 +30,35 @@ create policy "No public access on gacha_serials"
   to anon, authenticated
   using (false)
   with check (false);
+
+-- 未使用シリアルの自動削除（発行から 30 日間、status = issued のみ）
+create or replace function public.purge_expired_gacha_serials(retention_days int default 30)
+returns bigint
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  deleted_count bigint;
+begin
+  delete from public.gacha_serials
+  where status = 'issued'
+    and created_at < now() - make_interval(days => retention_days);
+  get diagnostics deleted_count = row_count;
+  return deleted_count;
+end;
+$$;
+
+grant execute on function public.purge_expired_gacha_serials(int) to service_role;
+
+-- 既存テーブルがある場合（★2〜★4 制約の更新）:
+-- delete from public.gacha_serials where rarity < 5;
+-- alter table public.gacha_serials drop constraint if exists gacha_serials_rarity_check;
+-- alter table public.gacha_serials add constraint gacha_serials_rarity_check check (rarity between 5 and 6);
+--
+-- Supabase pg_cron で毎日実行する場合（Database → Extensions で pg_cron を有効化）:
+-- select cron.schedule(
+--   'purge-expired-gacha-serials',
+--   '0 3 * * *',
+--   $$ select public.purge_expired_gacha_serials(30); $$
+-- );

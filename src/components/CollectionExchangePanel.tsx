@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { issueGachaSerialFromApi } from "@/lib/gacha-serial-client";
+import { shouldIssueGachaSerialNumber } from "@/lib/gacha-serial";
 import {
   GACHA_COLLECTION_EXCHANGE_UPDATED_EVENT,
   getAllCollectionExchangeStatuses,
@@ -72,22 +73,24 @@ export default function CollectionExchangePanel({
 
     let record = result.record;
 
-    try {
-      const serialRecord = await issueGachaSerialFromApi({
-        rarity: record.rarity,
-        source: "exchange",
-        wonAt: record.exchangedAt,
-        prizeTitle: record.prizeTitle,
-        prizeSubtitle: record.prizeSubtitle,
-      });
-      const updated = updateCollectionExchangeRecordSerial(userKey, record.id, serialRecord.serial);
-      if (updated) record = updated;
-    } catch (issueError) {
-      setError(
-        issueError instanceof Error
-          ? issueError.message
-          : "交換は完了しましたが、シリアルNo.の発行に失敗しました。"
-      );
+    if (shouldIssueGachaSerialNumber(record.rarity)) {
+      try {
+        const serialRecord = await issueGachaSerialFromApi({
+          rarity: record.rarity,
+          source: "exchange",
+          wonAt: record.exchangedAt,
+          prizeTitle: record.prizeTitle,
+          prizeSubtitle: record.prizeSubtitle,
+        });
+        const updated = updateCollectionExchangeRecordSerial(userKey, record.id, serialRecord.serial);
+        if (updated) record = updated;
+      } catch (issueError) {
+        setError(
+          issueError instanceof Error
+            ? issueError.message
+            : "交換は完了しましたが、シリアルNo.の発行に失敗しました。"
+        );
+      }
     }
 
     onExchanged?.(record);

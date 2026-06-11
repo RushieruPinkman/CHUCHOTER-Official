@@ -206,7 +206,7 @@ export default function GachaSharePanel({
             <Link href="/dm" className="link-gold text-gold">
               運営DM
             </Link>
-            から当選内容とシリアルNo.をお送りください。★4・★5は希望のキャスト名もあわせてお知らせください。
+            から当選内容をお送りください（★5以上はシリアルNo.も）。★4・★5は希望のキャスト名もあわせてお知らせください。
           </>
         ) : (
           <>

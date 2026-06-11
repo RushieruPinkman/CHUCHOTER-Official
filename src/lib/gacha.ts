@@ -1,5 +1,10 @@
 import { SITE } from "@/lib/site";
-import { formatGachaSerialLabel, getGachaReportSerial, type GachaSerialStatus } from "@/lib/gacha-serial";
+import {
+  formatGachaSerialLabel,
+  getGachaReportSerial,
+  shouldIssueGachaSerialNumber,
+  type GachaSerialStatus,
+} from "@/lib/gacha-serial";
 
 export type GachaRarity = 1 | 2 | 3 | 4 | 5 | 6;
 
@@ -106,7 +111,7 @@ export interface GachaDrawResult {
   prize: GachaPrize;
   /** 抽選確定時刻（ISO 8601） */
   wonAt: string;
-  /** 当選報告用シリアル（★2以上の当選時） */
+  /** 当選報告用シリアル（★5以上の当選時） */
   serialNumber?: string;
   /** サーバー管理の使用状態 */
   serialStatus?: GachaSerialStatus;
@@ -154,17 +159,29 @@ export function shouldIncludeCastNameInGachaDm(rarity: GachaRarity): boolean {
 
 export function getGachaDmReceiveLine(rarity: GachaRarity): string {
   if (shouldIncludeCastNameInGachaDm(rarity)) {
-    return "当選内容・シリアルNo.・希望のキャスト名をサイトの運営DMからお送りください。";
+    if (shouldIssueGachaSerialNumber(rarity)) {
+      return "当選内容・シリアルNo.・希望のキャスト名をサイトの運営DMからお送りください。";
+    }
+    return "当選内容と希望のキャスト名をサイトの運営DMからお送りください。";
   }
-  return "当選内容とシリアルNo.をサイトの運営DMからお送りください。";
+  if (shouldIssueGachaSerialNumber(rarity)) {
+    return "当選内容とシリアルNo.をサイトの運営DMからお送りください。";
+  }
+  return "当選内容をサイトの運営DMからお送りください。";
 }
 
 /** 画面表示用（運営DM案内） */
 export function getGachaOperationsDmHint(rarity: GachaRarity): string {
   if (shouldIncludeCastNameInGachaDm(rarity)) {
-    return "当選内容・シリアルNo.・希望のキャスト名を運営DMからお送りください。";
+    if (shouldIssueGachaSerialNumber(rarity)) {
+      return "当選内容・シリアルNo.・希望のキャスト名を運営DMからお送りください。";
+    }
+    return "当選内容と希望のキャスト名を運営DMからお送りください。";
   }
-  return "当選内容とシリアルNo.を運営DMからお送りください。";
+  if (shouldIssueGachaSerialNumber(rarity)) {
+    return "当選内容とシリアルNo.を運営DMからお送りください。";
+  }
+  return "当選内容を運営DMからお送りください。";
 }
 
 export function getGachaReceiveLine(rarity: GachaRarity): string {

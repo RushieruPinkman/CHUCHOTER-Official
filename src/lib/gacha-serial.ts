@@ -65,9 +65,12 @@ function buildMixedSerialBody(): string {
   return chars.join("");
 }
 
-/** ★2以上の当選時に当選報告用シリアルを発行 */
+/** 未使用シリアルを保持する日数（この期間を過ぎると自動削除） */
+export const GACHA_SERIAL_UNUSED_RETENTION_DAYS = 30;
+
+/** ★5以上の当選時に当選報告用シリアルを発行 */
 export function shouldIssueGachaSerialNumber(rarity: GachaSerialRarity): boolean {
-  return rarity >= 2;
+  return rarity >= 5;
 }
 
 export function generateGachaSerialNumber(): string {

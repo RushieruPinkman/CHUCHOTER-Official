@@ -2,6 +2,7 @@ import "server-only";
 
 import { buildAuthCollectionUserKey } from "@/lib/gacha-collection";
 import {
+  GACHA_SERIAL_UNUSED_RETENTION_DAYS,
   generateGachaSerialNumber,
   isValidGachaSerialNumber,
   normalizeGachaSerialNumber,
@@ -65,9 +66,11 @@ export async function issueGachaSerial(input: IssueGachaSerialInput): Promise<Ga
     throw new Error("Supabase が未設定のためシリアルを発行できません。");
   }
 
-  if (input.rarity < 2 || input.rarity > 6) {
+  if (input.rarity < 5 || input.rarity > 6) {
     throw new Error("シリアル発行対象のレアリティが不正です。");
   }
+
+  void purgeExpiredUnusedGachaSerials().catch(() => {});
 
   for (let attempt = 0; attempt < 8; attempt++) {
     const serial = generateGachaSerialNumber();
@@ -230,4 +233,26 @@ export async function listRecentGachaSerials(limit = 20): Promise<GachaSerialPub
 
 export function buildUserKeyFromAuthUserId(userId: string): string {
   return buildAuthCollectionUserKey(userId);
+}
+
+export async function purgeExpiredUnusedGachaSerials(
+  retentionDays = GACHA_SERIAL_UNUSED_RETENTION_DAYS
+): Promise<number> {
+  const supabase = getSupabaseAdmin();
+  if (!supabase) return 0;
+
+  const cutoff = new Date(Date.now() - retentionDays * 24 * 60 * 60 * 1000).toISOString();
+  const { data, error } = await supabase
+    .from("gacha_serials")
+    .delete()
+    .eq("status", "issued")
+    .lt("created_at", cutoff)
+    .select("serial");
+
+  if (error) {
+    if (isMissingTableError(error)) return 0;
+    throw new Error(error.message);
+  }
+
+  return data?.length ?? 0;
 }
