@@ -8,7 +8,6 @@ import StatusBadge from "@/components/StatusBadge";
 import AnnouncementList from "@/components/AnnouncementList";
 import XLink from "@/components/XLink";
 import VrChatGroupLink from "@/components/VrChatGroupLink";
-import DailyTaskTracker from "@/components/DailyTaskTracker";
 import { getAnnouncements, getCasts, getStatus } from "@/lib/data";
 import { SITE } from "@/lib/site";
 import Link from "next/link";
@@ -24,7 +23,6 @@ export default async function HomePage() {
 
   return (
     <>
-      <DailyTaskTracker taskId="visit_entrance" />
       <section
         className="hero-mv relative flex min-h-[100dvh] w-full max-w-full flex-col overflow-hidden"
         aria-labelledby="hero-title"

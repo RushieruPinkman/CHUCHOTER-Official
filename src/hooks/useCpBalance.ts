@@ -47,6 +47,7 @@ export function useCpBalance() {
   return {
     state,
     balance: state?.balance ?? 0,
+    freeDrawAvailable: state?.freeDrawAvailable ?? false,
     enabled: state?.enabled ?? false,
     loading: !authReady || loading,
     error,

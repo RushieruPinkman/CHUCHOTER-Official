@@ -9,7 +9,7 @@ export const revalidate = 300;
 export const metadata: Metadata = {
   title: "ガチャ",
   description:
-    "CHUCHOTERの運命の扉 — CP（シュシュテポイント）で景品抽選。デイリータスクで CP を貯め、100 CP で1回・900 CP で10連。",
+    "CHUCHOTERの運命の扉 — 毎日1回無料ガチャ + CP追加抽選。無料ガチャ後にXシェアでCPを貯め、100 CPで1回・900 CPで10連。",
 };
 
 export default async function GachaPage() {
@@ -27,7 +27,7 @@ export default async function GachaPage() {
       <PageHero
         titleEn="Fortune"
         titleJa="運命の扉"
-        description="扉の向こうに待つ景品を、CP（シュシュテポイント）で抽選。デイリータスクをクリアして CP を貯め、100 CP で1回・900 CP で10連。"
+        description="扉の向こうに待つ景品を、毎日1回の無料ガチャと CP で抽選。無料ガチャのあと X でシェアして CP を貯めよう。"
       />
       <GachaMachine casts={gachaCasts} />
     </>

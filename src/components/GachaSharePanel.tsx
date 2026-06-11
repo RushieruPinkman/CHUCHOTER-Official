@@ -22,6 +22,7 @@ import {
 import { getGachaReportSerial, getGachaSerialStatusLabel, isGachaSerialUsed } from "@/lib/gacha-serial";
 import { renderGachaShareImageFromResult } from "@/lib/gacha-share-image";
 import { sendUserDmMessage } from "@/lib/dm-client";
+import { completeDailyTaskFromClient } from "@/lib/cp-client";
 import { isUserAuthEnabled } from "@/lib/supabase/config";
 import { SITE } from "@/lib/site";
 import GachaPrizeTextCard from "@/components/GachaPrizeTextCard";
@@ -59,6 +60,13 @@ export default function GachaSharePanel({
   const getBlob = useCallback(async () => {
     return renderGachaShareImageFromResult(result);
   }, [result]);
+
+  const handleTweetShare = () => {
+    void completeDailyTaskFromClient("share_gacha_on_x").catch(() => {
+      /* 既に達成済みなど */
+    });
+    window.open(tweetUrl, "_blank", "noopener,noreferrer");
+  };
 
   const downloadPrize = async () => {
     if (!prizeDownload) return;
@@ -339,16 +347,15 @@ export default function GachaSharePanel({
           {isMiss ? "結果を共有" : "当選カードを共有"}
         </button>
 
-        <a
-          href={tweetUrl}
-          target="_blank"
-          rel="noopener noreferrer"
+        <button
+          type="button"
+          onClick={handleTweetShare}
           className={`btn-ghost inline-flex items-center justify-center gap-1.5${siteDownloadable || isMiss ? "" : " gacha-share__action--wide"}`}
           aria-label={isMiss ? "Xで結果を投稿" : "Xで当選を投稿"}
         >
           <XIcon className="h-4 w-4 shrink-0" />
           <span>{isMiss ? "結果を投稿" : "当選を投稿"}</span>
-        </a>
+        </button>
       </div>
 
       {status && (

@@ -28,7 +28,7 @@ function isMissingTableError(error: { message?: string; code?: string } | null):
   if (!error) return false;
   return (
     error.code === "42P01" ||
-    /user_cp_balances|user_cp_ledger|user_daily_task_completions/.test(error.message ?? "")
+    /user_cp_balances|user_cp_ledger|user_daily_task_completions|user_daily_free_gacha/.test(error.message ?? "")
   );
 }
 
@@ -36,7 +36,12 @@ export function isCpStoreEnabled(): boolean {
   return Boolean(getSupabaseAdmin());
 }
 
-function buildCpState(balance: number, completedTaskIds: DailyTaskId[], taskDate: string): CpState {
+function buildCpState(
+  balance: number,
+  completedTaskIds: DailyTaskId[],
+  taskDate: string,
+  freeDrawAvailable: boolean
+): CpState {
   const completedSet = new Set(completedTaskIds);
   return {
     balance,
@@ -50,8 +55,49 @@ function buildCpState(balance: number, completedTaskIds: DailyTaskId[], taskDate
       singleDraw: CP_GACHA_SINGLE_COST,
       tenDraw: CP_GACHA_TEN_COST,
     },
+    freeDrawAvailable,
     enabled: true,
   };
+}
+
+export async function hasUsedFreeDrawToday(
+  userKey: string,
+  taskDate = getGachaDayJst()
+): Promise<boolean> {
+  if (!isCpStoreEnabled()) return false;
+
+  const supabase = getSupabaseAdmin()!;
+  const { data, error } = await supabase
+    .from("user_daily_free_gacha")
+    .select("draw_date")
+    .eq("user_key", userKey)
+    .eq("draw_date", taskDate)
+    .maybeSingle();
+
+  if (error && !isMissingTableError(error)) {
+    throw new Error(error.message);
+  }
+  if (isMissingTableError(error)) return false;
+
+  return Boolean(data);
+}
+
+export async function recordFreeDraw(userKey: string, taskDate = getGachaDayJst()): Promise<void> {
+  const supabase = getSupabaseAdmin()!;
+  const { error } = await supabase.from("user_daily_free_gacha").insert({
+    user_key: userKey,
+    draw_date: taskDate,
+  });
+
+  if (error) {
+    if (error.code === "23505") {
+      throw new Error("本日の無料ガチャはすでに引いています。");
+    }
+    if (isMissingTableError(error)) {
+      throw new Error("無料ガチャテーブルが未作成です。scripts/supabase-cp.sql を再実行してください。");
+    }
+    throw new Error(error.message);
+  }
 }
 
 export async function getCpState(userKey: string, taskDate = getGachaDayJst()): Promise<CpState> {
@@ -61,7 +107,7 @@ export async function getCpState(userKey: string, taskDate = getGachaDayJst()): 
 
   const supabase = getSupabaseAdmin()!;
 
-  const [{ data: balanceRow, error: balanceError }, { data: taskRows, error: taskError }] =
+  const [{ data: balanceRow, error: balanceError }, { data: taskRows, error: taskError }, freeDrawUsed] =
     await Promise.all([
       supabase.from("user_cp_balances").select("balance").eq("user_key", userKey).maybeSingle(),
       supabase
@@ -69,6 +115,7 @@ export async function getCpState(userKey: string, taskDate = getGachaDayJst()): 
         .select("task_id")
         .eq("user_key", userKey)
         .eq("task_date", taskDate),
+      hasUsedFreeDrawToday(userKey, taskDate),
     ]);
 
   if (balanceError && !isMissingTableError(balanceError)) {
@@ -85,7 +132,12 @@ export async function getCpState(userKey: string, taskDate = getGachaDayJst()): 
     .map((row) => row.task_id)
     .filter(isDailyTaskId);
 
-  return buildCpState((balanceRow as CpBalanceRow | null)?.balance ?? 0, completedTaskIds, taskDate);
+  return buildCpState(
+    (balanceRow as CpBalanceRow | null)?.balance ?? 0,
+    completedTaskIds,
+    taskDate,
+    !freeDrawUsed
+  );
 }
 
 async function addCpLedgerEntry(
@@ -156,7 +208,8 @@ async function setBalance(userKey: string, nextBalance: number): Promise<void> {
 
 export async function completeDailyTask(
   userKey: string,
-  taskId: DailyTaskId
+  taskId: DailyTaskId,
+  source: "client" | "system" = "client"
 ): Promise<CpState> {
   if (!isCpStoreEnabled()) {
     throw new Error("CP 機能が設定されていません。scripts/supabase-cp.sql を実行してください。");
@@ -165,6 +218,17 @@ export async function completeDailyTask(
   const task = getDailyTaskById(taskId);
   if (!task) {
     throw new Error("不明なタスクです。");
+  }
+
+  if (source === "client" && taskId === "draw_daily_gacha") {
+    throw new Error("無料ガチャタスクは、ガチャを引いたときに自動で達成されます。");
+  }
+
+  if (taskId === "share_gacha_on_x") {
+    const drewToday = await hasUsedFreeDrawToday(userKey);
+    if (!drewToday) {
+      throw new Error("先に本日の無料ガチャを引いてから、Xでシェアしてください。");
+    }
   }
 
   const taskDate = getGachaDayJst();

@@ -52,3 +52,23 @@ drop policy if exists "No public access on user_daily_task_completions" on publi
 create policy "No public access on user_daily_task_completions"
   on public.user_daily_task_completions for all to anon, authenticated
   using (false) with check (false);
+
+-- 1日1回の無料ガチャ（日本時間の暦日）
+create table if not exists public.user_daily_free_gacha (
+  user_key text not null,
+  draw_date date not null,
+  drawn_at timestamptz not null default now(),
+  primary key (user_key, draw_date)
+);
+
+create index if not exists user_daily_free_gacha_draw_date_idx
+  on public.user_daily_free_gacha (draw_date desc);
+
+alter table public.user_daily_free_gacha enable row level security;
+
+grant all on public.user_daily_free_gacha to service_role;
+
+drop policy if exists "No public access on user_daily_free_gacha" on public.user_daily_free_gacha;
+create policy "No public access on user_daily_free_gacha"
+  on public.user_daily_free_gacha for all to anon, authenticated
+  using (false) with check (false);

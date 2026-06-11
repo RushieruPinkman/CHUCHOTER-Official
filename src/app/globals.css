@@ -1584,7 +1584,44 @@ html.theme-transition *::after {
   }
 
   .gacha-machine__draw-actions {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
     width: 100%;
+  }
+
+  .gacha-machine__meta {
+    text-align: center;
+  }
+
+  .gacha-machine__cp {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    margin-inline: auto;
+    padding: 0.75rem 1.25rem 0.5rem;
+    max-width: 100%;
+  }
+
+  .gacha-machine__cp-label {
+    font-size: 0.6875rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--color-cream-faint);
+  }
+
+  .gacha-machine__cp-value {
+    font-family: var(--font-display);
+    font-size: clamp(2.5rem, 8vw, 3.25rem);
+    font-weight: 400;
+    line-height: 1;
+    letter-spacing: 0.04em;
+    color: var(--color-gold);
+    text-shadow: 0 0 24px rgba(201, 169, 98, 0.22);
   }
 
   .mobile-nav-panel__auth-member {
@@ -3316,6 +3353,7 @@ html.theme-transition *::after {
   .gacha-share__actions .gacha-share__action--primary,
   .gacha-machine__actions .gacha-machine__action--primary,
   .gacha-machine__actions .gacha-machine__auth,
+  .gacha-machine__actions .gacha-machine__draw-actions,
   .gacha-share__actions .gacha-share__action--wide {
     grid-column: 1 / -1;
   }

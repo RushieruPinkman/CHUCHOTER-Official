@@ -73,15 +73,21 @@ export async function completeDailyTaskFromClient(taskId: DailyTaskId): Promise<
   return state;
 }
 
-export async function drawGachaWithCp(count: 1 | 10): Promise<{
+export async function drawGacha(options: {
+  payment: "free" | "cp";
+  count?: 1 | 10;
+}): Promise<{
   draws: GachaDrawResult[];
   balance: number;
   spent: number;
+  payment: "free" | "cp";
+  freeDrawAvailable: boolean;
 }> {
+  const count = options.count ?? 1;
   const response = await fetch("/api/gacha/draw", {
     method: "POST",
     headers: await buildCpRequestHeaders(),
-    body: JSON.stringify({ count }),
+    body: JSON.stringify({ payment: options.payment, count }),
   });
 
   if (!response.ok) {
@@ -93,9 +99,21 @@ export async function drawGachaWithCp(count: 1 | 10): Promise<{
     draws: GachaDrawResult[];
     balance: number;
     spent: number;
+    payment: "free" | "cp";
+    freeDrawAvailable: boolean;
   };
   dispatchCpUpdated();
   return body;
+}
+
+/** @deprecated use drawGacha({ payment: "cp", count }) */
+export async function drawGachaWithCp(count: 1 | 10): Promise<{
+  draws: GachaDrawResult[];
+  balance: number;
+  spent: number;
+}> {
+  const result = await drawGacha({ payment: "cp", count });
+  return { draws: result.draws, balance: result.balance, spent: result.spent };
 }
 
 export async function resolveClientCpUserKey(): Promise<string | null> {

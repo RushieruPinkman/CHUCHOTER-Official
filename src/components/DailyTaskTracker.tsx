@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import type { DailyTaskId } from "@/lib/cp";
+import { isVisitDailyTask } from "@/lib/cp";
 import { completeDailyTaskFromClient } from "@/lib/cp-client";
 import { useCollectionUserKey } from "@/hooks/useCollectionUserKey";
 
@@ -14,6 +15,7 @@ export default function DailyTaskTracker({ taskId }: DailyTaskTrackerProps) {
   const attemptedRef = useRef(false);
 
   useEffect(() => {
+    if (!isVisitDailyTask(taskId)) return;
     if (!ready || !userKey || attemptedRef.current) return;
     attemptedRef.current = true;
 
