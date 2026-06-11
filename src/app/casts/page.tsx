@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import PageHero from "@/components/PageHero";
 import CastsGrid from "@/components/CastsGrid";
+import DailyTaskTracker from "@/components/DailyTaskTracker";
 import { getCasts } from "@/lib/data";
 export const revalidate = 300;
 
@@ -16,6 +17,7 @@ export default async function CastsPage() {
 
   return (
     <>
+      <DailyTaskTracker taskId="visit_residents" />
       <PageHero
         titleEn="The Residence"
         titleJa="住人紹介"

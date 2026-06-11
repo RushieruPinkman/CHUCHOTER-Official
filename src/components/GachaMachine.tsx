@@ -8,17 +8,14 @@ import GachaResultModal from "@/components/GachaResultModal";
 import GachaSharePanel from "@/components/GachaSharePanel";
 import GachaDoorReveal from "@/components/GachaDoorReveal";
 import GachaStageIndicator from "@/components/GachaStageIndicator";
+import GachaTenResultModal from "@/components/GachaTenResultModal";
 import GachaVfx, { GachaRateList } from "@/components/GachaVfx";
 import ScrollReveal from "@/components/ScrollReveal";
+import DailyTasksPanel from "@/components/DailyTasksPanel";
 import { useCollectionUserKey } from "@/hooks/useCollectionUserKey";
-import {
-  canDrawGachaToday,
-  formatGachaCooldownMessage,
-  getMsUntilNextGachaReset,
-  isGachaDailyLimitEnabled,
-  restoreTodaysGachaRecord,
-  writeGachaDailyRecord,
-} from "@/lib/gacha-daily-limit";
+import { useCpBalance } from "@/hooks/useCpBalance";
+import { CP_GACHA_SINGLE_COST, CP_GACHA_TEN_COST } from "@/lib/cp";
+import { drawGachaWithCp } from "@/lib/cp-client";
 import {
   buildGachaPresentation,
   GACHA_TIMING,
@@ -40,7 +37,6 @@ import {
   isGachaDevEnabled,
 } from "@/lib/gacha-dev";
 import { getAuthLoginHref, getAuthRegisterHref } from "@/lib/auth-routes";
-import { attachSerialToDrawResult } from "@/lib/gacha-serial-client";
 import { registerGachaCollectionFromDraw } from "@/lib/gacha-collection";
 import { appendGachaDrawHistory, buildGachaHistoryKey } from "@/lib/gacha-history";
 import { useGachaSerialStatusSync } from "@/hooks/useGachaSerialStatus";
@@ -60,9 +56,9 @@ const DRAWING_PHASES: DrawPhase[] = [...PRESENTING_PHASES, "impact"];
 
 export default function GachaMachine({ casts, mode = "production" }: GachaMachineProps) {
   const isDevMode = mode === "dev" && isGachaDevEnabled();
-  const dailyLimitEnabled = isGachaDailyLimitEnabled();
   const activeRates = isDevMode ? GACHA_DEV_RATES : RARITY_RATE;
   const { userKey: collectionUserKey, memberLabel, ready: authReady } = useCollectionUserKey();
+  const { balance: cpBalance, enabled: cpEnabled, loading: cpLoading } = useCpBalance();
   const historyKey = buildGachaHistoryKey(collectionUserKey);
   const loginNextPath = isDevMode ? "/gacha/dev" : "/gacha";
   const isLoggedIn = Boolean(collectionUserKey);
@@ -76,21 +72,31 @@ export default function GachaMachine({ casts, mode = "production" }: GachaMachin
   const [promoting, setPromoting] = useState(false);
   const [promotionDelta, setPromotionDelta] = useState(0);
   const [previewCast, setPreviewCast] = useState<GachaCastSnapshot | undefined>(undefined);
-  const [dailyLocked, setDailyLocked] = useState(false);
-  const [cooldownMessage, setCooldownMessage] = useState<string | null>(null);
   const [hydrated, setHydrated] = useState(false);
   const [historyModalResult, setHistoryModalResult] = useState<GachaDrawResult | null>(null);
+  const [tenDrawResults, setTenDrawResults] = useState<GachaDrawResult[] | null>(null);
+  const [tenDetailDraw, setTenDetailDraw] = useState<GachaDrawResult | null>(null);
   const [drawError, setDrawError] = useState<string | null>(null);
   const [issuingSerial, setIssuingSerial] = useState(false);
   const timersRef = useRef<number[]>([]);
 
   const isDrawing = DRAWING_PHASES.includes(phase);
   const isPresenting = PRESENTING_PHASES.includes(phase);
+  const canAffordSingle = isDevMode || (cpEnabled && cpBalance >= CP_GACHA_SINGLE_COST);
+  const canAffordTen = isDevMode || (cpEnabled && cpBalance >= CP_GACHA_TEN_COST);
   const canDraw =
     !isDrawing &&
     hydrated &&
     (isDevMode || isLoggedIn) &&
-    (isDevMode || !dailyLocked || !dailyLimitEnabled);
+    (isDevMode || (!cpLoading && canAffordSingle));
+  const canTenDraw =
+    !isDrawing &&
+    hydrated &&
+    !isDevMode &&
+    isLoggedIn &&
+    !cpLoading &&
+    cpEnabled &&
+    canAffordTen;
   const finalRarity = pendingDraw?.rarity ?? result?.rarity ?? null;
   const syncedResult = useGachaSerialStatusSync(result, collectionUserKey);
   const displayResult = syncedResult ?? result;
@@ -108,51 +114,9 @@ export default function GachaMachine({ casts, mode = "production" }: GachaMachin
 
   useEffect(() => () => clearDrawTimers(), [clearDrawTimers]);
 
-  const applyDailyRecord = useCallback((record: NonNullable<ReturnType<typeof restoreTodaysGachaRecord>>) => {
-    setDailyLocked(true);
-    setCooldownMessage(formatGachaCooldownMessage());
-    setResult(record.result);
-    setPreviewPrize(record.result.prize);
-    setPreviewRarity(record.result.rarity);
-    setPreviewCast(record.result.cast);
-    setDisplayRarity(record.result.rarity);
-    setPhase("result");
-  }, []);
-
   useEffect(() => {
-    if (isDevMode) {
-      setHydrated(true);
-      return;
-    }
-
-    if (!authReady) return;
-
-    if (collectionUserKey) {
-      const record = restoreTodaysGachaRecord();
-      if (record) {
-        applyDailyRecord(record);
-      }
-    }
-
     setHydrated(true);
-  }, [applyDailyRecord, authReady, collectionUserKey, isDevMode]);
-
-  useEffect(() => {
-    if (isDevMode || !dailyLocked) return;
-
-    const updateCooldown = () => setCooldownMessage(formatGachaCooldownMessage());
-    updateCooldown();
-    const interval = window.setInterval(updateCooldown, 60_000);
-    const timeout = window.setTimeout(() => {
-      setDailyLocked(false);
-      setCooldownMessage(null);
-    }, getMsUntilNextGachaReset() + 1000);
-
-    return () => {
-      window.clearInterval(interval);
-      window.clearTimeout(timeout);
-    };
-  }, [dailyLocked, isDevMode]);
+  }, []);
 
   const runStage = useCallback(
     (draw: GachaDrawResult, script: GachaPresentation, stage: PresentationStage) => {
@@ -197,18 +161,58 @@ export default function GachaMachine({ casts, mode = "production" }: GachaMachin
     [schedule]
   );
 
+  const playDrawResult = useCallback(
+    (draw: GachaDrawResult) => {
+      const script = buildGachaPresentation(draw.rarity);
+      const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+      clearDrawTimers();
+      setResult(null);
+      setPreviewPrize(null);
+      setPreviewRarity(null);
+      setPreviewCast(undefined);
+      setPendingDraw(draw);
+      setPromoting(false);
+      setPromotionDelta(0);
+
+      if (reducedMotion) {
+        setDisplayRarity(draw.rarity);
+        setPreviewPrize(draw.prize);
+        setPreviewRarity(draw.rarity);
+        setPreviewCast(draw.cast);
+        setResult(draw);
+        setPhase("result");
+        return;
+      }
+
+      runStage(draw, script, 1);
+    },
+    [clearDrawTimers, runStage]
+  );
+
+  const persistDrawResult = useCallback(
+    (draw: GachaDrawResult) => {
+      registerGachaCollectionFromDraw(collectionUserKey, draw);
+      if (historyKey) appendGachaDrawHistory(historyKey, draw);
+    },
+    [collectionUserKey, historyKey]
+  );
+
   const handleDraw = async () => {
     if (!canDraw || issuingSerial) return;
     if (!isDevMode && !collectionUserKey) return;
-    if (!isDevMode && !canDrawGachaToday()) return;
 
     setDrawError(null);
     setIssuingSerial(true);
 
     let draw: GachaDrawResult;
     try {
-      const baseDraw = pickGachaPrize(casts, activeRates);
-      draw = await attachSerialToDrawResult(baseDraw, { devMode: isDevMode });
+      if (isDevMode) {
+        draw = pickGachaPrize(casts, activeRates);
+      } else {
+        const response = await drawGachaWithCp(1);
+        draw = response.draws[0]!;
+      }
     } catch (error) {
       setDrawError(error instanceof Error ? error.message : "抽選処理に失敗しました。");
       setIssuingSerial(false);
@@ -216,36 +220,27 @@ export default function GachaMachine({ casts, mode = "production" }: GachaMachin
     }
 
     setIssuingSerial(false);
-    registerGachaCollectionFromDraw(collectionUserKey, draw);
-    if (historyKey) appendGachaDrawHistory(historyKey, draw);
-    if (!isDevMode && dailyLimitEnabled) {
-      writeGachaDailyRecord(draw);
-      setDailyLocked(true);
-      setCooldownMessage(formatGachaCooldownMessage());
+    persistDrawResult(draw);
+    playDrawResult(draw);
+  };
+
+  const handleTenDraw = async () => {
+    if (!canTenDraw || issuingSerial) return;
+
+    setDrawError(null);
+    setIssuingSerial(true);
+
+    try {
+      const response = await drawGachaWithCp(10);
+      for (const draw of response.draws) {
+        persistDrawResult(draw);
+      }
+      setTenDrawResults(response.draws);
+    } catch (error) {
+      setDrawError(error instanceof Error ? error.message : "10連抽選に失敗しました。");
+    } finally {
+      setIssuingSerial(false);
     }
-    const script = buildGachaPresentation(draw.rarity);
-    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-    clearDrawTimers();
-    setResult(null);
-    setPreviewPrize(null);
-    setPreviewRarity(null);
-    setPreviewCast(undefined);
-    setPendingDraw(draw);
-    setPromoting(false);
-    setPromotionDelta(0);
-
-    if (reducedMotion) {
-      setDisplayRarity(draw.rarity);
-      setPreviewPrize(draw.prize);
-      setPreviewRarity(draw.rarity);
-      setPreviewCast(draw.cast);
-      setResult(draw);
-      setPhase("result");
-      return;
-    }
-
-    runStage(draw, script, 1);
   };
 
   const handleReset = () => {
@@ -413,9 +408,15 @@ export default function GachaMachine({ casts, mode = "production" }: GachaMachin
 
             <div className="mb-5 mt-6 px-1 space-y-1">
               <p className="text-[11px] leading-relaxed text-cream-faint">{rateSummary}</p>
-              {!isDevMode && dailyLimitEnabled && (
+              {!isDevMode && cpEnabled && (
                 <p className="text-[11px] leading-relaxed text-cream-faint">
-                  1日1回まで（更新: 日本時間 毎日0:00）
+                  1回 {CP_GACHA_SINGLE_COST} CP / 10連 {CP_GACHA_TEN_COST} CP — デイリータスクで CP を貯めよう
+                </p>
+              )}
+              {!isDevMode && authReady && isLoggedIn && cpEnabled && (
+                <p className="cp-balance-badge mx-auto w-fit max-w-full" role="status">
+                  <span className="cp-balance-badge__label">所持 CP</span>
+                  <span className="cp-balance-badge__value">{cpBalance}</span>
                 </p>
               )}
               {!isDevMode && authReady && !isLoggedIn && (
@@ -430,9 +431,19 @@ export default function GachaMachine({ casts, mode = "production" }: GachaMachin
                   <span className="auth-status-badge__name truncate">{memberLabel}</span>
                 </p>
               )}
+              {!isDevMode && authReady && isLoggedIn && !cpLoading && !cpEnabled && (
+                <p className="text-[11px] leading-relaxed text-amber-100/90">
+                  CP 機能が未設定です。管理者は scripts/supabase-cp.sql を実行してください。
+                </p>
+              )}
+              {!isDevMode && authReady && isLoggedIn && cpEnabled && !canAffordSingle && (
+                <p className="text-[11px] leading-relaxed text-cream-muted">
+                  CP が不足しています。下のデイリータスクまたはプロフィールで CP を貯めてください。
+                </p>
+              )}
               {isDevMode && (
                 <p className="text-[11px] leading-relaxed text-cream-faint">
-                  試験モード：何度でも引き直せます（localStorage の本番記録は更新しません）
+                  試験モード：何度でも引き直せます（CP 消費なし）
                 </p>
               )}
             </div>
@@ -444,7 +455,7 @@ export default function GachaMachine({ casts, mode = "production" }: GachaMachin
                   onClick={handleReset}
                   className="btn-ghost gacha-machine__action--primary"
                 >
-                  {isDevMode ? "もう一度試す" : dailyLimitEnabled && dailyLocked ? "扉に戻る" : "もう一度引く"}
+                  {isDevMode ? "もう一度試す" : "扉に戻る"}
                 </button>
               ) : !isDevMode && authReady && !isLoggedIn ? (
                 <div className="gacha-machine__auth space-y-4 text-center">
@@ -467,26 +478,36 @@ export default function GachaMachine({ casts, mode = "production" }: GachaMachin
                   </div>
                 </div>
               ) : (
-                <button
-                  type="button"
-                  onClick={handleDraw}
-                  disabled={!canDraw || issuingSerial}
-                  className="gacha-draw-btn btn-primary gacha-machine__action--primary disabled:cursor-not-allowed disabled:opacity-40"
-                >
-                  {!hydrated || !authReady
-                    ? "読み込み中…"
-                    : issuingSerial
-                      ? "シリアル発行中…"
-                    : !isDevMode && dailyLimitEnabled && dailyLocked
-                      ? "本日の抽選は完了"
-                      : isPresenting
-                        ? "演出中…"
-                        : isDrawing
-                          ? "抽選中…"
-                          : isDevMode
-                            ? "試験抽選を開始"
-                            : "扉を開ける"}
-                </button>
+                <div className="gacha-machine__draw-actions space-y-3">
+                  <button
+                    type="button"
+                    onClick={handleDraw}
+                    disabled={!canDraw || issuingSerial}
+                    className="gacha-draw-btn btn-primary gacha-machine__action--primary w-full disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    {!hydrated || !authReady || cpLoading
+                      ? "読み込み中…"
+                      : issuingSerial
+                        ? "抽選中…"
+                        : isPresenting
+                          ? "演出中…"
+                          : isDrawing
+                            ? "抽選中…"
+                            : isDevMode
+                              ? "試験抽選を開始"
+                              : `扉を開ける（${CP_GACHA_SINGLE_COST} CP）`}
+                  </button>
+                  {!isDevMode && (
+                    <button
+                      type="button"
+                      onClick={handleTenDraw}
+                      disabled={!canTenDraw || issuingSerial}
+                      className="btn-ghost gacha-machine__action--primary w-full disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      {issuingSerial ? "10連抽選中…" : `10連（${CP_GACHA_TEN_COST} CP）`}
+                    </button>
+                  )}
+                </div>
               )}
             </div>
 
@@ -496,11 +517,6 @@ export default function GachaMachine({ casts, mode = "production" }: GachaMachin
               </Link>
             </div>
 
-            {!isDevMode && dailyLimitEnabled && cooldownMessage && (
-              <p className="mt-4 px-1 text-center text-xs leading-relaxed text-cream-muted" role="status">
-                {cooldownMessage}
-              </p>
-            )}
             {drawError && (
               <p className="mt-4 px-1 text-center text-sm leading-relaxed text-red-300" role="alert">
                 {drawError}
@@ -508,6 +524,12 @@ export default function GachaMachine({ casts, mode = "production" }: GachaMachin
             )}
             </div>
           </div>
+
+        {!isDevMode && (
+          <ScrollReveal delay={0.05} className="mx-auto mt-10 max-w-xl">
+            <DailyTasksPanel showGachaHint={false} />
+          </ScrollReveal>
+        )}
 
         <ScrollReveal delay={0.06} className="mt-10">
           <GachaDrawHistory
@@ -547,6 +569,22 @@ export default function GachaMachine({ casts, mode = "production" }: GachaMachin
           userKey={collectionUserKey}
           titleEn="History"
           titleJa="抽選結果"
+        />
+      )}
+      {tenDrawResults && (
+        <GachaTenResultModal
+          draws={tenDrawResults}
+          onClose={() => setTenDrawResults(null)}
+          onViewDraw={setTenDetailDraw}
+        />
+      )}
+      {tenDetailDraw && (
+        <GachaResultModal
+          result={tenDetailDraw}
+          onClose={() => setTenDetailDraw(null)}
+          userKey={collectionUserKey}
+          titleEn="10 Draws"
+          titleJa="10連結果"
         />
       )}
     </section>

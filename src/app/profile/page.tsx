@@ -4,6 +4,7 @@ import PageHero from "@/components/PageHero";
 import ProfilePanel from "@/components/ProfilePanel";
 import ProfileCollection from "@/components/ProfileCollection";
 import ProfileSignOut from "@/components/ProfileSignOut";
+import DailyTasksPanel from "@/components/DailyTasksPanel";
 import { AUTH_DEV_LOGIN_PATH } from "@/lib/auth-dev";
 import { getUserProfileLabel } from "@/lib/auth-messages";
 import { buildAuthCollectionUserKey } from "@/lib/gacha-collection";
@@ -53,6 +54,7 @@ export default async function ProfilePage() {
             mode: "production",
           }}
         />
+        <DailyTasksPanel className="mx-auto mt-10 max-w-lg" />
         <ProfileCollection userKey={buildAuthCollectionUserKey(user.id)} className="mt-10" />
         <div className="mx-auto mt-6 max-w-lg text-center">
           <ProfileSignOut />

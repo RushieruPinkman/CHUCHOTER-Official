@@ -39,7 +39,7 @@ export function translateAuthError(message: string): string {
 }
 
 export function getSignUpPendingMessage(): string {
-  return "確認メールを送信しました。メール内のリンクを開くと登録が完了し、ログインできます。数分経っても届かない場合は迷惑メールを確認するか、「確認メール再送」をお試しください。";
+  return "確認メールを送信しました。メール内のリンクを開くと登録が完了し、そのままログインした状態でプロフィールへ移動します。数分経っても届かない場合は迷惑メールを確認するか、「確認メール再送」をお試しください。";
 }
 
 export function getDuplicateSignUpMessage(): string {

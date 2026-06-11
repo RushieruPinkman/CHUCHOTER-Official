@@ -261,7 +261,7 @@ export default function LoginForm({
             {pending ? "送信中…" : "確認メールを送信"}
           </button>
           <p className="text-[11px] leading-relaxed text-cream-faint">
-            登録後、確認メールのリンクを開くと本登録が完了します。迷惑メールフォルダもご確認ください。
+            登録後、確認メールのリンクを開くと本登録が完了し、そのままログインした状態でプロフィールへ移動します。迷惑メールフォルダもご確認ください。
           </p>
           <p className="text-center text-[11px] text-cream-faint">
             メールが届かない場合は{" "}

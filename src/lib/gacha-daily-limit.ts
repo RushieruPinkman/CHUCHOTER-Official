@@ -3,8 +3,8 @@ import type { GachaDrawResult } from "@/lib/gacha";
 export const GACHA_DAILY_STORAGE_KEY = "chuchoter-gacha-daily";
 export const GACHA_TIMEZONE = "Asia/Tokyo";
 
-/** 本番ガチャ：日本時間で1日1回 */
-export const GACHA_DAILY_LIMIT_ENABLED = true;
+/** 本番ガチャ：CP 消費制（デイリータスクで CP を獲得） */
+export const GACHA_DAILY_LIMIT_ENABLED = false;
 
 export function isGachaDailyLimitEnabled(): boolean {
   return GACHA_DAILY_LIMIT_ENABLED;

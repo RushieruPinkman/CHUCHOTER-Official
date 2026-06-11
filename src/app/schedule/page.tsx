@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import PageHero from "@/components/PageHero";
 import ScrollReveal from "@/components/ScrollReveal";
+import DailyTaskTracker from "@/components/DailyTaskTracker";
 import { formatJapaneseDate, getWeekDates, SITE } from "@/lib/site";
 import { getAllCasts, getSchedule } from "@/lib/data";
 
@@ -40,6 +41,7 @@ export default async function SchedulePage() {
 
   return (
     <>
+      <DailyTaskTracker taskId="visit_schedule" />
       <PageHero
         titleEn="Schedule"
         titleJa="予定表"
