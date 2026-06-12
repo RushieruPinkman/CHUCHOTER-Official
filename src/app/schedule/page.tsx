@@ -4,14 +4,16 @@ import ScrollReveal from "@/components/ScrollReveal";
 import DailyTaskTracker from "@/components/DailyTaskTracker";
 import { formatJapaneseDate, getWeekDates, SITE } from "@/lib/site";
 import { getAllCasts, getSchedule } from "@/lib/data";
+import { buildPageMetadata } from "@/lib/seo";
 
 export const revalidate = 300;
 
-export const metadata: Metadata = {
+export const metadata: Metadata = buildPageMetadata({
   title: "予定表",
   description:
-    "CHUCHOTERの今週の営業予定と出勤キャストのシフト表。1部（20:50〜）・2部（22:00〜）の出勤状況をご確認ください。",
-};
+    "CHUCHOTER（シュシュテ）の今週の営業予定と出勤キャストのシフト。VRChat イベントの開催日・1部・2部の出勤状況を確認できます。",
+  path: "/schedule",
+});
 
 const STATUS = {
   open: { label: "営業", className: "text-gold border-gold/30 bg-gold/[0.06]" },

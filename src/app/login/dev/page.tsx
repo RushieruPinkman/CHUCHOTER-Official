@@ -5,13 +5,17 @@ import { Suspense } from "react";
 import AuthDevLoginForm from "@/components/AuthDevLoginForm";
 import PageHero from "@/components/PageHero";
 import { isAuthDevEnabled } from "@/lib/auth-dev";
+import { buildPageMetadata } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = buildPageMetadata({
   title: "ログイン（開発用）",
-  robots: { index: false, follow: false },
-};
+  description: "CHUCHOTER ログイン開発用ページ。",
+  path: "/login/dev",
+  index: false,
+  follow: false,
+});
 
 export default function LoginDevPage() {
   if (!isAuthDevEnabled()) {

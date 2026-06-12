@@ -39,9 +39,9 @@ export const GACHA_SITE_DOWNLOAD_MAX_RARITY = 3 as const satisfies GachaRarity;
 
 /** レアリティ別の排出率（合計100） */
 export const RARITY_RATE: Record<GachaRarity, number> = {
-  1: 50,
-  2: 30,
-  3: 17,
+  1: 80,
+  2: 10,
+  3: 7,
   4: 2,
   5: 0.95,
   6: 0.05,

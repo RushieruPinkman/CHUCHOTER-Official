@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import StructuredData from "@/components/StructuredData";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { SITE } from "@/lib/site";
 import "./globals.css";
@@ -14,30 +15,17 @@ export const metadata: Metadata = {
     default: `${SITE.name} | 高級隠れ家マンション`,
     template: `%s | ${SITE.name}`,
   },
-  description: SITE.description,
-  keywords: [
-    "CHUCHOTER",
-    "VRChat",
-    "Le Ciel Blanc",
-    "黒糖アメ",
-    "Request Invite",
-  ],
+  robots: { index: true, follow: true },
   openGraph: {
     type: "website",
     locale: "ja_JP",
-    url: SITE.url,
     siteName: SITE.name,
-    title: `${SITE.name} | 高級隠れ家マンション`,
-    description: SITE.description,
-    images: [{ url: SITE.ogImage, alt: SITE.logoAlt }],
+    images: [{ url: SITE.ogImage, alt: SITE.ogImageAlt, width: 1200, height: 630 }],
   },
   twitter: {
     card: "summary_large_image",
-    title: `${SITE.name} | 高級隠れ家マンション`,
-    description: SITE.description,
     images: [SITE.ogImage],
   },
-  robots: { index: true, follow: true },
   icons: {
     icon: [{ url: SITE.favicon, type: "image/svg+xml" }],
     apple: [{ url: SITE.appleIcon, type: "image/svg+xml" }],
@@ -53,6 +41,7 @@ export default function RootLayout({
   return (
     <html lang="ja" suppressHydrationWarning>
       <head>
+        <StructuredData />
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>
       <body className="relative flex min-h-[100dvh] flex-col">

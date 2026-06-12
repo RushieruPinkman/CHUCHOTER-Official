@@ -12,6 +12,9 @@ type CastPortraitProps = {
 const DEFAULT_CARD_SIZES =
   "(max-width: 640px) 50vw, (max-width: 1024px) 33vw, (max-width: 1280px) 25vw, 280px";
 
+const DEFAULT_COVER_SIZES =
+  "(max-width: 640px) 45vw, (max-width: 1024px) 28vw, 220px";
+
 export default function CastPortrait({
   src,
   alt,
@@ -40,7 +43,7 @@ export default function CastPortrait({
       alt={alt}
       fill
       priority={priority}
-      sizes={sizes ?? (variant === "cover" ? "100vw" : DEFAULT_CARD_SIZES)}
+      sizes={sizes ?? (variant === "cover" ? DEFAULT_COVER_SIZES : DEFAULT_CARD_SIZES)}
       className={`cast-card-media__image ${className}`.trim()}
     />
   );

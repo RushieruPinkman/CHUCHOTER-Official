@@ -69,6 +69,30 @@ function writeGachaCollection(userKey: string, entries: GachaCollectionEntry[]):
   );
 }
 
+/** 指定キャストを指定枚数消費。不足があれば null */
+export function consumeCollectionCastAmount(
+  userKey: string,
+  castId: string,
+  amount: number
+): GachaCollectionEntry[] | null {
+  if (!userKey || amount < 1) return null;
+
+  const entries = readGachaCollection(userKey);
+  const entry = entries.find((item) => item.castId === castId);
+  if (!entry || entry.count < amount) return null;
+
+  entry.count -= amount;
+
+  const nextEntries = entries
+    .filter((item) => item.count > 0)
+    .sort(
+      (a, b) => new Date(b.lastObtainedAt).getTime() - new Date(a.lastObtainedAt).getTime()
+    );
+
+  writeGachaCollection(userKey, nextEntries);
+  return nextEntries;
+}
+
 /** 指定キャストを1枚ずつ消費。不足があれば null */
 export function consumeCollectionCasts(
   userKey: string,
@@ -137,6 +161,51 @@ export function addGachaCollectionCast(
   return readGachaCollection(userKey);
 }
 
+/** 開発・テスト用: 指定キャストの所持枚数を一括加算 */
+export function incrementGachaCollectionCasts(
+  userKey: string,
+  catalog: CollectionCatalogCast[],
+  amountPerCast: number
+): GachaCollectionEntry[] {
+  if (!userKey || amountPerCast < 1 || catalog.length === 0) {
+    return readGachaCollection(userKey);
+  }
+
+  const entries = readGachaCollection(userKey);
+  const now = new Date().toISOString();
+  const map = new Map(entries.map((entry) => [entry.castId, { ...entry }]));
+
+  for (const cast of catalog) {
+    const existing = map.get(cast.id);
+    if (existing) {
+      existing.count += amountPerCast;
+      existing.lastObtainedAt = now;
+      existing.name = cast.name;
+      existing.nameEn = cast.nameEn;
+      existing.image = cast.image;
+      existing.gender = cast.gender;
+    } else {
+      map.set(cast.id, {
+        castId: cast.id,
+        name: cast.name,
+        nameEn: cast.nameEn,
+        image: cast.image,
+        gender: cast.gender,
+        count: amountPerCast,
+        firstObtainedAt: now,
+        lastObtainedAt: now,
+      });
+    }
+  }
+
+  const nextEntries = [...map.values()].sort(
+    (a, b) => new Date(b.lastObtainedAt).getTime() - new Date(a.lastObtainedAt).getTime()
+  );
+
+  writeGachaCollection(userKey, nextEntries);
+  return nextEntries;
+}
+
 /** ★1で住人が出たとき、ログイン中ユーザーのコレクションへ追加 */
 export function registerGachaCollectionFromDraw(
   userKey: string | null,
@@ -148,6 +217,78 @@ export function registerGachaCollectionFromDraw(
 
 export function getGachaCollectionTotal(entries: GachaCollectionEntry[]): number {
   return entries.reduce((sum, entry) => sum + entry.count, 0);
+}
+
+export interface CollectionCatalogCast {
+  id: string;
+  name: string;
+  nameEn: string;
+  image: string;
+  gender: CollectionGender;
+}
+
+export type CollectionSortMode = "owned-first" | "unowned-first";
+
+export interface CollectionDisplayItem {
+  castId: string;
+  name: string;
+  nameEn: string;
+  image: string;
+  gender: CollectionGender;
+  count: number;
+  owned: boolean;
+}
+
+export function buildCollectionDisplayItems(
+  catalog: CollectionCatalogCast[],
+  entries: GachaCollectionEntry[]
+): CollectionDisplayItem[] {
+  const map = new Map(entries.map((entry) => [entry.castId, entry]));
+
+  return catalog.map((cast) => {
+    const entry = map.get(cast.id);
+    const count = entry?.count ?? 0;
+    return {
+      castId: cast.id,
+      name: cast.name,
+      nameEn: cast.nameEn,
+      image: cast.image,
+      gender: cast.gender,
+      count,
+      owned: count > 0,
+    };
+  });
+}
+
+export function sortCollectionDisplayItems(
+  items: CollectionDisplayItem[],
+  mode: CollectionSortMode
+): CollectionDisplayItem[] {
+  return [...items].sort((a, b) => {
+    if (a.owned !== b.owned) {
+      if (mode === "owned-first") return a.owned ? -1 : 1;
+      return a.owned ? 1 : -1;
+    }
+    return a.name.localeCompare(b.name, "ja");
+  });
+}
+
+export function groupCollectionDisplayByGender(items: CollectionDisplayItem[]): {
+  female: CollectionDisplayItem[];
+  male: CollectionDisplayItem[];
+} {
+  const female: CollectionDisplayItem[] = [];
+  const male: CollectionDisplayItem[] = [];
+
+  for (const item of items) {
+    if (item.gender === "male") {
+      male.push(item);
+    } else {
+      female.push(item);
+    }
+  }
+
+  return { female, male };
 }
 
 export function groupGachaCollectionByGender(entries: GachaCollectionEntry[]): {

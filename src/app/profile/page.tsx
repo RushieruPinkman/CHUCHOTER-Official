@@ -10,11 +10,15 @@ import { getUserProfileLabel } from "@/lib/auth-messages";
 import { buildAuthCollectionUserKey } from "@/lib/gacha-collection";
 import { createClient } from "@/lib/supabase/server";
 import { isUserAuthEnabledOnServer } from "@/lib/supabase/config";
+import { buildPageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = buildPageMetadata({
   title: "プロフィール",
-  robots: { index: false, follow: false },
-};
+  description: "CHUCHOTER 会員プロフィール。デイリータスク・CP・コレクションの確認とアカウント設定。",
+  path: "/profile",
+  index: false,
+  follow: false,
+});
 
 export default async function ProfilePage() {
   if (!isUserAuthEnabledOnServer()) {

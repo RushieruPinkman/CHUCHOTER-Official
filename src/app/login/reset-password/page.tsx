@@ -4,11 +4,15 @@ import ResetPasswordForm from "@/components/ResetPasswordForm";
 import PageHero from "@/components/PageHero";
 import { createClient } from "@/lib/supabase/server";
 import { isUserAuthEnabledOnServer } from "@/lib/supabase/config";
+import { buildPageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = buildPageMetadata({
   title: "パスワード再設定",
-  robots: { index: false, follow: false },
-};
+  description: "CHUCHOTER 会員アカウントのパスワード再設定。",
+  path: "/login/reset-password",
+  index: false,
+  follow: false,
+});
 
 export default async function ResetPasswordPage() {
   if (!isUserAuthEnabledOnServer()) {

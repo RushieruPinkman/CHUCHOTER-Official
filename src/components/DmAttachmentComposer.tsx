@@ -10,6 +10,7 @@ interface DmAttachmentComposerProps {
   disabled?: boolean;
   pendingAttachment: DmAttachmentPayload | null;
   uploading?: boolean;
+  compact?: boolean;
   onSelectFile: (file: File) => Promise<void>;
   onClear: () => void;
 }
@@ -18,6 +19,7 @@ export default function DmAttachmentComposer({
   disabled = false,
   pendingAttachment,
   uploading = false,
+  compact = false,
   onSelectFile,
   onClear,
 }: DmAttachmentComposerProps) {
@@ -80,7 +82,7 @@ export default function DmAttachmentComposer({
         </p>
       )}
 
-      <p className="text-[10px] leading-relaxed text-cream-faint">
+      <p className={`text-[10px] leading-relaxed text-cream-faint ${compact ? "hidden md:block" : ""}`}>
         画像 5MB まで / 音声 10MB まで（JPEG, PNG, WebP, GIF, MP3, WAV, OGG, WebM, M4A, AAC）
       </p>
     </div>

@@ -109,7 +109,13 @@ export default function CollectionExchangeHistory({
                 )}
               </div>
               <p className="history-record-item__note text-xs leading-relaxed text-cream-muted">
-                消費: {record.consumedCasts.map((cast) => cast.name).join("、")}
+                消費:{" "}
+                {record.consumedCasts
+                  .map((cast) =>
+                    cast.quantity && cast.quantity > 1 ? `${cast.name} ×${cast.quantity}` : cast.name
+                  )
+                  .join("、")}
+                {record.receivedCast ? ` / 獲得: ${record.receivedCast.name}` : ""}
               </p>
             </li>
           ))}

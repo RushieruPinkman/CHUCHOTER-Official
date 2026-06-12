@@ -1,8 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import CastDetailModal from "@/components/CastDetailModal";
+import Link from "next/link";
+import { useMemo, useState, useSyncExternalStore } from "react";
 import CastPortrait from "@/components/CastPortrait";
 import CastRoleBadge from "@/components/CastRoleBadge";
 import type { Cast } from "@/types";
@@ -64,12 +63,9 @@ function ColumnIcon({ cols }: { cols: Columns }) {
 }
 
 export default function CastsGrid({ casts }: { casts: Cast[] }) {
-  const router = useRouter();
-  const searchParams = useSearchParams();
   const isDesktop = useIsDesktop();
   const [columns, setColumns] = useState<Columns>(4);
   const [genderFilter, setGenderFilter] = useState<GenderFilter>("all");
-  const [selectedCast, setSelectedCast] = useState<Cast | null>(null);
 
   const displayColumns: Columns = isDesktop ? columns : columns > 2 ? 2 : columns;
 
@@ -82,34 +78,6 @@ export default function CastsGrid({ casts }: { casts: Cast[] }) {
       ),
     [casts, genderFilter]
   );
-
-  const openCast = useCallback(
-    (cast: Cast) => {
-      setSelectedCast(cast);
-      router.replace(`/casts?cast=${cast.id}`, { scroll: false });
-    },
-    [router]
-  );
-
-  const closeCast = useCallback(() => {
-    setSelectedCast(null);
-    router.replace("/casts", { scroll: false });
-  }, [router]);
-
-  useEffect(() => {
-    const castId = searchParams.get("cast");
-    if (!castId) {
-      setSelectedCast(null);
-      return;
-    }
-    const cast = casts.find((c) => c.id === castId);
-    if (cast) {
-      setSelectedCast(cast);
-      return;
-    }
-    setSelectedCast(null);
-    router.replace("/casts", { scroll: false });
-  }, [casts, searchParams, router]);
 
   return (
     <section className="pb-14 md:pb-16" aria-label="キャスト一覧">
@@ -189,7 +157,6 @@ export default function CastsGrid({ casts }: { casts: Cast[] }) {
           </div>
         </div>
 
-        {/* フィルター結果をスクリーンリーダーへ通知 */}
         <p className="sr-only" aria-live="polite" aria-atomic="true">
           {filteredCasts.length === 0
             ? "該当する住人がいません。"
@@ -204,9 +171,8 @@ export default function CastsGrid({ casts }: { casts: Cast[] }) {
           <div className="grid gap-4 min-w-0" style={{ gridTemplateColumns: `repeat(${displayColumns}, minmax(0, 1fr))` }}>
             {filteredCasts.map((cast) => (
               <article key={cast.id} className="min-w-0 h-full">
-                <button
-                  type="button"
-                  onClick={() => openCast(cast)}
+                <Link
+                  href={`/casts/${cast.id}`}
                   className="group panel panel-hover flex h-full w-full flex-col overflow-hidden text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold"
                 >
                   <div className="cast-card-media aspect-[3/4] shrink-0">
@@ -235,14 +201,12 @@ export default function CastsGrid({ casts }: { casts: Cast[] }) {
                       Profile →
                     </span>
                   </div>
-                </button>
+                </Link>
               </article>
             ))}
           </div>
         )}
       </div>
-
-      {selectedCast ? <CastDetailModal cast={selectedCast} onClose={closeCast} /> : null}
     </section>
   );
 }

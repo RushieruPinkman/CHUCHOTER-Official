@@ -3,14 +3,16 @@ import PageHero from "@/components/PageHero";
 import GachaCollectionSection from "@/components/GachaCollectionSection";
 import { getCasts } from "@/lib/data";
 import { toResidentCastRefs } from "@/lib/gacha-collection-exchange";
+import { buildPageMetadata } from "@/lib/seo";
 
 export const revalidate = 300;
 
-export const metadata: Metadata = {
+export const metadata: Metadata = buildPageMetadata({
   title: "コレクション",
   description:
-    "運命の扉で★1として出会った住人のコレクション。コンプリートで★4〜★6と交換できます。",
-};
+    "CHUCHOTER 運命の扉で獲得した★1住人カードのコレクション。重複交換やコンプリートで景品と交換できます。",
+  path: "/collection",
+});
 
 export default async function CollectionPage() {
   const casts = await getCasts();
@@ -21,7 +23,7 @@ export default async function CollectionPage() {
       <PageHero
         titleEn="Collection"
         titleJa="コレクション"
-        description="★1の住人カードを集め、男女別・全員コンプリートで★4〜★6の景品と交換できます。交換時は対象の住人カードを各1枚ずつ消費します。"
+        description="★1の住人カードを集め、同じカード3枚で好きな★1カード1枚と交換できます。男女別・全員コンプリートで★4〜★6の景品とも交換できます。"
       />
       <section className="site-container pb-16">
         <GachaCollectionSection residents={residents} />

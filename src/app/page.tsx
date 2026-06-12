@@ -10,9 +10,16 @@ import XLink from "@/components/XLink";
 import VrChatGroupLink from "@/components/VrChatGroupLink";
 import { getAnnouncements, getCasts, getStatus } from "@/lib/data";
 import { SITE } from "@/lib/site";
+import { buildPageMetadata } from "@/lib/seo";
 import Link from "next/link";
+import type { Metadata } from "next";
 
 export const revalidate = 300;
+
+export const metadata: Metadata = buildPageMetadata({
+  description: SITE.description,
+  path: "/",
+});
 
 export default async function HomePage() {
   const [status, casts, announcements] = await Promise.all([
@@ -144,7 +151,7 @@ export default async function HomePage() {
             {casts.slice(0, 2).map((cast, index) => (
               <ScrollReveal key={cast.id} delay={index * 0.08}>
                 <Link
-                  href={`/casts?cast=${cast.id}`}
+                  href={`/casts/${cast.id}`}
                   className="group panel panel-hover block overflow-hidden"
                 >
                   <div className="cast-card-media aspect-[3/4] shrink-0">

@@ -4,13 +4,17 @@ import { notFound } from "next/navigation";
 import PageHero from "@/components/PageHero";
 import ProfileDevClient from "@/components/ProfileDevClient";
 import { isAuthDevEnabled } from "@/lib/auth-dev";
+import { buildPageMetadata } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = buildPageMetadata({
   title: "プロフィール（開発用）",
-  robots: { index: false, follow: false },
-};
+  description: "CHUCHOTER プロフィール開発用ページ。",
+  path: "/profile/dev",
+  index: false,
+  follow: false,
+});
 
 export default function ProfileDevPage() {
   if (!isAuthDevEnabled()) {

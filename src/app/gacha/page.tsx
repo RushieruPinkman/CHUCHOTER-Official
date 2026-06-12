@@ -4,13 +4,16 @@ import GachaMachine from "@/components/GachaMachine";
 import { getCasts } from "@/lib/data";
 import type { GachaCastSnapshot } from "@/lib/gacha";
 
+import { buildPageMetadata } from "@/lib/seo";
+
 export const revalidate = 300;
 
-export const metadata: Metadata = {
+export const metadata: Metadata = buildPageMetadata({
   title: "ガチャ",
   description:
-    "CHUCHOTERの運命の扉 — 毎日1回無料ガチャ + CP追加抽選。無料ガチャ後にXシェアでCPを貯め、100 CPで1回・900 CPで10連。",
-};
+    "CHUCHOTER 運命の扉 — 毎日1回無料ガチャと CP 追加抽選。X シェアで CP を貯め、景品を獲得できます。",
+  path: "/gacha",
+});
 
 export default async function GachaPage() {
   const casts = await getCasts();

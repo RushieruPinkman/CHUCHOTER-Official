@@ -167,17 +167,31 @@ export default function DmPanel({ loginNextPath = "/dm" }: DmPanelProps) {
   }
 
   return (
-    <div className="dm-panel dm-panel--user mx-auto max-w-2xl">
-      <div className="dm-panel__notice mb-4 border border-[var(--color-border)] bg-deep/60 px-4 py-3 text-center text-xs leading-relaxed text-cream-faint md:mb-5">
+    <div className="dm-panel dm-panel--user mx-auto flex h-full min-h-0 w-full max-w-2xl flex-col">
+      <details className="dm-panel__notice mb-3 border border-[var(--color-border)] bg-deep/60 px-3 py-2.5 text-xs leading-relaxed text-cream-faint md:mb-5 md:hidden">
+        <summary className="cursor-pointer list-none text-center marker:content-none [&::-webkit-details-marker]:hidden">
+          <span className="text-cream-muted">ご利用上の注意</span>
+        </summary>
+        <div className="mt-2 border-t border-[var(--color-border)] pt-2 text-center">
+          <p>{DM_RETENTION_NOTICE}</p>
+        </div>
+      </details>
+
+      <div className="dm-panel__notice mb-4 hidden border border-[var(--color-border)] bg-deep/60 px-4 py-3 text-center text-xs leading-relaxed text-cream-faint md:mb-5 md:block">
         {memberLabel && <span className="block text-cream-muted">{memberLabel} として送信されます。</span>}
         <span className="mt-1 block">{DM_RETENTION_NOTICE}</span>
       </div>
 
-      <div className="dm-panel__chat flex flex-col border border-[var(--color-border)] bg-deep/70">
+      <div className="dm-panel__chat flex min-h-0 flex-1 flex-col overflow-hidden border border-[var(--color-border)] bg-deep/70">
+        {memberLabel && (
+          <div className="dm-panel__chat-header shrink-0 border-b border-[var(--color-border)] px-3 py-2.5 md:hidden">
+            <p className="truncate text-center text-xs text-cream-muted">{memberLabel}</p>
+          </div>
+        )}
         <div
           ref={containerRef}
           onScroll={handleScroll}
-          className="dm-panel__messages dm-panel__messages--user min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 py-4 md:max-h-[28rem] md:flex-none md:px-4"
+          className="dm-panel__messages dm-panel__messages--user min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain px-3 py-3 md:max-h-[28rem] md:flex-none md:px-4 md:py-4"
         >
           {loading && messages.length === 0 ? (
             <p className="py-8 text-center text-sm text-cream-faint" role="status">
@@ -200,12 +214,12 @@ export default function DmPanel({ loginNextPath = "/dm" }: DmPanelProps) {
                       key={message.id}
                       className={`dm-message ${isUser ? "dm-message--user" : "dm-message--admin"}`}
                     >
-                      <div className="dm-message__bubble">
-                      <DmMessageContent
-                        message={message}
-                        downloadHeaders={buildDmUploadHeaders(userKey, devMode)}
-                      />
-                    </div>
+                      <div className="dm-message__bubble min-w-0 max-w-full overflow-hidden">
+                        <DmMessageContent
+                          message={message}
+                          downloadHeaders={buildDmUploadHeaders(userKey, devMode)}
+                        />
+                      </div>
                       <p className="dm-message__meta">
                         {!isUser && `${getDmSenderLabel(message.sender)} · `}
                         {formatDmTimestamp(message.createdAt)}
@@ -221,22 +235,23 @@ export default function DmPanel({ loginNextPath = "/dm" }: DmPanelProps) {
 
         <form
           onSubmit={handleSend}
-          className="dm-panel__composer shrink-0 border-t border-[var(--color-border)] p-4 pb-[max(1rem,env(safe-area-inset-bottom))] md:p-5"
+          className="dm-panel__composer relative z-[2] shrink-0 border-t border-[var(--color-border)] p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] md:p-5 md:pb-[max(1rem,env(safe-area-inset-bottom))]"
         >
-          <label htmlFor="dm-message" className="mb-1.5 block text-xs text-cream-muted">
+          <label htmlFor="dm-message" className="mb-1.5 hidden text-xs text-cream-muted md:block">
             メッセージ
           </label>
           <textarea
             id="dm-message"
             value={draft}
             onChange={(event) => setDraft(event.target.value)}
-            rows={4}
+            rows={3}
             maxLength={2000}
-            className={`${inputClass} min-h-[6rem] resize-y`}
-            placeholder="運営へのメッセージを入力…（画像・音声も添付できます）"
+            className={`${inputClass} min-h-[4.75rem] resize-none md:min-h-[6rem] md:resize-y`}
+            placeholder="運営へのメッセージ…（画像・音声も添付可）"
           />
 
           <DmAttachmentComposer
+            compact
             disabled={sending}
             uploading={uploadingAttachment}
             pendingAttachment={pendingAttachment}
@@ -244,12 +259,19 @@ export default function DmPanel({ loginNextPath = "/dm" }: DmPanelProps) {
             onClear={() => setPendingAttachment(null)}
           />
 
-          <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-            <p className="text-[11px] text-cream-faint">{draft.length}/2000</p>
+          <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-3">
+            {error && (
+              <p className="order-3 w-full text-sm leading-relaxed text-red-300 sm:order-3" role="alert">
+                {error}
+              </p>
+            )}
+            <p className="order-2 text-center text-[11px] text-cream-faint sm:order-1 sm:text-left">
+              {draft.length}/2000
+            </p>
             <button
               type="submit"
               disabled={sending || uploadingAttachment || (!draft.trim() && !pendingAttachment)}
-              className="btn-primary min-h-11 px-6 disabled:opacity-40"
+              className="btn-primary order-1 min-h-11 w-full touch-manipulation px-6 disabled:opacity-40 sm:order-2 sm:w-auto"
             >
               {sending ? "送信中…" : "送信する"}
             </button>
@@ -257,14 +279,8 @@ export default function DmPanel({ loginNextPath = "/dm" }: DmPanelProps) {
         </form>
       </div>
 
-      {error && (
-        <p className="mt-4 text-sm leading-relaxed text-red-300" role="alert">
-          {error}
-        </p>
-      )}
-
       {thread && (
-        <p className="mt-3 text-center text-[11px] text-cream-faint" role="status">
+        <p className="mt-2 hidden text-center text-[11px] text-cream-faint md:mt-3 md:block" role="status">
           最終更新: {formatDmTimestamp(thread.lastMessageAt)}
         </p>
       )}

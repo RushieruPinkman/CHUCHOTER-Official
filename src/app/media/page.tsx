@@ -3,11 +3,14 @@ import PageHero from "@/components/PageHero";
 import ScrollReveal from "@/components/ScrollReveal";
 import XLink from "@/components/XLink";
 import { SITE } from "@/lib/site";
-export const metadata: Metadata = {
+import { buildPageMetadata } from "@/lib/seo";
+
+export const metadata: Metadata = buildPageMetadata({
   title: "ラウンジ",
   description:
-    "CHUCHOTERのラウンジ。公式ポスター、女性キャスト・スタッフ募集のご案内。",
-};
+    "CHUCHOTER 公式ラウンジ — ポスター画像と女性キャスト・スタッフ募集のご案内。",
+  path: "/media",
+});
 
 const POSTER_SRC = "/images/lounge/poster.png";
 

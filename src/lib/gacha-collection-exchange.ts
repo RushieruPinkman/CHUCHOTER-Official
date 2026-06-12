@@ -5,6 +5,8 @@ import {
   type GachaRarity,
 } from "@/lib/gacha";
 import {
+  addGachaCollectionCast,
+  consumeCollectionCastAmount,
   consumeCollectionCasts,
   readGachaCollection,
   type GachaCollectionEntry,
@@ -17,26 +19,41 @@ const EXCHANGE_HISTORY_MAX_ENTRIES = USER_HISTORY_MAX_ENTRIES;
 export const GACHA_COLLECTION_EXCHANGE_UPDATED_EVENT =
   "chuchoter-gacha-collection-exchange-updated";
 
-export type CollectionExchangeTier = "male_set" | "female_set" | "complete_set";
+export type CollectionExchangeTier = "male_set" | "female_set" | "complete_set" | "star1_duplicate";
+
+/** 同じ★1カード何枚で好きな★1カード1枚と交換できるか */
+export const STAR1_DUPLICATE_EXCHANGE_COST = 3;
 
 export interface ResidentCastRef {
   id: string;
   name: string;
+  nameEn: string;
+  image: string;
   gender: Cast["gender"];
 }
 
 export interface CollectionExchangeConsumedCast {
   castId: string;
   name: string;
+  quantity?: number;
+}
+
+export interface CollectionExchangeReceivedCast {
+  castId: string;
+  name: string;
+  nameEn: string;
+  image: string;
+  gender: Cast["gender"];
 }
 
 export interface CollectionExchangeRecord {
   id: string;
   tier: CollectionExchangeTier;
-  rarity: 4 | 5 | 6;
+  rarity: 1 | 4 | 5 | 6;
   prizeTitle: string;
   prizeSubtitle: string;
   consumedCasts: CollectionExchangeConsumedCast[];
+  receivedCast?: CollectionExchangeReceivedCast;
   exchangedAt: string;
   serialNumber?: string;
   /** 表示用。交換履歴から開く際は API 同期で上書き */
@@ -177,7 +194,7 @@ function parseCollectionExchangeHistoryRecords(parsed: unknown): CollectionExcha
         record &&
         typeof record.id === "string" &&
         typeof record.exchangedAt === "string" &&
-        (record.rarity === 4 || record.rarity === 5 || record.rarity === 6)
+        (record.rarity === 1 || record.rarity === 4 || record.rarity === 5 || record.rarity === 6)
     )
     .sort(
       (a, b) => new Date(b.exchangedAt).getTime() - new Date(a.exchangedAt).getTime()
@@ -263,6 +280,106 @@ export function performCollectionExchange(
   return { ok: true, record };
 }
 
+export interface Star1DuplicateExchangeCandidate {
+  castId: string;
+  name: string;
+  nameEn: string;
+  image: string;
+  gender: Cast["gender"];
+  count: number;
+}
+
+export function getStar1DuplicateExchangeCandidates(
+  entries: GachaCollectionEntry[]
+): Star1DuplicateExchangeCandidate[] {
+  return entries
+    .filter((entry) => entry.count >= STAR1_DUPLICATE_EXCHANGE_COST)
+    .map((entry) => ({
+      castId: entry.castId,
+      name: entry.name,
+      nameEn: entry.nameEn,
+      image: entry.image,
+      gender: entry.gender,
+      count: entry.count,
+    }))
+    .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name, "ja"));
+}
+
+export function performStar1DuplicateExchange(
+  userKey: string,
+  residents: ResidentCastRef[],
+  duplicateCastId: string,
+  targetCastId: string
+): CollectionExchangeResult {
+  if (!userKey) {
+    return { ok: false, error: "ログインが必要です。" };
+  }
+
+  if (duplicateCastId === targetCastId) {
+    return { ok: false, error: "交換元と交換先は別のカードを選んでください。" };
+  }
+
+  const entries = readGachaCollection(userKey);
+  const duplicateEntry = entries.find((entry) => entry.castId === duplicateCastId);
+  if (!duplicateEntry || duplicateEntry.count < STAR1_DUPLICATE_EXCHANGE_COST) {
+    return {
+      ok: false,
+      error: `同じ★1カードが${STAR1_DUPLICATE_EXCHANGE_COST}枚以上必要です。`,
+    };
+  }
+
+  const target = residents.find((resident) => resident.id === targetCastId);
+  if (!target) {
+    return { ok: false, error: "交換先の住人が見つかりません。" };
+  }
+
+  const consumed = consumeCollectionCastAmount(
+    userKey,
+    duplicateCastId,
+    STAR1_DUPLICATE_EXCHANGE_COST
+  );
+  if (!consumed) {
+    return { ok: false, error: "コレクションの消費に失敗しました。" };
+  }
+
+  addGachaCollectionCast(userKey, {
+    id: target.id,
+    name: target.name,
+    nameEn: target.nameEn,
+    image: target.image,
+    gender: target.gender,
+  });
+
+  const exchangedAt = new Date().toISOString();
+  const record: CollectionExchangeRecord = {
+    id: `exchange-${Date.now()}`,
+    tier: "star1_duplicate",
+    rarity: 1,
+    prizeTitle: target.name,
+    prizeSubtitle: target.nameEn,
+    consumedCasts: [
+      {
+        castId: duplicateEntry.castId,
+        name: duplicateEntry.name,
+        quantity: STAR1_DUPLICATE_EXCHANGE_COST,
+      },
+    ],
+    receivedCast: {
+      castId: target.id,
+      name: target.name,
+      nameEn: target.nameEn,
+      image: target.image,
+      gender: target.gender,
+    },
+    exchangedAt,
+  };
+
+  const history = readCollectionExchangeHistory(userKey);
+  writeCollectionExchangeHistory(userKey, trimExchangeHistoryRecords([record, ...history]));
+
+  return { ok: true, record };
+}
+
 export function updateCollectionExchangeRecordSerial(
   userKey: string,
   recordId: string,
@@ -288,6 +405,27 @@ export function updateCollectionExchangeRecordSerial(
 export function exchangeRecordToGachaDrawResult(
   record: CollectionExchangeRecord
 ): GachaDrawResult {
+  if (record.rarity === 1 && record.receivedCast) {
+    const cast = record.receivedCast;
+    return {
+      rarity: 1,
+      prize: {
+        ...getPrizeByRarity(1),
+        title: cast.name,
+        subtitle: cast.nameEn,
+        description: `${cast.name}のカードを獲得しました`,
+      },
+      wonAt: record.exchangedAt,
+      cast: {
+        id: cast.castId,
+        name: cast.name,
+        nameEn: cast.nameEn,
+        image: cast.image,
+        gender: cast.gender,
+      },
+    };
+  }
+
   return {
     rarity: record.rarity,
     prize: getPrizeByRarity(record.rarity),
@@ -314,11 +452,13 @@ export function getExchangeTierRarityLabel(rarity: GachaRarity): string {
 }
 
 export function toResidentCastRefs(
-  casts: Pick<Cast, "id" | "name" | "gender">[]
+  casts: Pick<Cast, "id" | "name" | "nameEn" | "image" | "gender">[]
 ): ResidentCastRef[] {
   return casts.map((cast) => ({
     id: cast.id,
     name: cast.name,
+    nameEn: cast.nameEn,
+    image: cast.image,
     gender: cast.gender ?? "female",
   }));
 }

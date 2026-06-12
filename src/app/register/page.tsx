@@ -5,11 +5,15 @@ import LoginForm from "@/components/LoginForm";
 import PageHero from "@/components/PageHero";
 import { createClient } from "@/lib/supabase/server";
 import { getMissingUserAuthEnvVars, isUserAuthEnabledOnServer } from "@/lib/supabase/config";
+import { buildPageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = buildPageMetadata({
   title: "新規登録",
-  robots: { index: false, follow: false },
-};
+  description: "CHUCHOTER 会員登録。メールアドレスでアカウントを作成し、ガチャやコレクション機能をご利用ください。",
+  path: "/register",
+  index: false,
+  follow: false,
+});
 
 export default async function RegisterPage() {
   if (isUserAuthEnabledOnServer()) {

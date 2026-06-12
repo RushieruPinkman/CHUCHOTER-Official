@@ -335,7 +335,7 @@ export default function ResidentsEditor({
                     {cast.active ? "非公開にする" : "公開する"}
                   </button>
                   <a
-                    href={`/casts?cast=${cast.id}`}
+                    href={`/casts/${cast.id}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-xs text-cream-muted hover:text-gold"

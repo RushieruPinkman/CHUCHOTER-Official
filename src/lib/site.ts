@@ -8,8 +8,9 @@ export const SITE = {
   logoAlt:
     "CHUCHOTER — La meilleure guérison pour vous. 高級隠れ家マンションのロゴ",
   tagline: "あなたに最高の癒しを。",
+  /** TOP・OGP 既定の meta description（スマホ約70字以内に結論、全体120字目安） */
   description:
-    "VRChatで静かで質の高い1対1コミュニケーションを提供する、高級隠れ家マンション。Le Ciel Blanc・黒糖アメへのRequest Inviteはこちら。",
+    "CHUCHOTER（シュシュテ）はVRChatで行われる完全個室1対1密着型イベントです。完全予約制の高級隠れ家マンション。住人紹介・営業予定・Request Inviteは公式サイトからご確認ください。",
   url: process.env.NEXT_PUBLIC_SITE_URL || DEFAULT_SITE_URL,
   xHandle: "CHUCHOTER_VRC",
   xUrl: "https://x.com/CHUCHOTER_VRC?s=20",
@@ -17,7 +18,9 @@ export const SITE = {
   xRecipientId:
     process.env.NEXT_PUBLIC_X_RECIPIENT_ID ?? "1933854400952635393",
   vrchatGroupUrl: "https://vrc.group/CHUCHO.3872",
-  ogImage: "/images/logo.svg",
+  /** サイト共通 OGP（Next.js opengraph-image で生成） */
+  ogImage: "/opengraph-image",
+  ogImageAlt: "CHUCHOTER — 高級隠れ家マンション",
   heroImage: "/images/hero.webp",
   heroImageAlt: "CHUCHOTER ラウンジ内観",
   part1Time: "20:50",

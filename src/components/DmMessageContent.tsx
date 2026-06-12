@@ -37,19 +37,19 @@ export default function DmMessageContent({ message, downloadHeaders }: DmMessage
   };
 
   return (
-    <div className="dm-message__content space-y-2">
+    <div className="dm-message__content min-w-0 max-w-full space-y-2 overflow-hidden">
       {message.body.trim() && (
         <p className="dm-message__body whitespace-pre-wrap break-words">{message.body}</p>
       )}
 
       {attachment?.type === "image" && (
-        <figure className="dm-attachment dm-attachment--image">
+        <figure className="dm-attachment dm-attachment--image min-w-0 max-w-full overflow-hidden">
           <a href={attachment.url} target="_blank" rel="noopener noreferrer" className="block">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={attachment.url}
               alt={attachment.name}
-              className="dm-attachment__image max-h-64 w-full rounded-xl object-cover"
+              className="dm-attachment__image max-h-48 w-full rounded-xl object-cover md:max-h-64"
               loading="lazy"
             />
           </a>
@@ -63,8 +63,8 @@ export default function DmMessageContent({ message, downloadHeaders }: DmMessage
       )}
 
       {attachment?.type === "audio" && (
-        <figure className="dm-attachment dm-attachment--audio">
-          <audio controls preload="metadata" className="dm-attachment__audio w-full">
+        <figure className="dm-attachment dm-attachment--audio min-w-0 max-w-full overflow-hidden">
+          <audio controls preload="metadata" className="dm-attachment__audio block w-full max-w-full min-w-0">
             <source src={attachment.url} type={attachment.mime} />
           </audio>
           <figcaption className="mt-2 flex flex-wrap items-center gap-2">

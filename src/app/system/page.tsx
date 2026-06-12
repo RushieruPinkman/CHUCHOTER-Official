@@ -4,12 +4,14 @@ import ScrollReveal from "@/components/ScrollReveal";
 import VrChatGroupLink from "@/components/VrChatGroupLink";
 import XLink from "@/components/XLink";
 import { SITE } from "@/lib/site";
+import { buildPageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = buildPageMetadata({
   title: "ご案内",
   description:
-    "CHUCHOTERの入館システム、Request Invite手順、ドレスコード・マナーをご案内。初めてのお客様も迷わずチェックインいただけます。",
-};
+    "CHUCHOTER（シュシュテ）の入館方法・Request Invite手順・ドレスコードを掲載。VRChat完全個室1対1イベントの初めての方も安心してご利用いただけます。",
+  path: "/system",
+});
 
 const STEPS = [
   {

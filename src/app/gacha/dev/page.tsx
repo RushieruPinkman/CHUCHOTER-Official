@@ -6,13 +6,17 @@ import GachaMachine from "@/components/GachaMachine";
 import { getCasts } from "@/lib/data";
 import { isGachaDevEnabled } from "@/lib/gacha-dev";
 import type { GachaCastSnapshot } from "@/lib/gacha";
+import { buildPageMetadata } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = buildPageMetadata({
   title: "ガチャ（開発用）",
-  robots: { index: false, follow: false },
-};
+  description: "CHUCHOTER ガチャ開発用ページ。",
+  path: "/gacha/dev",
+  index: false,
+  follow: false,
+});
 
 export default async function GachaDevPage() {
   if (!isGachaDevEnabled()) {
