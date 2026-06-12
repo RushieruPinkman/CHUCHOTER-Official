@@ -81,7 +81,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <AnnouncementList items={announcements} />
+      <AnnouncementList items={announcements} variant="compact" />
 
       <section className="section-py" aria-labelledby="concept-heading">
         <div className="site-container">

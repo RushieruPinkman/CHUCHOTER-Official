@@ -59,6 +59,13 @@ export function formatJapaneseDate(dateStr: string): string {
   return `${month}月${day}日（${weekday}）`;
 }
 
+/** お知らせの公開日（YYYY-MM-DD）を表示用に整形 */
+export function formatAnnouncementDate(dateStr: string): string {
+  const date = new Date(`${dateStr}T00:00:00`);
+  if (Number.isNaN(date.getTime())) return dateStr;
+  return `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日`;
+}
+
 export function getWeekDates(startDate = new Date()): string[] {
   const dates: string[] = [];
   const start = new Date(startDate);

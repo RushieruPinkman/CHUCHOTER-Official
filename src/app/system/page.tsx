@@ -1,10 +1,14 @@
 import type { Metadata } from "next";
 import PageHero from "@/components/PageHero";
 import ScrollReveal from "@/components/ScrollReveal";
+import AnnouncementList from "@/components/AnnouncementList";
 import VrChatGroupLink from "@/components/VrChatGroupLink";
 import XLink from "@/components/XLink";
+import { getAnnouncements } from "@/lib/data";
 import { SITE } from "@/lib/site";
 import { buildPageMetadata } from "@/lib/seo";
+
+export const revalidate = 300;
 
 export const metadata: Metadata = buildPageMetadata({
   title: "ご案内",
@@ -34,7 +38,9 @@ const MANNERS = [
   "体調不良時は無理せず、またの機会をお待ちしております。",
 ];
 
-export default function SystemPage() {
+export default async function SystemPage() {
+  const announcements = await getAnnouncements();
+
   return (
     <>
       <PageHero
@@ -42,6 +48,8 @@ export default function SystemPage() {
         titleJa="ご利用案内"
         description="初めてのお客様も迷わないよう、入館からRequest Inviteまで、コンシェルジュが丁寧にご案内いたします。"
       />
+
+      <AnnouncementList items={announcements} variant="detail" />
 
       <section className="pb-12 md:pb-14" aria-labelledby="system-heading">
         <div className="site-container">
