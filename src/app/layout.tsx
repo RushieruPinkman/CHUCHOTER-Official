@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
+import SiteShell from "@/components/SiteShell";
 import StructuredData from "@/components/StructuredData";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { SITE } from "@/lib/site";
@@ -63,11 +62,7 @@ export default function RootLayout({
             <div className="ambient-bg__vignette" />
           </div>
 
-          <Header />
-          <main id="main-content" className="relative z-10 w-full max-w-full flex-1 overflow-x-hidden">
-            {children}
-          </main>
-          <Footer />
+          <SiteShell>{children}</SiteShell>
         </ThemeProvider>
       </body>
     </html>

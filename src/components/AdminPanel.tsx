@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import Logo from "@/components/Logo";
+import AdminHeader from "@/components/AdminHeader";
 import ImageUploader from "@/components/admin/ImageUploader";
 import VoiceUploader from "@/components/admin/VoiceUploader";
 import ResidentsEditor from "@/components/admin/ResidentsEditor";
@@ -298,10 +298,11 @@ export default function AdminPanel({
 
   if (!token) {
     return (
-      <div className="flex min-h-screen items-center justify-center px-4 pt-20">
-        <form onSubmit={handleLogin} className="panel w-full max-w-md p-8 md:p-10">
-          <Logo size="sm" className="mb-8" />
-          <h1 className="section-title mb-6 text-xl">管理者ログイン</h1>
+      <>
+        <AdminHeader />
+        <div className="flex min-h-[60svh] items-center justify-center px-4 py-10">
+          <form onSubmit={handleLogin} className="panel w-full max-w-md p-8 md:p-10">
+            <h1 className="section-title mb-6 text-xl">管理者ログイン</h1>
           <label htmlFor="password" className="mb-2 block text-sm text-cream-muted">
             パスワード
           </label>
@@ -320,8 +321,9 @@ export default function AdminPanel({
           <p className="mt-6 text-[11px] text-cream-faint">
             パスワードは data/settings.json で変更できます
           </p>
-        </form>
-      </div>
+          </form>
+        </div>
+      </>
     );
   }
 
@@ -335,16 +337,15 @@ export default function AdminPanel({
   ];
 
   return (
-    <div className="site-container py-20 md:py-24">
-      <div className="mb-10 flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <Logo size="sm" className="mb-4" />
-          <h1 className="section-title text-xl">管理画面</h1>
-        </div>
-        <button type="button" onClick={handleLogout} className="btn-ghost text-sm">
-          ログアウト
-        </button>
-      </div>
+    <>
+      <AdminHeader
+        trailing={
+          <button type="button" onClick={handleLogout} className="btn-ghost text-sm">
+            ログアウト
+          </button>
+        }
+      />
+      <div className="site-container py-8 md:py-10">
 
       {remoteStorage && !storageIssue && (
         <p className="panel mb-6 border-gold/30 px-4 py-3 text-sm leading-relaxed text-cream-muted">
@@ -692,7 +693,8 @@ export default function AdminPanel({
           </form>
         </Modal>
       )}
-    </div>
+      </div>
+    </>
   );
 }
 
