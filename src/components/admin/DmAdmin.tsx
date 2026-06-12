@@ -37,7 +37,8 @@ export default function DmAdmin({ authJsonHeaders, remoteStorage }: DmAdminProps
   const [settings, setSettings] = useState<DmSettings>({ discordWebhookUrl: "" });
   const [webhookDraft, setWebhookDraft] = useState("");
   const [unreadTotal, setUnreadTotal] = useState(0);
-  const [loading, setLoading] = useState(false);
+  const [inboxLoading, setInboxLoading] = useState(false);
+  const [threadLoading, setThreadLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [sending, setSending] = useState(false);
   const [uploadingAttachment, setUploadingAttachment] = useState(false);
@@ -46,12 +47,13 @@ export default function DmAdmin({ authJsonHeaders, remoteStorage }: DmAdminProps
   const [error, setError] = useState<string | null>(null);
   const [mobileChatOpen, setMobileChatOpen] = useState(false);
   const selectedIdRef = useRef<string | null>(null);
+  const loadingThreadIdRef = useRef<string | null>(null);
   const loadThreadRequestRef = useRef(0);
-  const scrollKey = buildDmMessageScrollKey(messages, loading && messages.length === 0);
+  const scrollKey = buildDmMessageScrollKey(messages, threadLoading && messages.length === 0);
   const { containerRef, bottomSentinelRef, handleScroll, scrollToBottom } = useDmMessageListScroll(
     scrollKey,
     {
-      paused: loading && messages.length === 0,
+      paused: threadLoading && messages.length === 0,
       resetKey: selectedId,
     }
   );
@@ -114,7 +116,7 @@ export default function DmAdmin({ authJsonHeaders, remoteStorage }: DmAdminProps
       if (silent) {
         setRefreshing(true);
       } else {
-        setLoading(true);
+        setInboxLoading(true);
       }
       setError(null);
       try {
@@ -138,7 +140,7 @@ export default function DmAdmin({ authJsonHeaders, remoteStorage }: DmAdminProps
         if (silent) {
           setRefreshing(false);
         } else {
-          setLoading(false);
+          setInboxLoading(false);
         }
       }
     },
@@ -156,18 +158,30 @@ export default function DmAdmin({ authJsonHeaders, remoteStorage }: DmAdminProps
     return () => window.clearInterval(interval);
   }, [refreshAll]);
 
-  const handleSelectThread = async (threadId: string) => {
+  const handleSelectThread = (threadId: string) => {
+    const summary = threads.find((thread) => thread.id === threadId);
+    if (!summary) return;
+
     setError(null);
     setPendingAttachment(null);
-    setLoading(true);
-    try {
-      await loadThread(threadId);
-      setMobileChatOpen(true);
-    } catch (selectError) {
-      setError(selectError instanceof Error ? selectError.message : "DM の取得に失敗しました");
-    } finally {
-      setLoading(false);
-    }
+    setDraft("");
+    setSelectedId(threadId);
+    selectedIdRef.current = threadId;
+    setActiveThread(summary);
+    setMessages([]);
+    setMobileChatOpen(true);
+    loadingThreadIdRef.current = threadId;
+    setThreadLoading(true);
+
+    void loadThread(threadId)
+      .catch((selectError) => {
+        setError(selectError instanceof Error ? selectError.message : "DM の取得に失敗しました");
+      })
+      .finally(() => {
+        if (loadingThreadIdRef.current === threadId) {
+          setThreadLoading(false);
+        }
+      });
   };
 
   const handleBackToList = () => {
@@ -371,7 +385,11 @@ export default function DmAdmin({ authJsonHeaders, remoteStorage }: DmAdminProps
               mobileChatOpen ? "hidden lg:block" : "block"
             }`}
           >
-            {threads.length === 0 ? (
+            {inboxLoading && threads.length === 0 ? (
+              <div className="dm-panel__state" role="status">
+                <p className="text-sm text-cream-faint">一覧を読み込み中…</p>
+              </div>
+            ) : threads.length === 0 ? (
               <p className="px-4 py-8 text-center text-sm text-cream-faint">DM はまだありません。</p>
             ) : (
               <ul className="dm-admin__thread-list lg:max-h-[32rem] lg:overflow-y-auto">
@@ -381,7 +399,7 @@ export default function DmAdmin({ authJsonHeaders, remoteStorage }: DmAdminProps
                     <li key={thread.id}>
                       <button
                         type="button"
-                        onClick={() => void handleSelectThread(thread.id)}
+                        onClick={() => handleSelectThread(thread.id)}
                         className={`dm-admin__thread-item w-full px-4 py-4 text-left transition-colors ${
                           active ? "dm-admin__thread-item--active" : ""
                         }`}
@@ -408,10 +426,10 @@ export default function DmAdmin({ authJsonHeaders, remoteStorage }: DmAdminProps
 
           <section
             className={`dm-admin__conversation min-h-[24rem] flex-col ${
-              mobileChatOpen && activeThread ? "flex" : "hidden lg:flex"
+              selectedId ? (mobileChatOpen ? "flex" : "hidden lg:flex") : "hidden lg:flex"
             }`}
           >
-            {!activeThread ? (
+            {!selectedId ? (
               <p className="hidden h-full min-h-[24rem] items-center justify-center px-6 text-sm text-cream-faint lg:flex">
                 左の一覧から会話を選択してください。
               </p>
@@ -429,12 +447,17 @@ export default function DmAdmin({ authJsonHeaders, remoteStorage }: DmAdminProps
                     </button>
                     <div className="min-w-0 flex-1">
                       <p className="truncate font-serif-jp text-base text-cream">
-                        {activeThread.userDisplayName}
+                        {activeThread?.userDisplayName}
                       </p>
-                      {activeThread.userEmail && (
+                      {activeThread?.userEmail && (
                         <p className="mt-1 break-all text-xs text-cream-faint">{activeThread.userEmail}</p>
                       )}
                     </div>
+                    {threadLoading && (
+                      <span className="shrink-0 text-[10px] tracking-[0.08em] text-cream-faint">
+                        読み込み中…
+                      </span>
+                    )}
                   </div>
                 </div>
 
@@ -442,30 +465,46 @@ export default function DmAdmin({ authJsonHeaders, remoteStorage }: DmAdminProps
                   ref={containerRef}
                   onScroll={handleScroll}
                   className="dm-panel__messages dm-panel__messages--fill min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 py-4 md:max-h-[24rem] md:flex-none md:px-4"
+                  aria-busy={threadLoading}
                 >
-                  <ul className="dm-message-list">
-                    {messages.map((message) => {
-                      const isAdmin = message.sender === "admin";
-                      return (
-                        <li
-                          key={message.id}
-                          className={`dm-message ${isAdmin ? "dm-message--admin" : "dm-message--user"}`}
-                        >
-                          <div className="dm-message__bubble">
-                            <DmMessageContent
-                              message={message}
-                              downloadHeaders={{ Authorization: (authJsonHeaders() as Record<string, string>).Authorization }}
-                            />
-                          </div>
-                          <p className="dm-message__meta">
-                            {!isAdmin && `${getDmSenderLabel(message.sender)} · `}
-                            {formatDmTimestamp(message.createdAt)}
-                          </p>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                  <div ref={bottomSentinelRef} className="dm-panel__scroll-sentinel" aria-hidden="true" />
+                  {threadLoading ? (
+                    <div className="dm-admin__thread-loading dm-panel__state" role="status">
+                      <span className="dm-composer__attach-spinner" aria-hidden="true" />
+                      <p className="mt-3 text-sm text-cream-muted">メッセージを読み込み中…</p>
+                    </div>
+                  ) : messages.length === 0 ? (
+                    <div className="dm-panel__state">
+                      <p className="text-sm text-cream-faint">メッセージはまだありません。</p>
+                    </div>
+                  ) : (
+                    <>
+                      <ul className="dm-message-list">
+                        {messages.map((message) => {
+                          const isAdmin = message.sender === "admin";
+                          return (
+                            <li
+                              key={message.id}
+                              className={`dm-message ${isAdmin ? "dm-message--admin" : "dm-message--user"}`}
+                            >
+                              <div className="dm-message__bubble">
+                                <DmMessageContent
+                                  message={message}
+                                  downloadHeaders={{
+                                    Authorization: (authJsonHeaders() as Record<string, string>).Authorization,
+                                  }}
+                                />
+                              </div>
+                              <p className="dm-message__meta">
+                                {!isAdmin && `${getDmSenderLabel(message.sender)} · `}
+                                {formatDmTimestamp(message.createdAt)}
+                              </p>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                      <div ref={bottomSentinelRef} className="dm-panel__scroll-sentinel" aria-hidden="true" />
+                    </>
+                  )}
                 </div>
 
                 <form
@@ -481,12 +520,13 @@ export default function DmAdmin({ authJsonHeaders, remoteStorage }: DmAdminProps
                     onChange={(event) => setDraft(event.target.value)}
                     rows={4}
                     maxLength={2000}
-                    className={`${inputClass} min-h-[6rem] resize-y`}
+                    disabled={threadLoading}
+                    className={`${inputClass} min-h-[6rem] resize-y disabled:opacity-50`}
                     placeholder="返信メッセージを入力…（画像・音声も添付できます）"
                   />
 
                   <DmAttachmentComposer
-                    disabled={sending || !selectedId}
+                    disabled={sending || !selectedId || threadLoading}
                     uploading={uploadingAttachment}
                     pendingAttachment={pendingAttachment}
                     onSelectFile={handleSelectAttachment}
@@ -500,7 +540,7 @@ export default function DmAdmin({ authJsonHeaders, remoteStorage }: DmAdminProps
                         sending ||
                         uploadingAttachment ||
                         !selectedId ||
-                        loading ||
+                        threadLoading ||
                         refreshing ||
                         (!draft.trim() && !pendingAttachment)
                       }

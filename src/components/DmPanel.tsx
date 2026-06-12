@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import DmAttachmentComposer from "@/components/DmAttachmentComposer";
 import DmMessageContent from "@/components/DmMessageContent";
@@ -32,9 +32,6 @@ interface DmPanelProps {
   loginNextPath?: string;
 }
 
-const inputClass =
-  "w-full border border-[var(--color-border)] bg-deep px-3 py-2.5 text-sm text-cream focus:border-gold focus:outline-none";
-
 export default function DmPanel({ loginNextPath = "/dm" }: DmPanelProps) {
   const { userKey, memberLabel, ready: authReady } = useCollectionUserKey();
   const devMode = isAuthDevEnabled() && !isUserAuthEnabled();
@@ -46,6 +43,7 @@ export default function DmPanel({ loginNextPath = "/dm" }: DmPanelProps) {
   const [uploadingAttachment, setUploadingAttachment] = useState(false);
   const [pendingAttachment, setPendingAttachment] = useState<DmAttachmentPayload | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const scrollKey = buildDmMessageScrollKey(messages, loading && messages.length === 0);
   const { containerRef, bottomSentinelRef, handleScroll, scrollToBottom } = useDmMessageListScroll(
     scrollKey,
@@ -54,6 +52,12 @@ export default function DmPanel({ loginNextPath = "/dm" }: DmPanelProps) {
       resetKey: userKey,
     }
   );
+
+  const canSend =
+    Boolean(userKey) &&
+    !sending &&
+    !uploadingAttachment &&
+    (draft.trim().length > 0 || pendingAttachment !== null);
 
   const refresh = useCallback(async (options?: { silent?: boolean }) => {
     if (!userKey) {
@@ -105,10 +109,9 @@ export default function DmPanel({ loginNextPath = "/dm" }: DmPanelProps) {
     };
   }, [refresh, userKey]);
 
-  const handleSend = async (event: React.FormEvent) => {
-    event.preventDefault();
-    if (!userKey || sending || uploadingAttachment) return;
-    if (!draft.trim() && !pendingAttachment) return;
+  const handleSend = async (event?: React.FormEvent) => {
+    event?.preventDefault();
+    if (!canSend || !userKey) return;
 
     setSending(true);
     setError(null);
@@ -127,6 +130,13 @@ export default function DmPanel({ loginNextPath = "/dm" }: DmPanelProps) {
     }
   };
 
+  const handleComposerKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (event.key !== "Enter" || event.shiftKey || event.nativeEvent.isComposing) return;
+    event.preventDefault();
+    if (!canSend) return;
+    void handleSend();
+  };
+
   const handleSelectAttachment = async (file: File) => {
     if (!userKey) return;
     setUploadingAttachment(true);
@@ -134,6 +144,7 @@ export default function DmPanel({ loginNextPath = "/dm" }: DmPanelProps) {
     try {
       const attachment = await uploadUserDmAttachment(userKey, devMode, file);
       setPendingAttachment(attachment);
+      textareaRef.current?.focus();
     } finally {
       setUploadingAttachment(false);
     }
@@ -141,24 +152,38 @@ export default function DmPanel({ loginNextPath = "/dm" }: DmPanelProps) {
 
   if (!authReady) {
     return (
-      <p className="py-12 text-center text-sm text-cream-faint" role="status">
-        読み込み中…
-      </p>
+      <div className="dm-panel__state" role="status">
+        <p className="text-sm text-cream-faint">読み込み中…</p>
+      </div>
     );
   }
 
   if (!userKey) {
     return (
-      <div className="profile-collection__empty mx-auto max-w-lg border border-[var(--color-border)] bg-deep/60 px-6 py-10 text-center">
-        <p className="text-sm leading-relaxed text-cream-muted">
+      <div className="dm-panel__gate mx-auto w-full max-w-md">
+        <div className="dm-panel__gate-icon" aria-hidden="true">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+            <path
+              d="M4 6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v7A2.5 2.5 0 0 1 17.5 16H9l-4.5 4v-4H6.5A2.5 2.5 0 0 1 4 13.5v-7Z"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </div>
+        <h2 className="dm-panel__gate-title">ログインが必要です</h2>
+        <p className="mt-3 text-sm leading-relaxed text-cream-muted">
           運営とのDMは、ログイン中のアカウントでのみご利用いただけます。
         </p>
-        <p className="mt-2 text-xs leading-relaxed text-cream-faint">{DM_RETENTION_NOTICE}</p>
-        <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-          <Link href={getAuthLoginHref(loginNextPath)} className="btn-primary inline-flex min-h-11 items-center px-6">
+        <details className="dm-panel__notice mt-4 text-left">
+          <summary>ご利用上の注意</summary>
+          <p className="mt-2">{DM_RETENTION_NOTICE}</p>
+        </details>
+        <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-center">
+          <Link href={getAuthLoginHref(loginNextPath)} className="btn-primary inline-flex min-h-11 items-center justify-center px-6">
             ログイン
           </Link>
-          <Link href={getAuthRegisterHref(loginNextPath)} className="btn-ghost inline-flex min-h-11 items-center px-6">
+          <Link href={getAuthRegisterHref(loginNextPath)} className="btn-ghost inline-flex min-h-11 items-center justify-center px-6">
             新規登録
           </Link>
         </div>
@@ -168,40 +193,59 @@ export default function DmPanel({ loginNextPath = "/dm" }: DmPanelProps) {
 
   return (
     <div className="dm-panel dm-panel--user mx-auto flex h-full min-h-0 w-full max-w-2xl flex-col">
-      <details className="dm-panel__notice mb-3 border border-[var(--color-border)] bg-deep/60 px-3 py-2.5 text-xs leading-relaxed text-cream-faint md:mb-5 md:hidden">
-        <summary className="cursor-pointer list-none text-center marker:content-none [&::-webkit-details-marker]:hidden">
-          <span className="text-cream-muted">ご利用上の注意</span>
-        </summary>
-        <div className="mt-2 border-t border-[var(--color-border)] pt-2 text-center">
+      <details className="dm-panel__notice">
+        <summary>ご利用上の注意</summary>
+        <div className="dm-panel__notice-body">
+          {memberLabel && <p className="text-cream-muted">{memberLabel} として送信されます。</p>}
           <p>{DM_RETENTION_NOTICE}</p>
+          <p className="text-[10px] text-cream-faint">
+            画像 5MB まで / 音声 10MB まで。Enter で送信、Shift+Enter で改行。
+          </p>
         </div>
       </details>
 
-      <div className="dm-panel__notice mb-4 hidden border border-[var(--color-border)] bg-deep/60 px-4 py-3 text-center text-xs leading-relaxed text-cream-faint md:mb-5 md:block">
-        {memberLabel && <span className="block text-cream-muted">{memberLabel} として送信されます。</span>}
-        <span className="mt-1 block">{DM_RETENTION_NOTICE}</span>
-      </div>
-
-      <div className="dm-panel__chat flex min-h-0 flex-1 flex-col overflow-hidden border border-[var(--color-border)] bg-deep/70">
-        {memberLabel && (
-          <div className="dm-panel__chat-header shrink-0 border-b border-[var(--color-border)] px-3 py-2.5 md:hidden">
-            <p className="truncate text-center text-xs text-cream-muted">{memberLabel}</p>
+      <div className="dm-panel__chat flex min-h-0 flex-1 flex-col overflow-hidden">
+        <header className="dm-panel__chat-header">
+          <div className="min-w-0">
+            <p className="dm-panel__chat-label">Contact</p>
+            <h2 className="dm-panel__chat-title">運営DM</h2>
           </div>
-        )}
+          <div className="dm-panel__chat-meta">
+            {memberLabel && <span className="dm-panel__member-badge">{memberLabel}</span>}
+            {thread && (
+              <span className="dm-panel__updated hidden md:inline">
+                更新 {formatDmTimestamp(thread.lastMessageAt)}
+              </span>
+            )}
+          </div>
+        </header>
+
         <div
           ref={containerRef}
           onScroll={handleScroll}
-          className="dm-panel__messages dm-panel__messages--user min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain px-3 py-3 md:max-h-[28rem] md:flex-none md:px-4 md:py-4"
+          className="dm-panel__messages dm-panel__messages--user min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain"
+          aria-live="polite"
+          aria-relevant="additions"
         >
           {loading && messages.length === 0 ? (
-            <p className="py-8 text-center text-sm text-cream-faint" role="status">
-              読み込み中…
-            </p>
+            <div className="dm-panel__state" role="status">
+              <p className="text-sm text-cream-faint">読み込み中…</p>
+            </div>
           ) : messages.length === 0 ? (
-            <div className="py-10 text-center">
-              <p className="text-sm text-cream-muted">まだメッセージはありません。</p>
-              <p className="mt-2 text-xs leading-relaxed text-cream-faint">
-                当選報告・お問い合わせなど、運営への連絡はこちらからどうぞ。
+            <div className="dm-panel__empty">
+              <div className="dm-panel__empty-icon" aria-hidden="true">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
+                  <path
+                    d="M4 6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v7A2.5 2.5 0 0 1 17.5 16H9l-4.5 4v-4H6.5A2.5 2.5 0 0 1 4 13.5v-7Z"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </div>
+              <p className="text-sm text-cream">まだメッセージはありません</p>
+              <p className="mt-2 max-w-xs text-xs leading-relaxed text-cream-faint">
+                当選報告・お問い合わせなど、運営への連絡は下の入力欄からどうぞ。
               </p>
             </div>
           ) : (
@@ -214,16 +258,16 @@ export default function DmPanel({ loginNextPath = "/dm" }: DmPanelProps) {
                       key={message.id}
                       className={`dm-message ${isUser ? "dm-message--user" : "dm-message--admin"}`}
                     >
+                      {!isUser && (
+                        <p className="dm-message__sender">{getDmSenderLabel(message.sender)}</p>
+                      )}
                       <div className="dm-message__bubble min-w-0 max-w-full overflow-hidden">
                         <DmMessageContent
                           message={message}
                           downloadHeaders={buildDmUploadHeaders(userKey, devMode)}
                         />
                       </div>
-                      <p className="dm-message__meta">
-                        {!isUser && `${getDmSenderLabel(message.sender)} · `}
-                        {formatDmTimestamp(message.createdAt)}
-                      </p>
+                      <p className="dm-message__meta">{formatDmTimestamp(message.createdAt)}</p>
                     </li>
                   );
                 })}
@@ -234,56 +278,74 @@ export default function DmPanel({ loginNextPath = "/dm" }: DmPanelProps) {
         </div>
 
         <form
-          onSubmit={handleSend}
-          className="dm-panel__composer relative z-[2] shrink-0 border-t border-[var(--color-border)] p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] md:p-5 md:pb-[max(1rem,env(safe-area-inset-bottom))]"
+          onSubmit={(event) => void handleSend(event)}
+          className="dm-panel__composer dm-composer"
         >
-          <label htmlFor="dm-message" className="mb-1.5 hidden text-xs text-cream-muted md:block">
-            メッセージ
-          </label>
-          <textarea
-            id="dm-message"
-            value={draft}
-            onChange={(event) => setDraft(event.target.value)}
-            rows={3}
-            maxLength={2000}
-            className={`${inputClass} min-h-[4.75rem] resize-none md:min-h-[6rem] md:resize-y`}
-            placeholder="運営へのメッセージ…（画像・音声も添付可）"
-          />
+          {pendingAttachment && (
+            <div className="dm-composer__pending">
+              <span className="dm-composer__pending-label">
+                添付: {pendingAttachment.name}
+                <span className="text-cream-faint">
+                  {" "}
+                  （{pendingAttachment.type === "image" ? "画像" : "音声"}）
+                </span>
+              </span>
+              <button
+                type="button"
+                onClick={() => setPendingAttachment(null)}
+                className="dm-composer__pending-clear"
+                aria-label="添付を解除"
+              >
+                ×
+              </button>
+            </div>
+          )}
 
-          <DmAttachmentComposer
-            compact
-            disabled={sending}
-            uploading={uploadingAttachment}
-            pendingAttachment={pendingAttachment}
-            onSelectFile={handleSelectAttachment}
-            onClear={() => setPendingAttachment(null)}
-          />
-
-          <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-3">
-            {error && (
-              <p className="order-3 w-full text-sm leading-relaxed text-red-300 sm:order-3" role="alert">
-                {error}
-              </p>
-            )}
-            <p className="order-2 text-center text-[11px] text-cream-faint sm:order-1 sm:text-left">
-              {draft.length}/2000
-            </p>
+          <div className="dm-composer__toolbar">
+            <DmAttachmentComposer
+              variant="toolbar"
+              disabled={sending}
+              uploading={uploadingAttachment}
+              pendingAttachment={pendingAttachment}
+              onSelectFile={handleSelectAttachment}
+              onClear={() => setPendingAttachment(null)}
+            />
+            <label htmlFor="dm-message" className="sr-only">
+              メッセージ
+            </label>
+            <textarea
+              ref={textareaRef}
+              id="dm-message"
+              value={draft}
+              onChange={(event) => setDraft(event.target.value)}
+              onKeyDown={handleComposerKeyDown}
+              rows={1}
+              maxLength={2000}
+              className="dm-composer__input"
+              placeholder="メッセージを入力…"
+            />
             <button
               type="submit"
-              disabled={sending || uploadingAttachment || (!draft.trim() && !pendingAttachment)}
-              className="btn-primary order-1 min-h-11 w-full touch-manipulation px-6 disabled:opacity-40 sm:order-2 sm:w-auto"
+              disabled={!canSend}
+              className="dm-composer__send btn-primary touch-manipulation"
+              aria-label={sending ? "送信中" : "送信する"}
             >
-              {sending ? "送信中…" : "送信する"}
+              {sending ? "…" : "送信"}
             </button>
+          </div>
+
+          <div className="dm-composer__footer">
+            {error ? (
+              <p className="dm-composer__error" role="alert">
+                {error}
+              </p>
+            ) : (
+              <span className="dm-composer__hint">Shift+Enter で改行</span>
+            )}
+            <span className="dm-composer__count">{draft.length}/2000</span>
           </div>
         </form>
       </div>
-
-      {thread && (
-        <p className="mt-2 hidden text-center text-[11px] text-cream-faint md:mt-3 md:block" role="status">
-          最終更新: {formatDmTimestamp(thread.lastMessageAt)}
-        </p>
-      )}
     </div>
   );
 }

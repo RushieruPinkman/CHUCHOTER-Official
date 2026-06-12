@@ -7,12 +7,13 @@ import VoiceUploader from "@/components/admin/VoiceUploader";
 import ResidentsEditor from "@/components/admin/ResidentsEditor";
 import ScheduleEditor from "@/components/admin/ScheduleEditor";
 import GachaSerialAdmin from "@/components/admin/GachaSerialAdmin";
+import CpAdminPanel from "@/components/admin/CpAdminPanel";
 import DmAdmin from "@/components/admin/DmAdmin";
 import { readApiError } from "@/lib/api-error";
 import { CAST_ROLES, CAST_ROLE_LABELS, normalizeCastRole } from "@/lib/cast-roles";
 import type { Announcement, Cast, CastRole, ScheduleEntry, SiteStatus } from "@/types";
 
-type Tab = "announcements" | "residents" | "schedule" | "status" | "serials" | "dm";
+type Tab = "announcements" | "residents" | "schedule" | "status" | "serials" | "cp" | "dm";
 
 const EMPTY_CAST: Omit<Cast, "id"> = {
   name: "",
@@ -333,6 +334,7 @@ export default function AdminPanel({
     { id: "schedule", label: "予定表" },
     { id: "status", label: "運行状況" },
     { id: "serials", label: "シリアル" },
+    { id: "cp", label: "CP" },
     { id: "dm", label: "DM" },
   ];
 
@@ -526,6 +528,10 @@ export default function AdminPanel({
 
       {tab === "serials" && token && (
         <GachaSerialAdmin authJsonHeaders={authJsonHeaders} remoteStorage={remoteStorage} />
+      )}
+
+      {tab === "cp" && token && (
+        <CpAdminPanel authJsonHeaders={authJsonHeaders} remoteStorage={remoteStorage} />
       )}
 
       {tab === "dm" && token && (

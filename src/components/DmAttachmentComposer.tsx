@@ -11,8 +11,22 @@ interface DmAttachmentComposerProps {
   pendingAttachment: DmAttachmentPayload | null;
   uploading?: boolean;
   compact?: boolean;
+  variant?: "default" | "toolbar";
   onSelectFile: (file: File) => Promise<void>;
   onClear: () => void;
+}
+
+function AttachIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path
+        d="M16.5 6.5v8.75a4.75 4.75 0 0 1-9.5 0V5.5a3.25 3.25 0 0 1 6.5 0v8.25a2 2 0 0 1-4 0V6"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
 }
 
 export default function DmAttachmentComposer({
@@ -20,6 +34,7 @@ export default function DmAttachmentComposer({
   pendingAttachment,
   uploading = false,
   compact = false,
+  variant = "default",
   onSelectFile,
   onClear,
 }: DmAttachmentComposerProps) {
@@ -38,6 +53,40 @@ export default function DmAttachmentComposer({
       setLocalError(error instanceof Error ? error.message : "添付ファイルの準備に失敗しました");
     }
   };
+
+  if (variant === "toolbar") {
+    return (
+      <div className="dm-attachment-composer dm-attachment-composer--toolbar">
+        <input
+          ref={inputRef}
+          type="file"
+          accept={ACCEPT}
+          className="sr-only"
+          disabled={disabled || uploading}
+          onChange={(event) => void handleChange(event)}
+        />
+        <button
+          type="button"
+          disabled={disabled || uploading}
+          onClick={() => inputRef.current?.click()}
+          className="dm-composer__attach-btn"
+          aria-label={uploading ? "アップロード中" : "画像・音声を添付"}
+          title={uploading ? "アップロード中…" : "画像・音声を添付"}
+        >
+          {uploading ? (
+            <span className="dm-composer__attach-spinner" aria-hidden="true" />
+          ) : (
+            <AttachIcon />
+          )}
+        </button>
+        {localError && (
+          <p className="sr-only" role="alert">
+            {localError}
+          </p>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="dm-attachment-composer space-y-2">

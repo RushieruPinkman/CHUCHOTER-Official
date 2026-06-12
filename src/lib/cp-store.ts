@@ -11,6 +11,7 @@ import {
   type CpState,
   type DailyTaskId,
 } from "@/lib/cp";
+import { buildAuthCollectionUserKey } from "@/lib/gacha-collection";
 import { getGachaDayJst } from "@/lib/gacha-daily-limit";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 
@@ -288,4 +289,120 @@ export async function spendCpForGachaDraw(
 ): Promise<number> {
   const cost = count === 10 ? CP_GACHA_TEN_COST : CP_GACHA_SINGLE_COST;
   return spendCp(userKey, cost, count === 10 ? "gacha_ten_draw" : "gacha_single_draw");
+}
+
+async function paginateTableUserKeys(table: string): Promise<string[]> {
+  const supabase = getSupabaseAdmin()!;
+  const keys = new Set<string>();
+  let from = 0;
+  const pageSize = 500;
+
+  while (true) {
+    const { data, error } = await supabase
+      .from(table)
+      .select("user_key")
+      .range(from, from + pageSize - 1);
+
+    if (error) {
+      if (isMissingTableError(error)) return [...keys];
+      throw new Error(error.message);
+    }
+
+    const rows = (data as { user_key: string }[] | null) ?? [];
+    for (const row of rows) {
+      if (row.user_key?.trim()) keys.add(row.user_key.trim());
+    }
+
+    if (rows.length < pageSize) break;
+    from += pageSize;
+  }
+
+  return [...keys];
+}
+
+async function listAuthUserKeys(): Promise<string[]> {
+  const supabase = getSupabaseAdmin()!;
+  const keys = new Set<string>();
+  let page = 1;
+  const perPage = 200;
+
+  while (true) {
+    const { data, error } = await supabase.auth.admin.listUsers({ page, perPage });
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    for (const user of data.users) {
+      if (user.id) keys.add(buildAuthCollectionUserKey(user.id));
+    }
+
+    if (data.users.length < perPage) break;
+    page += 1;
+  }
+
+  return [...keys];
+}
+
+export async function collectAllCpUserKeys(): Promise<string[]> {
+  if (!isCpStoreEnabled()) {
+    throw new Error("CP 機能が設定されていません。scripts/supabase-cp.sql を実行してください。");
+  }
+
+  const keys = new Set<string>();
+
+  for (const key of await listAuthUserKeys()) {
+    keys.add(key);
+  }
+  for (const key of await paginateTableUserKeys("user_cp_balances")) {
+    keys.add(key);
+  }
+  for (const key of await paginateTableUserKeys("dm_threads")) {
+    keys.add(key);
+  }
+
+  return [...keys].sort();
+}
+
+export async function grantCp(
+  userKey: string,
+  amount: number,
+  reason: string,
+  refId?: string | null
+): Promise<number> {
+  if (!isCpStoreEnabled()) {
+    throw new Error("CP 機能が設定されていません。");
+  }
+  if (amount <= 0) {
+    throw new Error("付与 CP が不正です。");
+  }
+
+  const currentBalance = await ensureBalanceRow(userKey);
+  const nextBalance = currentBalance + amount;
+  await setBalance(userKey, nextBalance);
+  await addCpLedgerEntry(userKey, amount, reason, refId ?? null);
+  return nextBalance;
+}
+
+export async function grantCpToAllUsers(amount: number): Promise<{
+  userCount: number;
+  granted: number;
+  failed: number;
+}> {
+  const userKeys = await collectAllCpUserKeys();
+  const reason = "admin_bulk_grant";
+  const refId = new Date().toISOString();
+
+  let granted = 0;
+  let failed = 0;
+
+  for (const userKey of userKeys) {
+    try {
+      await grantCp(userKey, amount, reason, refId);
+      granted += 1;
+    } catch {
+      failed += 1;
+    }
+  }
+
+  return { userCount: userKeys.length, granted, failed };
 }

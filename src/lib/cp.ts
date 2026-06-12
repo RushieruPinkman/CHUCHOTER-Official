@@ -3,6 +3,9 @@ export const CP_DAILY_TASK_COUNT = 3;
 export const CP_DAILY_TASK_TOTAL = CP_TASK_REWARD * CP_DAILY_TASK_COUNT;
 export const CP_GACHA_SINGLE_COST = 100;
 export const CP_GACHA_TEN_COST = 900;
+/** 管理画面：全ユーザー一括付与 */
+export const CP_ADMIN_BULK_GRANT_AMOUNT = 100;
+export const CP_ADMIN_BULK_GRANT_CONFIRM_TEXT = "付与する";
 
 export type DailyTaskId = "draw_daily_gacha" | "share_gacha_on_x" | "visit_schedule";
 
