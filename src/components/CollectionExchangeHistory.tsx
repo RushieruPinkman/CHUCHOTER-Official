@@ -11,6 +11,7 @@ import {
   type CollectionExchangeRecord,
 } from "@/lib/gacha-collection-exchange";
 import { isRemoteCollectionUserKey } from "@/lib/gacha-collection-client";
+import { USER_HISTORY_MAX_ENTRIES } from "@/lib/history-limits";
 import { syncCollectionExchangeHistoryFromServer } from "@/lib/gacha-exchange-history-client";
 import { GACHA_COLLECTION_UPDATED_EVENT } from "@/lib/gacha-collection";
 
@@ -83,7 +84,7 @@ export default function CollectionExchangeHistory({
       ) : records.length === 0 ? (
         <div className="profile-collection__empty border border-[var(--color-border)] bg-deep/60 px-5 py-6 text-center">
           <p className="text-sm text-cream-muted">まだ交換履歴はありません。</p>
-            <p className="mt-2 text-xs text-cream-faint">最新5件まで表示されます。端末をまたいで保持されます。</p>
+            <p className="mt-2 text-xs text-cream-faint">最新{USER_HISTORY_MAX_ENTRIES}件まで表示されます。端末をまたいで保持されます。</p>
         </div>
       ) : (
         <ul className="space-y-3">

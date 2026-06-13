@@ -1541,6 +1541,7 @@ html.theme-transition *::after {
     list-style: none;
     margin: 0;
     padding: 0;
+    grid-auto-rows: 1fr;
   }
 
   @media (min-width: 640px) {
@@ -1551,7 +1552,9 @@ html.theme-transition *::after {
 
   .gacha-ten-modal__item {
     display: flex;
-    min-height: 5.5rem;
+    aspect-ratio: 1;
+    width: 100%;
+    min-height: 0;
     flex-direction: column;
     align-items: center;
     justify-content: center;
@@ -1560,12 +1563,51 @@ html.theme-transition *::after {
     background: var(--theme-deep);
     padding: 0.5rem;
     text-align: center;
-    transition: border-color 0.2s ease, background 0.2s ease;
+    transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
   }
 
   .gacha-ten-modal__item:hover {
-    border-color: color-mix(in srgb, var(--color-gold) 35%, var(--color-border));
+    background: color-mix(in srgb, var(--theme-deep) 88%, var(--color-gold) 12%);
   }
+
+  .gacha-ten-modal__item--r1 {
+    border-color: #e7e5e4;
+    box-shadow: 0 0 16px rgba(231, 229, 228, 0.2);
+  }
+
+  .gacha-ten-modal__item--r2 {
+    border-color: #3b82f6;
+    box-shadow: 0 0 18px rgba(59, 130, 246, 0.28);
+  }
+
+  .gacha-ten-modal__item--r3 {
+    border-color: #22c55e;
+    box-shadow: 0 0 18px rgba(34, 197, 94, 0.28);
+  }
+
+  .gacha-ten-modal__item--r4 {
+    border-color: #a855f7;
+    box-shadow: 0 0 20px rgba(168, 85, 247, 0.32);
+  }
+
+  .gacha-ten-modal__item--r5 {
+    border-color: #ef4444;
+    box-shadow: 0 0 22px rgba(239, 68, 68, 0.36);
+  }
+
+  .gacha-ten-modal__item--r6 {
+    border-color: #eab308;
+    box-shadow:
+      0 0 24px rgba(234, 179, 8, 0.45),
+      inset 0 0 12px rgba(253, 224, 71, 0.08);
+  }
+
+  .gacha-ten-modal__item--r1 .gacha-ten-modal__rarity { color: #fafaf9; }
+  .gacha-ten-modal__item--r2 .gacha-ten-modal__rarity { color: #93c5fd; }
+  .gacha-ten-modal__item--r3 .gacha-ten-modal__rarity { color: #86efac; }
+  .gacha-ten-modal__item--r4 .gacha-ten-modal__rarity { color: #e9d5ff; }
+  .gacha-ten-modal__item--r5 .gacha-ten-modal__rarity { color: #fecaca; }
+  .gacha-ten-modal__item--r6 .gacha-ten-modal__rarity { color: #fde047; }
 
   .gacha-ten-modal__index {
     font-size: 0.625rem;

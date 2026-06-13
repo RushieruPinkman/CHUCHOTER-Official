@@ -26,6 +26,7 @@ import {
   getStageLabel,
   getStageStatus,
   pickGachaPrize,
+  pickTenDrawPresentationDraw,
   RARITY_RATE,
   type GachaCastSnapshot,
   type GachaDrawResult,
@@ -89,6 +90,7 @@ export default function GachaMachine({ casts, mode = "production" }: GachaMachin
   const [tenDetailDraw, setTenDetailDraw] = useState<GachaDrawResult | null>(null);
   const [drawError, setDrawError] = useState<string | null>(null);
   const [issuingSerial, setIssuingSerial] = useState(false);
+  const [tenDrawShowcase, setTenDrawShowcase] = useState(false);
   const timersRef = useRef<number[]>([]);
 
   const isDrawing = DRAWING_PHASES.includes(phase);
@@ -141,7 +143,12 @@ export default function GachaMachine({ casts, mode = "production" }: GachaMachin
   }, []);
 
   const runStage = useCallback(
-    (draw: GachaDrawResult, script: GachaPresentation, stage: PresentationStage) => {
+    (
+      draw: GachaDrawResult,
+      script: GachaPresentation,
+      stage: PresentationStage,
+      afterResult?: () => void
+    ) => {
       const phaseName = `stage${stage}` as DrawPhase;
       const prevRarity = stage > 1 ? script.stages[stage - 2] : null;
       const nextRarity = script.stages[stage - 1];
@@ -162,7 +169,7 @@ export default function GachaMachine({ casts, mode = "production" }: GachaMachin
 
       schedule(() => {
         if (stage < 3) {
-          runStage(draw, script, (stage + 1) as PresentationStage);
+          runStage(draw, script, (stage + 1) as PresentationStage, afterResult);
           return;
         }
 
@@ -177,6 +184,7 @@ export default function GachaMachine({ casts, mode = "production" }: GachaMachin
         schedule(() => {
           setResult(draw);
           setPhase("result");
+          afterResult?.();
         }, GACHA_TIMING.reveal);
       }, getStageDuration(stage, draw.rarity));
     },
@@ -184,7 +192,7 @@ export default function GachaMachine({ casts, mode = "production" }: GachaMachin
   );
 
   const playDrawResult = useCallback(
-    (draw: GachaDrawResult) => {
+    (draw: GachaDrawResult, options?: { afterResult?: () => void }) => {
       const script = buildGachaPresentation(draw.rarity);
       const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -204,10 +212,11 @@ export default function GachaMachine({ casts, mode = "production" }: GachaMachin
         setPreviewCast(draw.cast);
         setResult(draw);
         setPhase("result");
+        options?.afterResult?.();
         return;
       }
 
-      runStage(draw, script, 1);
+      runStage(draw, script, 1, options?.afterResult);
     },
     [clearDrawTimers, runStage]
   );
@@ -276,25 +285,6 @@ export default function GachaMachine({ casts, mode = "production" }: GachaMachin
     }
   };
 
-  const handleTenDraw = async () => {
-    if (!canTenDraw || issuingSerial) return;
-
-    setDrawError(null);
-    setIssuingSerial(true);
-
-    try {
-      const response = await drawGacha({ payment: "cp", count: 10 });
-      for (const draw of response.draws) {
-        persistDrawResult(draw);
-      }
-      setTenDrawResults(response.draws);
-    } catch (error) {
-      setDrawError(error instanceof Error ? error.message : "10連抽選に失敗しました。");
-    } finally {
-      setIssuingSerial(false);
-    }
-  };
-
   const handleReset = () => {
     clearDrawTimers();
     setPhase("idle");
@@ -306,6 +296,36 @@ export default function GachaMachine({ casts, mode = "production" }: GachaMachin
     setDisplayRarity(null);
     setPromoting(false);
     setPromotionDelta(0);
+    setTenDrawShowcase(false);
+  };
+
+  const handleTenDraw = async () => {
+    if (!canTenDraw || issuingSerial) return;
+
+    setDrawError(null);
+    setIssuingSerial(true);
+
+    try {
+      const response = await drawGacha({ payment: "cp", count: 10 });
+      for (const draw of response.draws) {
+        persistDrawResult(draw);
+      }
+
+      const showcaseDraw = pickTenDrawPresentationDraw(response.draws);
+      setTenDrawShowcase(true);
+      playDrawResult(showcaseDraw, {
+        afterResult: () => {
+          setTenDrawResults(response.draws);
+          setTenDrawShowcase(false);
+          handleReset();
+        },
+      });
+    } catch (error) {
+      setTenDrawShowcase(false);
+      setDrawError(error instanceof Error ? error.message : "10連抽選に失敗しました。");
+    } finally {
+      setIssuingSerial(false);
+    }
   };
 
   const currentStage: PresentationStage | null =
@@ -454,7 +474,7 @@ export default function GachaMachine({ casts, mode = "production" }: GachaMachin
             </div>
 
             <div className="gacha-machine__controls">
-            {phase === "result" && displayResult && !isDevMode && (
+            {phase === "result" && displayResult && !isDevMode && !tenDrawShowcase && (
               <GachaSharePanel result={displayResult} loginNextPath={loginNextPath} />
             )}
 
@@ -499,7 +519,7 @@ export default function GachaMachine({ casts, mode = "production" }: GachaMachin
             </div>
 
             <div className="gacha-machine__actions mt-6 px-1">
-              {phase === "result" ? (
+              {phase === "result" && !tenDrawShowcase ? (
                 <button
                   type="button"
                   onClick={handleReset}

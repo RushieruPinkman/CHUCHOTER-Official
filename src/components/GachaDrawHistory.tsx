@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import HistoryDisclosure from "@/components/HistoryDisclosure";
+import { USER_HISTORY_MAX_ENTRIES } from "@/lib/history-limits";
 import { getAuthLoginHref, getAuthRegisterHref } from "@/lib/auth-routes";
 import {
   buildGachaHistoryKey,
@@ -107,7 +108,7 @@ export default function GachaDrawHistory({
               ログインすると、抽選結果がガチャ履歴に保存されます。
             </p>
             <p className="mt-2 text-xs leading-relaxed text-cream-faint">
-              ★1の住人はコレクションにも追加されます。履歴は最新5件まで表示され、コレクションは端末をまたいで保持されます。
+              ★1の住人はコレクションにも追加されます。履歴は最新{USER_HISTORY_MAX_ENTRIES}件まで表示され、コレクションは端末をまたいで保持されます。
             </p>
             <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
               <Link
@@ -127,7 +128,7 @@ export default function GachaDrawHistory({
         ) : records.length === 0 ? (
           <div className="profile-collection__empty border border-[var(--color-border)] bg-deep/60 px-5 py-6 text-center">
             <p className="text-sm text-cream-muted">まだガチャ履歴はありません。</p>
-            <p className="mt-2 text-xs text-cream-faint">最新5件まで保存されます。</p>
+            <p className="mt-2 text-xs text-cream-faint">最新{USER_HISTORY_MAX_ENTRIES}件まで保存されます。</p>
           </div>
         ) : (
           <ul className="space-y-3">

@@ -132,6 +132,23 @@ export function getRarityLabel(rarity: GachaRarity): string {
   return "★".repeat(rarity);
 }
 
+export function getHighestGachaRarity(draws: GachaDrawResult[]): GachaRarity {
+  if (draws.length === 0) return 1;
+  return draws.reduce(
+    (max, draw) => (draw.rarity > max ? draw.rarity : max),
+    draws[0]!.rarity
+  );
+}
+
+/** 10連演出用：最高レアの結果を1件選ぶ（同レアは先頭） */
+export function pickTenDrawPresentationDraw(draws: GachaDrawResult[]): GachaDrawResult {
+  if (draws.length === 0) {
+    throw new Error("10連結果が空です。");
+  }
+  const highest = getHighestGachaRarity(draws);
+  return draws.find((draw) => draw.rarity === highest) ?? draws[0]!;
+}
+
 export function getPrizeByRarity(rarity: GachaRarity): GachaPrize {
   return GACHA_PRIZES[rarity];
 }
