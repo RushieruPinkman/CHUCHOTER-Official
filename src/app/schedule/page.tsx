@@ -4,6 +4,7 @@ import ScrollReveal from "@/components/ScrollReveal";
 import DailyTaskTracker from "@/components/DailyTaskTracker";
 import { formatJapaneseDate, getWeekDates, SITE } from "@/lib/site";
 import { getAllCasts, getSchedule } from "@/lib/data";
+import { getGachaDayJst } from "@/lib/gacha-daily-limit";
 import { buildPageMetadata } from "@/lib/seo";
 
 export const revalidate = 300;
@@ -25,7 +26,7 @@ export default async function SchedulePage() {
   const [schedule, casts] = await Promise.all([getSchedule(), getAllCasts()]);
   const weekDates = getWeekDates();
   const castMap = Object.fromEntries(casts.map((c) => [c.id, c.name]));
-  const today = new Date().toISOString().slice(0, 10);
+  const today = getGachaDayJst();
 
   const weekEntries = weekDates.map((date) => {
     const entry = schedule.find((s) => s.date === date);

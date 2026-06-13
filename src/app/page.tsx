@@ -8,7 +8,7 @@ import StatusBadge from "@/components/StatusBadge";
 import AnnouncementList from "@/components/AnnouncementList";
 import XLink from "@/components/XLink";
 import VrChatGroupLink from "@/components/VrChatGroupLink";
-import { getAnnouncements, getCasts, getStatus } from "@/lib/data";
+import { getAnnouncements, getCasts, getEffectiveStatus } from "@/lib/data";
 import { SITE } from "@/lib/site";
 import { buildPageMetadata } from "@/lib/seo";
 import Link from "next/link";
@@ -23,7 +23,7 @@ export const metadata: Metadata = buildPageMetadata({
 
 export default async function HomePage() {
   const [status, casts, announcements] = await Promise.all([
-    getStatus(),
+    getEffectiveStatus(),
     getCasts(),
     getAnnouncements(),
   ]);

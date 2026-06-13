@@ -1,6 +1,7 @@
 import "server-only";
 import { readJsonFile, readJsonFileFresh, writeJsonFile } from "@/lib/site-storage";
 import { normalizeCast } from "@/lib/cast-roles";
+import { getGachaDayJst } from "@/lib/gacha-daily-limit";
 import type { Announcement, Cast, MediaArchive, ScheduleEntry, SiteStatus } from "@/types";
 
 export async function getCasts(): Promise<Cast[]> {
@@ -43,6 +44,29 @@ export async function getStatus(): Promise<SiteStatus> {
 
 export async function saveStatus(status: SiteStatus): Promise<void> {
   await writeJsonFile("status.json", status);
+}
+
+/** 予定表の「営業」日はサイト表示を自動で営業中にする */
+export function applyScheduleToStatus(
+  status: SiteStatus,
+  schedule: ScheduleEntry[],
+  date = new Date()
+): SiteStatus {
+  const todayEntry = getTodayScheduleEntry(schedule, date);
+  if (todayEntry?.status !== "open") {
+    return status;
+  }
+
+  return {
+    ...status,
+    isOpen: true,
+    message: status.message === "Close" ? "本日営業" : status.message,
+  };
+}
+
+export async function getEffectiveStatus(date = new Date()): Promise<SiteStatus> {
+  const [status, schedule] = await Promise.all([getStatus(), getSchedule()]);
+  return applyScheduleToStatus(status, schedule, date);
 }
 
 export async function getMediaArchives(): Promise<MediaArchive[]> {
@@ -107,6 +131,6 @@ export function getTodayScheduleEntry(
   schedule: ScheduleEntry[],
   date = new Date()
 ): ScheduleEntry | undefined {
-  const iso = date.toISOString().slice(0, 10);
+  const iso = getGachaDayJst(date);
   return schedule.find((entry) => entry.date === iso);
 }
