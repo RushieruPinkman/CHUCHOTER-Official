@@ -28,6 +28,7 @@ export default function CpAdminPanel({ authJsonHeaders, remoteStorage }: CpAdmin
   const [granting, setGranting] = useState(false);
   const [grantingUser, setGrantingUser] = useState(false);
   const [selectedUserKey, setSelectedUserKey] = useState("");
+  const [userSearch, setUserSearch] = useState("");
   const [grantAmount, setGrantAmount] = useState("100");
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -36,6 +37,25 @@ export default function CpAdminPanel({ authJsonHeaders, remoteStorage }: CpAdmin
     () => users.find((user) => user.userKey === selectedUserKey) ?? null,
     [selectedUserKey, users]
   );
+
+  const filteredUsers = useMemo(() => {
+    const query = userSearch.trim().toLowerCase();
+    if (!query) return users;
+
+    return users.filter((user) => {
+      const haystack = [user.displayName, user.email ?? "", user.userKey]
+        .join(" ")
+        .toLowerCase();
+      return haystack.includes(query);
+    });
+  }, [userSearch, users]);
+
+  useEffect(() => {
+    if (!selectedUserKey) return;
+    if (!filteredUsers.some((user) => user.userKey === selectedUserKey)) {
+      setSelectedUserKey("");
+    }
+  }, [filteredUsers, selectedUserKey]);
 
   const refresh = useCallback(async () => {
     setLoading(true);
@@ -53,7 +73,12 @@ export default function CpAdminPanel({ authJsonHeaders, remoteStorage }: CpAdmin
       setEnabled(body.enabled);
       setUserCount(body.userCount);
       setUsers(body.users ?? []);
-      setSelectedUserKey((current) => current || body.users?.[0]?.userKey || "");
+      setSelectedUserKey((current) => {
+        if (current && body.users?.some((user) => user.userKey === current)) {
+          return current;
+        }
+        return body.users?.[0]?.userKey || "";
+      });
     } catch (fetchError) {
       setError(fetchError instanceof Error ? fetchError.message : "CP 情報の取得に失敗しました");
     } finally {
@@ -224,28 +249,50 @@ export default function CpAdminPanel({ authJsonHeaders, remoteStorage }: CpAdmin
               お詫び CP など、任意のユーザーへ任意の CP を付与できます。
             </p>
             <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_8rem]">
-              <label className="block text-sm text-cream-muted">
-                <span className="mb-2 block text-[11px] tracking-[0.08em] text-cream-faint">
-                  対象ユーザー
-                </span>
-                <select
-                  value={selectedUserKey}
-                  onChange={(event) => setSelectedUserKey(event.target.value)}
-                  className="w-full min-h-11 border border-[var(--color-border)] bg-deep/80 px-3 text-sm text-cream"
-                >
-                  {users.length === 0 ? (
-                    <option value="">ユーザーが見つかりません</option>
-                  ) : (
-                    users.map((user) => (
-                      <option key={user.userKey} value={user.userKey}>
-                        {user.displayName}
-                        {user.email ? ` (${user.email})` : ""}
-                        {user.balance !== null ? ` — ${user.balance} CP` : ""}
-                      </option>
-                    ))
-                  )}
-                </select>
-              </label>
+              <div className="space-y-3">
+                <label className="block text-sm text-cream-muted">
+                  <span className="mb-2 block text-[11px] tracking-[0.08em] text-cream-faint">
+                    ユーザー検索
+                  </span>
+                  <input
+                    type="search"
+                    value={userSearch}
+                    onChange={(event) => setUserSearch(event.target.value)}
+                    placeholder="名前・メールで検索"
+                    className="w-full min-h-11 border border-[var(--color-border)] bg-deep/80 px-3 text-sm text-cream focus:border-gold focus:outline-none"
+                  />
+                </label>
+                <label className="block text-sm text-cream-muted">
+                  <span className="mb-2 block text-[11px] tracking-[0.08em] text-cream-faint">
+                    対象ユーザー
+                  </span>
+                  <select
+                    value={selectedUserKey}
+                    onChange={(event) => setSelectedUserKey(event.target.value)}
+                    disabled={users.length === 0 || filteredUsers.length === 0}
+                    className="w-full min-h-11 border border-[var(--color-border)] bg-deep/80 px-3 text-sm text-cream disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {users.length === 0 ? (
+                      <option value="">ユーザーが見つかりません</option>
+                    ) : filteredUsers.length === 0 ? (
+                      <option value="">該当するユーザーがいません</option>
+                    ) : (
+                      <>
+                        {!selectedUserKey && (
+                          <option value="">ユーザーを選択してください</option>
+                        )}
+                        {filteredUsers.map((user) => (
+                          <option key={user.userKey} value={user.userKey}>
+                            {user.displayName}
+                            {user.email ? ` (${user.email})` : ""}
+                            {user.balance !== null ? ` — ${user.balance} CP` : ""}
+                          </option>
+                        ))}
+                      </>
+                    )}
+                  </select>
+                </label>
+              </div>
               <label className="block text-sm text-cream-muted">
                 <span className="mb-2 block text-[11px] tracking-[0.08em] text-cream-faint">
                   付与 CP
