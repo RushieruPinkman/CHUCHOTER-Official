@@ -15,7 +15,7 @@ function isMissingTableError(error: { message?: string; code?: string } | null):
   if (!error) return false;
   return (
     error.code === "42P01" ||
-    /user_gacha_collections|user_gacha_draw_history/.test(error.message ?? "")
+    /user_gacha_collections|user_gacha_draw_history|user_gacha_exchange_history/.test(error.message ?? "")
   );
 }
 

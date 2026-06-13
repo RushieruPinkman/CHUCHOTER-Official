@@ -10,6 +10,8 @@ import {
   readCollectionExchangeHistory,
   type CollectionExchangeRecord,
 } from "@/lib/gacha-collection-exchange";
+import { isRemoteCollectionUserKey } from "@/lib/gacha-collection-client";
+import { syncCollectionExchangeHistoryFromServer } from "@/lib/gacha-exchange-history-client";
 import { GACHA_COLLECTION_UPDATED_EVENT } from "@/lib/gacha-collection";
 
 interface CollectionExchangeHistoryProps {
@@ -26,13 +28,21 @@ export default function CollectionExchangeHistory({
   const [records, setRecords] = useState<CollectionExchangeRecord[]>([]);
   const [hydrated, setHydrated] = useState(false);
 
-  const refresh = useCallback(() => {
+  const refresh = useCallback(async () => {
+    if (isRemoteCollectionUserKey(userKey)) {
+      try {
+        const synced = await syncCollectionExchangeHistoryFromServer(userKey);
+        setRecords(synced);
+        return;
+      } catch {
+        /* fall through to local cache */
+      }
+    }
     setRecords(readCollectionExchangeHistory(userKey));
   }, [userKey]);
 
   useEffect(() => {
-    refresh();
-    setHydrated(true);
+    void refresh().finally(() => setHydrated(true));
   }, [refresh]);
 
   useEffect(() => {
@@ -73,7 +83,7 @@ export default function CollectionExchangeHistory({
       ) : records.length === 0 ? (
         <div className="profile-collection__empty border border-[var(--color-border)] bg-deep/60 px-5 py-6 text-center">
           <p className="text-sm text-cream-muted">まだ交換履歴はありません。</p>
-          <p className="mt-2 text-xs text-cream-faint">最新5件まで保存されます。</p>
+            <p className="mt-2 text-xs text-cream-faint">最新5件まで表示されます。端末をまたいで保持されます。</p>
         </div>
       ) : (
         <ul className="space-y-3">

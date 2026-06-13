@@ -14,6 +14,20 @@ import {
 
 const MIGRATION_FLAG_PREFIX = "chuchoter-gacha-collection-synced:";
 
+export async function ensureUserApiSession(maxAttempts = 15): Promise<boolean> {
+  if (typeof window === "undefined") return false;
+
+  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+    const headers = await buildUserRequestHeaders();
+    if ((headers as Record<string, string>).Authorization) {
+      return true;
+    }
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  }
+
+  return Boolean(((await buildUserRequestHeaders()) as Record<string, string>).Authorization);
+}
+
 async function buildUserRequestHeaders(): Promise<HeadersInit> {
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
@@ -77,7 +91,10 @@ export async function syncGachaCollectionFromServer(userKey: string): Promise<Ga
     return readGachaCollection(userKey);
   }
 
+  const hasSession = await ensureUserApiSession();
   const local = readGachaCollection(userKey);
+  if (!hasSession) return local;
+
   const response = await fetch("/api/user/collection", {
     headers: await buildUserRequestHeaders(),
     cache: "no-store",

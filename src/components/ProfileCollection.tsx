@@ -16,7 +16,8 @@ import {
   type CollectionSortMode,
   type GachaCollectionEntry,
 } from "@/lib/gacha-collection";
-import { syncGachaCollectionFromServer } from "@/lib/gacha-collection-client";
+import { isRemoteCollectionUserKey } from "@/lib/gacha-collection-client";
+import { useGachaUserDataSync } from "@/hooks/useGachaUserDataSync";
 
 interface ProfileCollectionProps {
   userKey: string;
@@ -103,6 +104,9 @@ export default function ProfileCollection({
   const [entries, setEntries] = useState<GachaCollectionEntry[]>([]);
   const [sortMode, setSortMode] = useState<CollectionSortMode>("owned-first");
   const [hydrated, setHydrated] = useState(false);
+  const { syncing } = useGachaUserDataSync(userKey, {
+    authReady: isRemoteCollectionUserKey(userKey),
+  });
 
   const showCatalog = Boolean(residents?.length);
 
@@ -110,20 +114,11 @@ export default function ProfileCollection({
     setEntries(readGachaCollection(userKey));
   }, [userKey]);
 
-  const syncFromServer = useCallback(async () => {
-    try {
-      const synced = await syncGachaCollectionFromServer(userKey);
-      setEntries(synced);
-    } catch {
-      refresh();
-    } finally {
-      setHydrated(true);
-    }
-  }, [refresh, userKey]);
-
   useEffect(() => {
-    void syncFromServer();
-  }, [syncFromServer]);
+    if (syncing) return;
+    refresh();
+    setHydrated(true);
+  }, [refresh, syncing]);
 
   useEffect(() => {
     const onUpdated = (event: Event) => {
@@ -225,7 +220,7 @@ export default function ProfileCollection({
         </div>
       )}
 
-      {!hydrated ? (
+      {!hydrated || syncing ? (
         <p className="py-8 text-center text-sm text-cream-faint" role="status">
           読み込み中…
         </p>

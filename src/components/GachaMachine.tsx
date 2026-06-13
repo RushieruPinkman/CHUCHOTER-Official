@@ -13,6 +13,7 @@ import GachaVfx, { GachaRateList } from "@/components/GachaVfx";
 import ScrollReveal from "@/components/ScrollReveal";
 import DailyTasksPanel from "@/components/DailyTasksPanel";
 import { useCollectionUserKey } from "@/hooks/useCollectionUserKey";
+import { useGachaUserDataSync } from "@/hooks/useGachaUserDataSync";
 import { useCpBalance } from "@/hooks/useCpBalance";
 import { CP_GACHA_SINGLE_COST, CP_GACHA_TEN_COST } from "@/lib/cp";
 import { GACHA_SERIAL_UNUSED_RETENTION_DAYS } from "@/lib/gacha-serial";
@@ -41,10 +42,8 @@ import { getAuthLoginHref, getAuthRegisterHref } from "@/lib/auth-routes";
 import { registerGachaCollectionFromDraw } from "@/lib/gacha-collection";
 import {
   isRemoteCollectionUserKey,
-  syncGachaCollectionFromServer,
 } from "@/lib/gacha-collection-client";
 import { appendGachaDrawHistory, buildGachaHistoryKey } from "@/lib/gacha-history";
-import { syncGachaDrawHistoryFromServer } from "@/lib/gacha-history-client";
 import { useGachaSerialStatusSync } from "@/hooks/useGachaSerialStatus";
 
 type GachaMachineMode = "production" | "dev";
@@ -64,6 +63,7 @@ export default function GachaMachine({ casts, mode = "production" }: GachaMachin
   const isDevMode = mode === "dev" && isGachaDevEnabled();
   const activeRates = isDevMode ? GACHA_DEV_RATES : RARITY_RATE;
   const { userKey: collectionUserKey, ready: authReady } = useCollectionUserKey();
+  const { resync: resyncUserData } = useGachaUserDataSync(collectionUserKey, { authReady });
   const {
     balance: cpBalance,
     freeDrawAvailable,
@@ -215,17 +215,14 @@ export default function GachaMachine({ casts, mode = "production" }: GachaMachin
   const persistDrawResult = useCallback(
     (draw: GachaDrawResult) => {
       if (collectionUserKey && isRemoteCollectionUserKey(collectionUserKey)) {
-        void syncGachaCollectionFromServer(collectionUserKey);
-        if (historyKey) {
-          void syncGachaDrawHistoryFromServer(collectionUserKey, historyKey);
-        }
+        void resyncUserData();
         return;
       }
 
       registerGachaCollectionFromDraw(collectionUserKey, draw);
       if (historyKey) appendGachaDrawHistory(historyKey, draw);
     },
-    [collectionUserKey, historyKey]
+    [collectionUserKey, historyKey, resyncUserData]
   );
 
   const handleFreeDraw = async () => {

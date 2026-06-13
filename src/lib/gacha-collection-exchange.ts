@@ -217,6 +217,15 @@ function writeCollectionExchangeHistory(
   window.dispatchEvent(
     new CustomEvent(GACHA_COLLECTION_EXCHANGE_UPDATED_EVENT, { detail: { userKey } })
   );
+
+  if (userKey.startsWith("auth:")) {
+    void import("@/lib/gacha-exchange-history-client").then(
+      ({ saveCollectionExchangeHistoryRemoteClient }) =>
+        saveCollectionExchangeHistoryRemoteClient(userKey, records).catch(() => {
+          /* 次回表示時に再同期 */
+        })
+    );
+  }
 }
 
 export function clearCollectionExchangeHistory(userKey: string): void {

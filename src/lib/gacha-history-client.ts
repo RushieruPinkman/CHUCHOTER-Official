@@ -2,6 +2,7 @@ import type { GachaDrawHistoryRecord } from "@/lib/gacha-history";
 import { GACHA_HISTORY_UPDATED_EVENT } from "@/lib/gacha-history";
 import {
   buildUserRequestHeadersForApi,
+  ensureUserApiSession,
   isRemoteCollectionUserKey,
 } from "@/lib/gacha-collection-client";
 
@@ -43,6 +44,9 @@ export async function syncGachaDrawHistoryFromServer(
   if (!userKey || !historyKey || !isRemoteCollectionUserKey(userKey)) {
     return [];
   }
+
+  const hasSession = await ensureUserApiSession();
+  if (!hasSession) return [];
 
   const records = await fetchGachaDrawHistoryRemote(userKey);
   cacheGachaDrawHistoryLocal(historyKey, records);
