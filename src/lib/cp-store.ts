@@ -406,3 +406,87 @@ export async function grantCpToAllUsers(amount: number): Promise<{
 
   return { userCount: userKeys.length, granted, failed };
 }
+
+export interface CpAdminUserRow {
+  userKey: string;
+  displayName: string;
+  email: string | null;
+  balance: number | null;
+}
+
+export async function listCpAdminUsers(): Promise<CpAdminUserRow[]> {
+  if (!isCpStoreEnabled()) return [];
+
+  const supabase = getSupabaseAdmin()!;
+  const userKeys = await collectAllCpUserKeys();
+  const displayByKey = new Map<string, { displayName: string; email: string | null }>();
+  const balanceByKey = new Map<string, number>();
+
+  const { data: threadRows, error: threadError } = await supabase
+    .from("dm_threads")
+    .select("user_key, user_display_name, user_email");
+
+  if (threadError && !isMissingTableError(threadError)) {
+    throw new Error(threadError.message);
+  }
+
+  for (const row of (threadRows as { user_key: string; user_display_name: string; user_email: string | null }[] | null) ?? []) {
+    if (!row.user_key?.trim()) continue;
+    displayByKey.set(row.user_key.trim(), {
+      displayName: row.user_display_name?.trim() || row.user_email?.trim() || row.user_key.trim(),
+      email: row.user_email?.trim() || null,
+    });
+  }
+
+  let page = 1;
+  const perPage = 200;
+  while (true) {
+    const { data, error } = await supabase.auth.admin.listUsers({ page, perPage });
+    if (error) throw new Error(error.message);
+
+    for (const user of data.users) {
+      if (!user.id) continue;
+      const userKey = buildAuthCollectionUserKey(user.id);
+      const email = user.email?.trim() || null;
+      if (!displayByKey.has(userKey)) {
+        displayByKey.set(userKey, {
+          displayName: email || userKey,
+          email,
+        });
+      } else if (email) {
+        const existing = displayByKey.get(userKey)!;
+        displayByKey.set(userKey, {
+          displayName: existing.displayName || email,
+          email: existing.email || email,
+        });
+      }
+    }
+
+    if (data.users.length < perPage) break;
+    page += 1;
+  }
+
+  const { data: balanceRows, error: balanceError } = await supabase
+    .from("user_cp_balances")
+    .select("user_key, balance");
+
+  if (balanceError && !isMissingTableError(balanceError)) {
+    throw new Error(balanceError.message);
+  }
+
+  for (const row of (balanceRows as { user_key: string; balance: number }[] | null) ?? []) {
+    if (row.user_key?.trim()) {
+      balanceByKey.set(row.user_key.trim(), row.balance);
+    }
+  }
+
+  return userKeys.map((userKey) => {
+    const profile = displayByKey.get(userKey);
+    return {
+      userKey,
+      displayName: profile?.displayName || userKey,
+      email: profile?.email ?? null,
+      balance: balanceByKey.has(userKey) ? balanceByKey.get(userKey)! : null,
+    };
+  });
+}

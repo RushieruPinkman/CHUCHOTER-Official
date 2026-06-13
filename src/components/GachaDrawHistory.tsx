@@ -15,6 +15,8 @@ import {
 } from "@/lib/gacha-history";
 import { getRarityLabel, type GachaDrawResult } from "@/lib/gacha";
 import { formatGachaSerialLabel, getGachaReportSerial, getGachaSerialStatusLabel } from "@/lib/gacha-serial";
+import { syncGachaDrawHistoryFromServer } from "@/lib/gacha-history-client";
+import { isRemoteCollectionUserKey } from "@/lib/gacha-collection-client";
 import { useGachaSerialStatusMap } from "@/hooks/useGachaSerialStatus";
 
 interface GachaDrawHistoryProps {
@@ -42,17 +44,27 @@ export default function GachaDrawHistory({
   );
   const serialStatusMap = useGachaSerialStatusMap(serials);
 
-  const refresh = useCallback(() => {
-    if (!historyKey) {
+  const refresh = useCallback(async () => {
+    if (!historyKey || !userKey) {
       setRecords([]);
       return;
     }
+
+    if (isRemoteCollectionUserKey(userKey)) {
+      try {
+        const synced = await syncGachaDrawHistoryFromServer(userKey, historyKey);
+        setRecords(synced);
+        return;
+      } catch {
+        /* fall through to local cache */
+      }
+    }
+
     setRecords(readGachaDrawHistory(historyKey));
-  }, [historyKey]);
+  }, [historyKey, userKey]);
 
   useEffect(() => {
-    refresh();
-    setHydrated(true);
+    void refresh().finally(() => setHydrated(true));
   }, [refresh]);
 
   useEffect(() => {
@@ -95,7 +107,7 @@ export default function GachaDrawHistory({
               ログインすると、抽選結果がガチャ履歴に保存されます。
             </p>
             <p className="mt-2 text-xs leading-relaxed text-cream-faint">
-              ★1の住人はコレクションにも追加されます。最新5件まで保存され、それ以降は自動的に削除されます。
+              ★1の住人はコレクションにも追加されます。履歴は最新5件まで表示され、コレクションは端末をまたいで保持されます。
             </p>
             <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
               <Link

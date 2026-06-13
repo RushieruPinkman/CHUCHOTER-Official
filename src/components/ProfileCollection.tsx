@@ -16,6 +16,7 @@ import {
   type CollectionSortMode,
   type GachaCollectionEntry,
 } from "@/lib/gacha-collection";
+import { syncGachaCollectionFromServer } from "@/lib/gacha-collection-client";
 
 interface ProfileCollectionProps {
   userKey: string;
@@ -109,10 +110,20 @@ export default function ProfileCollection({
     setEntries(readGachaCollection(userKey));
   }, [userKey]);
 
+  const syncFromServer = useCallback(async () => {
+    try {
+      const synced = await syncGachaCollectionFromServer(userKey);
+      setEntries(synced);
+    } catch {
+      refresh();
+    } finally {
+      setHydrated(true);
+    }
+  }, [refresh, userKey]);
+
   useEffect(() => {
-    refresh();
-    setHydrated(true);
-  }, [refresh]);
+    void syncFromServer();
+  }, [syncFromServer]);
 
   useEffect(() => {
     const onUpdated = (event: Event) => {

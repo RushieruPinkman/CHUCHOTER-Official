@@ -39,7 +39,12 @@ import {
 } from "@/lib/gacha-dev";
 import { getAuthLoginHref, getAuthRegisterHref } from "@/lib/auth-routes";
 import { registerGachaCollectionFromDraw } from "@/lib/gacha-collection";
+import {
+  isRemoteCollectionUserKey,
+  syncGachaCollectionFromServer,
+} from "@/lib/gacha-collection-client";
 import { appendGachaDrawHistory, buildGachaHistoryKey } from "@/lib/gacha-history";
+import { syncGachaDrawHistoryFromServer } from "@/lib/gacha-history-client";
 import { useGachaSerialStatusSync } from "@/hooks/useGachaSerialStatus";
 
 type GachaMachineMode = "production" | "dev";
@@ -209,6 +214,14 @@ export default function GachaMachine({ casts, mode = "production" }: GachaMachin
 
   const persistDrawResult = useCallback(
     (draw: GachaDrawResult) => {
+      if (collectionUserKey && isRemoteCollectionUserKey(collectionUserKey)) {
+        void syncGachaCollectionFromServer(collectionUserKey);
+        if (historyKey) {
+          void syncGachaDrawHistoryFromServer(collectionUserKey, historyKey);
+        }
+        return;
+      }
+
       registerGachaCollectionFromDraw(collectionUserKey, draw);
       if (historyKey) appendGachaDrawHistory(historyKey, draw);
     },

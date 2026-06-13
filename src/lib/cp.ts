@@ -6,6 +6,8 @@ export const CP_GACHA_TEN_COST = 900;
 /** 管理画面：全ユーザー一括付与 */
 export const CP_ADMIN_BULK_GRANT_AMOUNT = 100;
 export const CP_ADMIN_BULK_GRANT_CONFIRM_TEXT = "付与する";
+/** 管理画面：特定ユーザーへの付与 */
+export const CP_ADMIN_USER_GRANT_CONFIRM_TEXT = "付与する";
 
 export type DailyTaskId = "draw_daily_gacha" | "share_gacha_on_x" | "visit_schedule";
 

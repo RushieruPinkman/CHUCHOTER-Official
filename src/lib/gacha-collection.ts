@@ -67,6 +67,14 @@ function writeGachaCollection(userKey: string, entries: GachaCollectionEntry[]):
   window.dispatchEvent(
     new CustomEvent(GACHA_COLLECTION_UPDATED_EVENT, { detail: { userKey } })
   );
+
+  if (userKey.startsWith("auth:")) {
+    void import("@/lib/gacha-collection-client").then(({ saveGachaCollectionRemoteClient }) =>
+      saveGachaCollectionRemoteClient(userKey, entries).catch(() => {
+        /* 次回表示時に再同期 */
+      })
+    );
+  }
 }
 
 /** 指定キャストを指定枚数消費。不足があれば null */

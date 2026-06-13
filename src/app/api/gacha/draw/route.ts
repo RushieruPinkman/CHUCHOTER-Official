@@ -11,6 +11,8 @@ import {
 } from "@/lib/cp-store";
 import { getCasts } from "@/lib/data";
 import { performGachaDrawsForUser, toGachaCastSnapshots } from "@/lib/gacha-draw-server";
+import { registerGachaCollectionFromDrawsRemote } from "@/lib/gacha-collection-store";
+import { appendGachaDrawHistoryRemote } from "@/lib/gacha-history-store";
 import { isUserAuthEnabledOnServer } from "@/lib/supabase/config";
 
 export const runtime = "nodejs";
@@ -70,6 +72,9 @@ export async function POST(request: NextRequest) {
 
     const casts = toGachaCastSnapshots(await getCasts());
     const draws = await performGachaDrawsForUser(casts, count, user.userKey);
+
+    await registerGachaCollectionFromDrawsRemote(user.userKey, draws);
+    await appendGachaDrawHistoryRemote(user.userKey, draws);
 
     if (payment === "free") {
       await completeDailyTask(user.userKey, "draw_daily_gacha", "system");
