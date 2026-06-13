@@ -3903,6 +3903,38 @@ html.theme-transition *::after {
   }
 }
 
+/* ── お知らせ（ご案内・詳細） ── */
+.announcement-details {
+  border-top: 1px solid var(--color-border);
+  padding-top: 0.75rem;
+}
+
+.announcement-details__summary {
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+  font-size: 0.8125rem;
+  letter-spacing: 0.1em;
+  color: var(--color-gold);
+}
+
+.announcement-details__summary::-webkit-details-marker {
+  display: none;
+}
+
+.announcement-details__summary::after {
+  content: " ▾";
+  color: var(--color-cream-faint);
+}
+
+.announcement-details[open] .announcement-details__summary::after {
+  content: " ▴";
+}
+
+.announcement-details__body {
+  margin-top: 0.75rem;
+}
+
 /* ── 運営 DM ── */
 .dm-page {
   display: flex;

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import AnnouncementDetailItem from "@/components/AnnouncementDetailItem";
 import ScrollReveal from "@/components/ScrollReveal";
 import { formatAnnouncementDate } from "@/lib/site";
 import type { Announcement } from "@/types";
@@ -69,22 +70,7 @@ export default function AnnouncementList({ items, variant = "detail" }: Announce
           {items.map((item, index) => (
             <li key={item.id}>
               <ScrollReveal delay={index * 0.06}>
-                <article id={`announcement-${item.id}`} className="panel scroll-mt-28 p-5 md:p-6">
-                  <div className="mb-3 flex flex-wrap items-center gap-3">
-                    <time dateTime={item.publishedAt} className="text-[11px] tracking-[0.12em] text-cream-faint">
-                      {formatAnnouncementDate(item.publishedAt)}
-                    </time>
-                    {item.pinned && (
-                      <span className="border border-gold/30 bg-gold/[0.06] px-2 py-0.5 text-[10px] tracking-widest text-gold">
-                        PIN
-                      </span>
-                    )}
-                  </div>
-                  <h3 className="mb-3 text-lg text-cream md:text-xl" style={{ fontFamily: "var(--font-serif-jp)" }}>
-                    {item.title}
-                  </h3>
-                  <p className="whitespace-pre-wrap text-sm leading-[1.9] text-cream-muted">{item.body}</p>
-                </article>
+                <AnnouncementDetailItem item={item} />
               </ScrollReveal>
             </li>
           ))}
