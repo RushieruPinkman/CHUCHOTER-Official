@@ -217,6 +217,24 @@ export default function LoginForm({
       {mode === "signup" && (
         <form action={signUpFormAction} className="space-y-4">
           <div>
+            <label htmlFor="signup-display-name" className="mb-1.5 block text-xs text-cream-muted">
+              VRChat上の表示名
+            </label>
+            <input
+              id="signup-display-name"
+              name="displayName"
+              type="text"
+              autoComplete="nickname"
+              required
+              maxLength={32}
+              placeholder="VRChatで表示されている名前"
+              className={inputClass}
+            />
+            <p className="mt-1.5 text-[11px] leading-relaxed text-cream-faint">
+              イベント参加時の呼び名として使用します。メールアドレスと同じ名前は登録できません。
+            </p>
+          </div>
+          <div>
             <label htmlFor="signup-email" className="mb-1.5 block text-xs text-cream-muted">
               メールアドレス
             </label>

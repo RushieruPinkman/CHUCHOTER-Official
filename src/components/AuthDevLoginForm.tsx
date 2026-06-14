@@ -53,7 +53,7 @@ export default function AuthDevLoginForm() {
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label htmlFor="dev-display-name" className="mb-1.5 block text-xs text-cream-muted">
-            表示名
+            VRChat上の表示名
           </label>
           <input
             id="dev-display-name"

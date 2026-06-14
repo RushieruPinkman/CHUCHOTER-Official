@@ -4,7 +4,9 @@ import { redirect } from "next/navigation";
 import {
   getDuplicateSignUpMessage,
   getSignUpPendingMessage,
+  isDisplayNameMatchingEmail,
   translateAuthError,
+  validateMemberDisplayName,
 } from "@/lib/auth-messages";
 import { getAuthCallbackUrl } from "@/lib/auth-url";
 import { createClient } from "@/lib/supabase/server";
@@ -62,9 +64,19 @@ export async function signUpAction(
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
   const passwordConfirm = String(formData.get("passwordConfirm") ?? "");
+  const displayName = String(formData.get("displayName") ?? "").trim();
 
   if (!email || !password) {
     return { error: "メールアドレスとパスワードを入力してください。" };
+  }
+
+  const displayNameError = validateMemberDisplayName(displayName);
+  if (displayNameError) {
+    return { error: displayNameError };
+  }
+
+  if (isDisplayNameMatchingEmail(email, displayName)) {
+    return { error: "VRChat上の表示名に、メールアドレスと同じ文字列は使用できません。" };
   }
 
   const passwordError = validatePasswordPair(password, passwordConfirm);
@@ -78,6 +90,9 @@ export async function signUpAction(
     password,
     options: {
       emailRedirectTo: getAuthCallbackUrl("/profile"),
+      data: {
+        display_name: displayName,
+      },
     },
   });
 

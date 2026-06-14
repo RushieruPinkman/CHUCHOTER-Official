@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { translateAuthError } from "@/lib/auth-messages";
+import { translateAuthError, validateMemberDisplayName, isDisplayNameMatchingEmail } from "@/lib/auth-messages";
 import { createClient } from "@/lib/supabase/server";
 import { isUserAuthEnabledOnServer } from "@/lib/supabase/config";
 
@@ -20,11 +20,9 @@ export async function updateDisplayNameAction(
   }
 
   const displayName = String(formData.get("displayName") ?? "").trim();
-  if (!displayName) {
-    return { error: "表示名を入力してください。" };
-  }
-  if (displayName.length > 32) {
-    return { error: "表示名は32文字以内で入力してください。" };
+  const displayNameError = validateMemberDisplayName(displayName);
+  if (displayNameError) {
+    return { error: displayNameError };
   }
 
   const supabase = await createClient();
@@ -34,6 +32,10 @@ export async function updateDisplayNameAction(
 
   if (!user) {
     return { error: "ログインが必要です。" };
+  }
+
+  if (isDisplayNameMatchingEmail(user.email, displayName)) {
+    return { error: "VRChat上の表示名に、メールアドレスと同じ文字列は使用できません。" };
   }
 
   const { error } = await supabase.auth.updateUser({

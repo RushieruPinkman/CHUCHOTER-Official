@@ -61,6 +61,39 @@ export function getUserProfileLabel(
   return getUserDisplayLabel(email);
 }
 
+const MEMBER_DISPLAY_NAME_MAX_LENGTH = 32;
+
+export function validateMemberDisplayName(name: string): string | null {
+  const trimmed = name.trim();
+  if (!trimmed) {
+    return "VRChat上の表示名を入力してください。";
+  }
+  if (trimmed.length > MEMBER_DISPLAY_NAME_MAX_LENGTH) {
+    return `表示名は${MEMBER_DISPLAY_NAME_MAX_LENGTH}文字以内で入力してください。`;
+  }
+  return null;
+}
+
+/** 表示名が未設定、またはメールアドレス（@前含む）と同一 */
+export function isDisplayNameMatchingEmail(
+  email: string | null | undefined,
+  displayName: string | null | undefined
+): boolean {
+  if (!email?.trim()) return false;
+
+  const normalizedEmail = email.trim().toLowerCase();
+  const localPart = normalizedEmail.split("@")[0]?.trim() ?? "";
+  const normalizedName = displayName?.trim().toLowerCase() ?? "";
+
+  if (!normalizedName) return true;
+
+  return normalizedName === normalizedEmail || normalizedName === localPart;
+}
+
+export function getDisplayNameEmailWarningMessage(): string {
+  return "表示名がメールアドレスと同じになっています。VRChat上で表示されている名前に変更してください。";
+}
+
 export function getAuthCallbackErrorMessage(code: string | null): string | null {
   if (code === "auth_callback") {
     return "認証リンクが無効か期限切れです。再度ログインまたは登録をお試しください。";

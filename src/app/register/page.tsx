@@ -33,7 +33,7 @@ export default async function RegisterPage() {
       <PageHero
         titleEn="Sign Up"
         titleJa="新規登録"
-        description="メールアドレスでアカウントを作成します。確認メールのリンクから本登録を完了してください。"
+        description="メールアドレスとVRChat上の表示名でアカウントを作成します。確認メールのリンクから本登録を完了してください。"
       />
       <section className="site-container pb-16">
         <Suspense fallback={<div className="mx-auto max-w-md py-8 text-center text-sm text-cream-faint">読み込み中…</div>}>

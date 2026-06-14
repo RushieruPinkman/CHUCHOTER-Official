@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useActionState, useEffect, useState } from "react";
 import { updateDisplayNameAction, type ProfileFormState } from "@/app/profile/actions";
 import { dispatchAuthMemberUpdated } from "@/lib/auth-client";
+import { getDisplayNameEmailWarningMessage } from "@/lib/auth-messages";
 import {
   AUTH_DEV_LOGIN_PATH,
   formatAuthTimestamp,
@@ -17,6 +18,7 @@ export interface ProfileView {
   email: string;
   loggedInAt?: string;
   mode: "production" | "dev";
+  showDisplayNameEmailWarning?: boolean;
 }
 
 interface ProfilePanelProps {
@@ -66,7 +68,7 @@ export default function ProfilePanel({ profile, onDisplayNameChange }: ProfilePa
 
     const nextName = displayName.trim();
     if (!nextName) {
-      setDevError("表示名を入力してください。");
+      setDevError("VRChat上の表示名を入力してください。");
       return;
     }
     if (nextName.length > 32) {
@@ -106,6 +108,15 @@ export default function ProfilePanel({ profile, onDisplayNameChange }: ProfilePa
       )}
 
       <div className="space-y-6 text-center">
+        {profile.showDisplayNameEmailWarning && (
+          <p
+            className="rounded border border-amber-500/35 bg-amber-500/10 px-4 py-3 text-left text-sm leading-relaxed text-amber-100/95"
+            role="alert"
+          >
+            {getDisplayNameEmailWarningMessage()}
+          </p>
+        )}
+
         <p className="auth-status-badge auth-status-badge--panel" role="status">
           <span className="auth-status-badge__dot" aria-hidden="true" />
           ログイン中
@@ -131,7 +142,7 @@ export default function ProfilePanel({ profile, onDisplayNameChange }: ProfilePa
           ) : isDev ? (
             <div className="mx-auto max-w-sm text-left">
               <label htmlFor="profile-display-name" className="mb-1.5 block text-xs text-cream-muted">
-                表示名
+                VRChat上の表示名
               </label>
               <input
                 id="profile-display-name"
@@ -160,7 +171,7 @@ export default function ProfilePanel({ profile, onDisplayNameChange }: ProfilePa
           ) : (
             <form action={formAction} className="mx-auto max-w-sm text-left">
               <label htmlFor="profile-display-name" className="mb-1.5 block text-xs text-cream-muted">
-                表示名
+                VRChat上の表示名
               </label>
               <input
                 id="profile-display-name"
@@ -171,8 +182,12 @@ export default function ProfilePanel({ profile, onDisplayNameChange }: ProfilePa
                 autoComplete="nickname"
                 maxLength={32}
                 required
+                placeholder="VRChatで表示されている名前"
                 className={inputClass}
               />
+              <p className="mt-1.5 text-[11px] leading-relaxed text-cream-faint">
+                メールアドレスと同じ名前は使用できません。
+              </p>
               <div className="mt-4 flex flex-wrap gap-3">
                 <button
                   type="submit"
