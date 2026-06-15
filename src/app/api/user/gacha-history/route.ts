@@ -7,6 +7,8 @@ import {
 } from "@/lib/gacha-history-store";
 import { isUserAuthEnabledOnServer } from "@/lib/supabase/config";
 
+export const runtime = "nodejs";
+
 export async function GET(request: NextRequest) {
   if (!isUserAuthEnabledOnServer()) {
     return NextResponse.json({ error: "ログイン機能が設定されていません。" }, { status: 503 });
