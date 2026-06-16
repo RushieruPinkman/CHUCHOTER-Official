@@ -285,7 +285,7 @@ export function pickGachaPrize(
   return { rarity: 1, prize: GACHA_PRIZES[1], wonAt };
 }
 
-const GACHA_TWEET_HASHTAGS = "#vrc_シュシュテ\n#シュシュテガチャ";
+const GACHA_TWEET_HASHTAGS = "#シュシュテガチャ";
 
 export function buildShareText(result: GachaDrawResult, siteUrl: string): string {
   if (isGachaMiss(result.rarity)) {
