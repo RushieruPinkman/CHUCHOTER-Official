@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import GoogleAnalytics from "@/components/GoogleAnalytics";
+import GoogleTagManager from "@/components/GoogleTagManager";
 import SiteShell from "@/components/SiteShell";
 import StructuredData from "@/components/StructuredData";
 import { ThemeProvider } from "@/components/ThemeProvider";
@@ -65,7 +65,7 @@ export default function RootLayout({
 
           <SiteShell>{children}</SiteShell>
         </ThemeProvider>
-        <GoogleAnalytics />
+        <GoogleTagManager />
       </body>
     </html>
   );
