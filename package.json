@@ -12,6 +12,7 @@
     "logo:transparent": "node scripts/make-logo-transparent.mjs"
   },
   "dependencies": {
+    "@next/third-parties": "^16.2.9",
     "@supabase/ssr": "^0.10.3",
     "@supabase/supabase-js": "^2.49.8",
     "next": "^15.3.3",
