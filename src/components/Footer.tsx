@@ -29,7 +29,8 @@ export default function Footer() {
           <div className="flex flex-col items-center border-b border-[var(--color-border)] pb-6 text-center lg:items-start lg:border-b-0 lg:pb-0 lg:text-left">
             <Link
               href="/"
-              aria-label="CHUCHOTER トップページへ"
+              aria-label="CHUCHOTER 公式サイト トップページへ"
+              title="CHUCHOTER 公式サイト"
               className="inline-block opacity-90 transition-opacity hover:opacity-100"
             >
               <Logo size="sm" />
@@ -40,6 +41,9 @@ export default function Footer() {
             >
               {SITE.tagline}
             </p>
+            <Link href="/" className="footer-link mt-2 inline-block text-[12px] tracking-wide">
+              公式サイト（エントランス）
+            </Link>
           </div>
 
           <div className="grid grid-cols-2 gap-x-5 gap-y-6 sm:grid-cols-3 sm:gap-6">

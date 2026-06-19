@@ -6,16 +6,34 @@ import VrChatGroupLink from "@/components/VrChatGroupLink";
 import XLink from "@/components/XLink";
 import { getAnnouncements } from "@/lib/data";
 import { SITE } from "@/lib/site";
-import { buildPageMetadata } from "@/lib/seo";
+import FaqSection from "@/components/FaqSection";
+import SeoJsonLd from "@/components/SeoJsonLd";
+import { buildFaqJsonLd, buildPageMetadata, buildPublicPageBreadcrumb } from "@/lib/seo";
 
 export const revalidate = 300;
 
 export const metadata: Metadata = buildPageMetadata({
   title: "ご案内",
   description:
-    "CHUCHOTER（シュシュテ）の入館方法・Request Invite手順・ドレスコードを掲載。VRChat完全個室1対1イベントの初めての方も安心してご利用いただけます。",
+    "入館方法・Request Invite手順・ドレスコードのご案内。VRChat完全個室1対1イベント CHUCHOTER（シュシュテ）の公式サイト内ページです。",
   path: "/system",
 });
+
+const SYSTEM_FAQ = [
+  {
+    question: "CHUCHOTER（シュシュテ）への入館方法は？",
+    answer:
+      "公式XまたはVRChatグループで営業日を確認し、指定キャストへRequest Inviteを送って招待を受け取ったうえで、指定インスタンスへ参加してください。",
+  },
+  {
+    question: "Request Inviteは誰に送ればよいですか？",
+    answer: "指定キャスト（Le Ciel Blanc / 黒糖アメ）へVRChat内でRequest Inviteをお送りください。",
+  },
+  {
+    question: "営業時間はいつですか？",
+    answer: `火・水・木（不定期）に営業しています。1部 ${SITE.part1Time}〜、2部 ${SITE.part2Time}〜です。詳細は営業予定表をご確認ください。`,
+  },
+];
 
 const STEPS = [
   {
@@ -43,6 +61,9 @@ export default async function SystemPage() {
 
   return (
     <>
+      <SeoJsonLd
+        data={[buildPublicPageBreadcrumb("ご利用案内", "/system"), buildFaqJsonLd(SYSTEM_FAQ)]}
+      />
       <PageHero
         titleEn="Concierge"
         titleJa="ご利用案内"
@@ -138,6 +159,8 @@ export default async function SystemPage() {
           </ScrollReveal>
         </div>
       </section>
+
+      <FaqSection items={SYSTEM_FAQ} />
 
       <section className="section-py border-t border-[var(--color-border)]" aria-labelledby="manner-heading">
         <div className="site-container">

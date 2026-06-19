@@ -15,7 +15,12 @@ export const metadata: Metadata = {
     default: `${SITE.name} | 高級隠れ家マンション`,
     template: `%s | ${SITE.name}`,
   },
+  description: SITE.description,
+  applicationName: SITE.name,
   robots: { index: true, follow: true },
+  ...(process.env.GOOGLE_SITE_VERIFICATION
+    ? { verification: { google: process.env.GOOGLE_SITE_VERIFICATION } }
+    : {}),
   openGraph: {
     type: "website",
     locale: "ja_JP",

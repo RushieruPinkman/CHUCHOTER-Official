@@ -4,14 +4,15 @@ import GachaMachine from "@/components/GachaMachine";
 import { getCasts } from "@/lib/data";
 import type { GachaCastSnapshot } from "@/lib/gacha";
 
-import { buildPageMetadata } from "@/lib/seo";
+import SeoJsonLd from "@/components/SeoJsonLd";
+import { buildPageMetadata, buildPublicPageBreadcrumb } from "@/lib/seo";
 
 export const revalidate = 300;
 
 export const metadata: Metadata = buildPageMetadata({
   title: "ガチャ",
   description:
-    "CHUCHOTER 運命の扉 — 毎日1回無料ガチャと CP 追加抽選。X シェアで CP を貯め、景品を獲得できます。",
+    "運命の扉 — 毎日1回無料ガチャと CP 追加抽選。CHUCHOTER（シュシュテ）公式サイトのガチャページです。",
   path: "/gacha",
 });
 
@@ -27,6 +28,7 @@ export default async function GachaPage() {
 
   return (
     <>
+      <SeoJsonLd data={buildPublicPageBreadcrumb("運命の扉", "/gacha")} />
       <PageHero
         titleEn="Fortune"
         titleJa="運命の扉"

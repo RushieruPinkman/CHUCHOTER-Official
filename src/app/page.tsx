@@ -10,7 +10,8 @@ import XLink from "@/components/XLink";
 import VrChatGroupLink from "@/components/VrChatGroupLink";
 import { getAnnouncements, getCasts, getEffectiveStatus } from "@/lib/data";
 import { SITE } from "@/lib/site";
-import { buildPageMetadata } from "@/lib/seo";
+import SeoJsonLd from "@/components/SeoJsonLd";
+import { buildHomePageJsonLd, buildPageMetadata } from "@/lib/seo";
 import Link from "next/link";
 import type { Metadata } from "next";
 
@@ -28,8 +29,11 @@ export default async function HomePage() {
     getAnnouncements(),
   ]);
 
+  const structuredData = buildHomePageJsonLd();
+
   return (
     <>
+      <SeoJsonLd data={structuredData} />
       <section
         className="hero-mv relative flex min-h-[100dvh] w-full max-w-full flex-col overflow-hidden"
         aria-labelledby="hero-title"

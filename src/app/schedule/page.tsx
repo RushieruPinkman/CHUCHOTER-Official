@@ -5,16 +5,19 @@ import DailyTaskTracker from "@/components/DailyTaskTracker";
 import { formatJapaneseDate, getWeekDates, SITE } from "@/lib/site";
 import { getAllCasts, getSchedule } from "@/lib/data";
 import { getGachaDayJst } from "@/lib/gacha-daily-limit";
-import { buildPageMetadata } from "@/lib/seo";
+import SeoJsonLd from "@/components/SeoJsonLd";
+import { buildPageMetadata, buildPublicPageBreadcrumb } from "@/lib/seo";
 
 export const revalidate = 300;
 
 export const metadata: Metadata = buildPageMetadata({
-  title: "予定表",
+  title: "営業予定表",
   description:
-    "CHUCHOTER（シュシュテ）の今週の営業予定と出勤キャストのシフト。VRChat イベントの開催日・1部・2部の出勤状況を確認できます。",
+    "今週の営業日・出勤シフト（1部・2部）を確認できるスケジュールページ。CHUCHOTER公式サイト内の営業予定表です。",
   path: "/schedule",
 });
+
+const scheduleBreadcrumbJsonLd = buildPublicPageBreadcrumb("営業予定表", "/schedule");
 
 const STATUS = {
   open: { label: "営業", className: "text-gold border-gold/30 bg-gold/[0.06]" },
@@ -44,10 +47,11 @@ export default async function SchedulePage() {
 
   return (
     <>
+      <SeoJsonLd data={scheduleBreadcrumbJsonLd} />
       <DailyTaskTracker taskId="visit_schedule" />
       <PageHero
         titleEn="Schedule"
-        titleJa="予定表"
+        titleJa="営業予定表"
         description="今週の営業日と出勤キャストのシフトをご確認いただけます。"
       />
 

@@ -1,24 +1,27 @@
 import type { Cast } from "@/types";
 import { SITE } from "@/lib/site";
-import { absoluteUrl } from "@/lib/seo";
+import { absoluteUrl, buildBreadcrumbJsonLd, SEO_HOME_BREADCRUMB_NAME } from "@/lib/seo";
 
 export function buildCastDescription(cast: Cast): string {
-  const description = `${cast.name}（${cast.nameEn}）— ${cast.tagline}。CHUCHOTER（シュシュテ）の住人紹介。`;
+  const description = `${cast.name}（${cast.nameEn}）— ${cast.tagline}。CHUCHOTER（シュシュテ）公式サイトの住人紹介。`;
   if (description.length <= 160) return description;
   return `${description.slice(0, 157)}...`;
 }
 
-export function buildCastPersonJsonLd(cast: Cast) {
+export function buildCastProfilePageJsonLd(cast: Cast) {
   return {
     "@context": "https://schema.org",
-    "@type": "Person",
-    name: cast.name,
-    alternateName: cast.nameEn,
-    description: cast.tagline,
-    image: absoluteUrl(cast.image),
-    url: absoluteUrl(`/casts/${cast.id}`),
-    memberOf: {
-      "@type": "Organization",
+    "@type": "ProfilePage",
+    mainEntity: {
+      "@type": "Person",
+      name: cast.name,
+      alternateName: cast.nameEn,
+      description: cast.tagline,
+      image: absoluteUrl(cast.image),
+      url: absoluteUrl(`/casts/${cast.id}`),
+    },
+    isPartOf: {
+      "@type": "WebSite",
       name: SITE.name,
       url: SITE.url,
     },
@@ -26,28 +29,9 @@ export function buildCastPersonJsonLd(cast: Cast) {
 }
 
 export function buildCastBreadcrumbJsonLd(cast: Cast) {
-  return {
-    "@context": "https://schema.org",
-    "@type": "BreadcrumbList",
-    itemListElement: [
-      {
-        "@type": "ListItem",
-        position: 1,
-        name: "エントランス",
-        item: SITE.url,
-      },
-      {
-        "@type": "ListItem",
-        position: 2,
-        name: "住人紹介",
-        item: absoluteUrl("/casts"),
-      },
-      {
-        "@type": "ListItem",
-        position: 3,
-        name: cast.name,
-        item: absoluteUrl(`/casts/${cast.id}`),
-      },
-    ],
-  };
+  return buildBreadcrumbJsonLd([
+    { name: SEO_HOME_BREADCRUMB_NAME, path: "/" },
+    { name: "住人紹介", path: "/casts" },
+    { name: cast.name, path: `/casts/${cast.id}` },
+  ]);
 }

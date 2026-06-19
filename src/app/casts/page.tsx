@@ -4,21 +4,28 @@ import CastsGrid from "@/components/CastsGrid";
 import CastLegacyRedirect from "@/components/CastLegacyRedirect";
 import PageHero from "@/components/PageHero";
 import { getCasts } from "@/lib/data";
-import { buildPageMetadata } from "@/lib/seo";
+import SeoJsonLd from "@/components/SeoJsonLd";
+import { buildCastListJsonLd, buildPageMetadata, buildPublicPageBreadcrumb } from "@/lib/seo";
 export const revalidate = 300;
 
 export const metadata: Metadata = buildPageMetadata({
   title: "住人紹介",
   description:
-    "CHUCHOTER（シュシュテ）の住人紹介。Le Ciel Blanc・黒糖アメをはじめ、VRChat完全個室1対1イベントで出会えるレジデンスのプロフィールを掲載しています。",
+    "レジデンス住人のプロフィール一覧。VRChat完全個室1対1イベント CHUCHOTER（シュシュテ）公式サイトの住人紹介ページです。",
   path: "/casts",
 });
 
 export default async function CastsPage() {
   const casts = await getCasts();
+  const castListJsonLd = buildCastListJsonLd(casts.map((cast) => ({ id: cast.id, name: cast.name })));
+  const structuredData = [
+    buildPublicPageBreadcrumb("住人紹介", "/casts"),
+    ...(castListJsonLd ? [castListJsonLd] : []),
+  ];
 
   return (
     <>
+      <SeoJsonLd data={structuredData} />
       <PageHero
         titleEn="The Residence"
         titleJa="住人紹介"

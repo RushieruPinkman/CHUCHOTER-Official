@@ -66,7 +66,7 @@ export default function Header() {
             <Link
               href="/"
               className="header-bar__logo focus-visible:outline-offset-4"
-              aria-label="CHUCHOTER トップページへ"
+              aria-label="CHUCHOTER 公式サイト トップページへ"
             >
               <Logo size="sm" priority />
             </Link>
@@ -104,7 +104,7 @@ export default function Header() {
               <Link
                 href="/"
                 className="header-bar__logo focus-visible:outline-offset-4"
-                aria-label="CHUCHOTER トップページへ"
+                aria-label="CHUCHOTER 公式サイト トップページへ"
               >
                 <Logo size="sm" priority />
               </Link>

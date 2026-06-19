@@ -3,14 +3,15 @@ import PageHero from "@/components/PageHero";
 import GachaCollectionSection from "@/components/GachaCollectionSection";
 import { getCasts } from "@/lib/data";
 import { toResidentCastRefs } from "@/lib/gacha-collection-exchange";
-import { buildPageMetadata } from "@/lib/seo";
+import SeoJsonLd from "@/components/SeoJsonLd";
+import { buildPageMetadata, buildPublicPageBreadcrumb } from "@/lib/seo";
 
 export const revalidate = 300;
 
 export const metadata: Metadata = buildPageMetadata({
   title: "コレクション",
   description:
-    "CHUCHOTER 運命の扉で獲得した★1住人カードのコレクション。重複交換やコンプリートで景品と交換できます。",
+    "★1住人カードのコレクションと重複交換。CHUCHOTER（シュシュテ）公式サイトのコレクションページです。",
   path: "/collection",
 });
 
@@ -20,6 +21,7 @@ export default async function CollectionPage() {
 
   return (
     <>
+      <SeoJsonLd data={buildPublicPageBreadcrumb("コレクション", "/collection")} />
       <PageHero
         titleEn="Collection"
         titleJa="コレクション"

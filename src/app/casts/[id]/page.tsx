@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import SeoJsonLd from "@/components/SeoJsonLd";
 import PageHero from "@/components/PageHero";
 import CastDetailPanel from "@/components/CastDetailPanel";
 import { getCastById, getCasts } from "@/lib/data";
 import {
   buildCastBreadcrumbJsonLd,
   buildCastDescription,
-  buildCastPersonJsonLd,
+  buildCastProfilePageJsonLd,
 } from "@/lib/cast-seo";
 import { absoluteUrl, buildPageMetadata } from "@/lib/seo";
 
@@ -42,14 +43,11 @@ export default async function CastDetailPage({ params }: CastDetailPageProps) {
   const cast = await getCastById(id);
   if (!cast) notFound();
 
-  const structuredData = [buildCastPersonJsonLd(cast), buildCastBreadcrumbJsonLd(cast)];
+  const structuredData = [buildCastProfilePageJsonLd(cast), buildCastBreadcrumbJsonLd(cast)];
 
   return (
     <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
-      />
+      <SeoJsonLd data={structuredData} />
       <PageHero titleEn="Resident" titleJa={cast.name} description={cast.tagline} />
       <CastDetailPanel cast={cast} />
     </>

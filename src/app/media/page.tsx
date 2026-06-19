@@ -3,12 +3,13 @@ import PageHero from "@/components/PageHero";
 import ScrollReveal from "@/components/ScrollReveal";
 import XLink from "@/components/XLink";
 import { SITE } from "@/lib/site";
-import { buildPageMetadata } from "@/lib/seo";
+import SeoJsonLd from "@/components/SeoJsonLd";
+import { buildPageMetadata, buildPublicPageBreadcrumb } from "@/lib/seo";
 
 export const metadata: Metadata = buildPageMetadata({
   title: "ラウンジ",
   description:
-    "CHUCHOTER 公式ラウンジ — ポスター画像と女性キャスト・スタッフ募集のご案内。",
+    "公式ポスター画像と女性キャスト・スタッフ募集のご案内。CHUCHOTER（シュシュテ）公式サイトのラウンジページです。",
   path: "/media",
 });
 
@@ -17,6 +18,7 @@ const POSTER_SRC = "/images/lounge/poster.png";
 export default function MediaPage() {
   return (
     <>
+      <SeoJsonLd data={buildPublicPageBreadcrumb("ラウンジ", "/media")} />
       <PageHero
         titleEn="The Lounge"
         titleJa="ラウンジ"
