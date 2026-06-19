@@ -1,0 +1,15 @@
+{
+  "users": {
+    "dev:test@example.com": {
+      "balance": 1010,
+      "tasksByDate": {
+        "2026-06-27": [
+          "draw_daily_gacha"
+        ]
+      },
+      "freeDrawsByDate": {
+        "2026-06-27": 1
+      }
+    }
+  }
+}

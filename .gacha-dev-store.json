@@ -1,0 +1,158 @@
+{
+  "collections": {
+    "dev:test@example.com": [],
+    "dev:dev@chuchoter.local": [
+      {
+        "castId": "kokuto-ame",
+        "name": "黒糖アメ",
+        "nameEn": "Kokuto Ame",
+        "image": "/images/casts/cast-1780487141570.webp",
+        "gender": "female",
+        "count": 22,
+        "firstObtainedAt": "2026-06-26T15:43:14.252Z",
+        "lastObtainedAt": "2026-06-26T16:02:07.399Z"
+      },
+      {
+        "castId": "le-ciel-blanc",
+        "name": "ル・シエル・ブラン",
+        "nameEn": "Le Ciel Blanc",
+        "image": "/images/casts/le-ciel-blanc.webp",
+        "gender": "male",
+        "count": 25,
+        "firstObtainedAt": "2026-06-26T15:43:14.252Z",
+        "lastObtainedAt": "2026-06-26T16:02:07.399Z"
+      },
+      {
+        "castId": "cast-1780408934343",
+        "name": "カサネ",
+        "nameEn": "Kasane",
+        "image": "/images/casts/kasane.webp",
+        "gender": "female",
+        "count": 22,
+        "firstObtainedAt": "2026-06-26T15:43:14.252Z",
+        "lastObtainedAt": "2026-06-26T16:02:07.399Z"
+      },
+      {
+        "castId": "dev-male-01",
+        "name": "デヴ・暁",
+        "nameEn": "Dev Akatsuki",
+        "image": "/images/casts/placeholder.svg",
+        "gender": "male",
+        "count": 4,
+        "firstObtainedAt": "2026-06-26T16:02:00.165Z",
+        "lastObtainedAt": "2026-06-26T16:02:07.399Z"
+      },
+      {
+        "castId": "dev-male-02",
+        "name": "デヴ・蒼",
+        "nameEn": "Dev Ao",
+        "image": "/images/casts/placeholder.svg",
+        "gender": "male",
+        "count": 4,
+        "firstObtainedAt": "2026-06-26T16:02:00.165Z",
+        "lastObtainedAt": "2026-06-26T16:02:07.399Z"
+      },
+      {
+        "castId": "dev-male-03",
+        "name": "デヴ・琥珀",
+        "nameEn": "Dev Kohaku",
+        "image": "/images/casts/placeholder.svg",
+        "gender": "male",
+        "count": 4,
+        "firstObtainedAt": "2026-06-26T16:02:00.165Z",
+        "lastObtainedAt": "2026-06-26T16:02:07.399Z"
+      },
+      {
+        "castId": "dev-male-04",
+        "name": "デヴ・深緋",
+        "nameEn": "Dev Kokihi",
+        "image": "/images/casts/placeholder.svg",
+        "gender": "male",
+        "count": 4,
+        "firstObtainedAt": "2026-06-26T16:02:00.165Z",
+        "lastObtainedAt": "2026-06-26T16:02:07.399Z"
+      },
+      {
+        "castId": "dev-male-05",
+        "name": "デヴ・銀狼",
+        "nameEn": "Dev Ginro",
+        "image": "/images/casts/placeholder.svg",
+        "gender": "male",
+        "count": 4,
+        "firstObtainedAt": "2026-06-26T16:02:00.165Z",
+        "lastObtainedAt": "2026-06-26T16:02:07.399Z"
+      },
+      {
+        "castId": "dev-female-01",
+        "name": "デヴ・桜",
+        "nameEn": "Dev Sakura",
+        "image": "/images/casts/placeholder.svg",
+        "gender": "female",
+        "count": 4,
+        "firstObtainedAt": "2026-06-26T16:02:00.165Z",
+        "lastObtainedAt": "2026-06-26T16:02:07.399Z"
+      },
+      {
+        "castId": "dev-female-02",
+        "name": "デヴ・雫",
+        "nameEn": "Dev Shizuku",
+        "image": "/images/casts/placeholder.svg",
+        "gender": "female",
+        "count": 4,
+        "firstObtainedAt": "2026-06-26T16:02:00.165Z",
+        "lastObtainedAt": "2026-06-26T16:02:07.399Z"
+      },
+      {
+        "castId": "dev-female-03",
+        "name": "デヴ・白百合",
+        "nameEn": "Dev Shirayuri",
+        "image": "/images/casts/placeholder.svg",
+        "gender": "female",
+        "count": 4,
+        "firstObtainedAt": "2026-06-26T16:02:00.165Z",
+        "lastObtainedAt": "2026-06-26T16:02:07.399Z"
+      },
+      {
+        "castId": "dev-female-04",
+        "name": "デヴ・星夜",
+        "nameEn": "Dev Seiya",
+        "image": "/images/casts/placeholder.svg",
+        "gender": "female",
+        "count": 4,
+        "firstObtainedAt": "2026-06-26T16:02:00.165Z",
+        "lastObtainedAt": "2026-06-26T16:02:07.399Z"
+      },
+      {
+        "castId": "dev-female-05",
+        "name": "デヴ・紅",
+        "nameEn": "Dev Kurenai",
+        "image": "/images/casts/placeholder.svg",
+        "gender": "female",
+        "count": 4,
+        "firstObtainedAt": "2026-06-26T16:02:00.165Z",
+        "lastObtainedAt": "2026-06-26T16:02:07.399Z"
+      }
+    ]
+  },
+  "history": {
+    "dev:test@example.com": [
+      {
+        "id": "draw-1782488478254-0",
+        "result": {
+          "rarity": 2,
+          "prize": {
+            "rarity": 2,
+            "title": "PC用壁紙",
+            "subtitle": "Wallpaper",
+            "description": "CHUCHOTERオリジナルPC用壁紙データ",
+            "download": {
+              "url": "/gacha/prizes/chuchoter-wallpaper.png",
+              "filename": "CHUCHOTER-wallpaper.png"
+            }
+          },
+          "wonAt": "2026-06-26T15:41:18.251Z"
+        }
+      }
+    ]
+  }
+}
