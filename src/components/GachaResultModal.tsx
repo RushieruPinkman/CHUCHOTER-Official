@@ -17,6 +17,7 @@ interface GachaResultModalProps {
   titleJa?: string;
   userKey?: string | null;
   prizeCasts?: GachaPrizeCastOption[];
+  loginNextPath?: string;
 }
 
 export default function GachaResultModal({
@@ -26,6 +27,7 @@ export default function GachaResultModal({
   titleJa = "当選",
   userKey = null,
   prizeCasts = [],
+  loginNextPath = "/gacha",
 }: GachaResultModalProps) {
   const syncedResult = useGachaSerialStatusSync(result, userKey) ?? result;
   const [mounted, setMounted] = useState(false);
@@ -139,7 +141,11 @@ export default function GachaResultModal({
             />
           </div>
 
-          <GachaSharePanel result={syncedResult} loginNextPath="/gacha" prizeCasts={prizeCasts} />
+          <GachaSharePanel
+            result={syncedResult}
+            loginNextPath={loginNextPath}
+            prizeCasts={prizeCasts}
+          />
         </div>
       </div>
     </div>,

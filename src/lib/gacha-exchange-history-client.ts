@@ -45,7 +45,13 @@ function mergeExchangeHistories(
     }
     const useIncoming =
       new Date(record.exchangedAt).getTime() >= new Date(existing.exchangedAt).getTime();
-    map.set(record.id, useIncoming ? record : existing);
+    const base = useIncoming ? record : existing;
+    const other = useIncoming ? existing : record;
+    map.set(record.id, {
+      ...base,
+      serialNumber: base.serialNumber ?? other.serialNumber,
+      serialStatus: base.serialStatus ?? other.serialStatus,
+    });
   }
 
   return [...map.values()].sort(

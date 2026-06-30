@@ -77,6 +77,7 @@ export default function CollectionView({
           onClose={closeModal}
           userKey={userKey}
           prizeCasts={residents.map((resident) => ({ id: resident.id, name: resident.name }))}
+          loginNextPath="/collection"
           titleEn="Exchange"
           titleJa="交換完了"
         />

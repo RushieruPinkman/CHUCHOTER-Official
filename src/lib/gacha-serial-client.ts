@@ -1,10 +1,14 @@
+import type { CollectionExchangeRecord } from "@/lib/gacha-collection-exchange";
+import { updateCollectionExchangeRecordSerial } from "@/lib/gacha-collection-exchange";
 import type { GachaDrawResult } from "@/lib/gacha";
+import { getPrizeByRarity } from "@/lib/gacha";
 import {
   shouldTrackGachaPrizeSerial,
   withGachaSerialNumber,
   type GachaSerialPublicRecord,
   type GachaSerialStatus,
 } from "@/lib/gacha-serial";
+import { ensureUserApiSession } from "@/lib/gacha-collection-client";
 
 export const GACHA_SERIAL_STATUS_UPDATED_EVENT = "chuchoter-gacha-serial-status-updated";
 
@@ -28,6 +32,7 @@ export async function issueGachaSerialFromApi(
   const response = await fetch("/api/gacha/serials", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
+    credentials: "same-origin",
     body: JSON.stringify(input),
   });
 
@@ -48,7 +53,9 @@ export async function fetchGachaSerialStatuses(
   if (unique.length === 0) return {};
 
   const params = new URLSearchParams({ serials: unique.join(",") });
-  const response = await fetch(`/api/gacha/serials?${params.toString()}`);
+  const response = await fetch(`/api/gacha/serials?${params.toString()}`, {
+    credentials: "same-origin",
+  });
 
   if (!response.ok) {
     return {};
@@ -60,6 +67,63 @@ export async function fetchGachaSerialStatuses(
     map[record.serial] = record.status;
   }
   return map;
+}
+
+export async function attachSerialToExchangeRecord(
+  userKey: string,
+  record: CollectionExchangeRecord,
+  options: { devMode?: boolean } = {}
+): Promise<CollectionExchangeRecord> {
+  if (!shouldTrackGachaPrizeSerial(record.rarity)) {
+    return record;
+  }
+
+  if (record.serialNumber?.trim()) {
+    return record;
+  }
+
+  if (options.devMode) {
+    const draw: GachaDrawResult = withGachaSerialNumber({
+      rarity: record.rarity,
+      prize: {
+        ...getPrizeByRarity(record.rarity),
+        title: record.prizeTitle,
+        subtitle: record.prizeSubtitle,
+      },
+      wonAt: record.exchangedAt,
+    });
+    const serial = draw.serialNumber?.trim();
+    if (!serial) return record;
+
+    return (
+      updateCollectionExchangeRecordSerial(userKey, record.id, serial) ?? {
+        ...record,
+        serialNumber: serial,
+        serialStatus: "issued",
+      }
+    );
+  }
+
+  const hasSession = await ensureUserApiSession();
+  if (!hasSession) {
+    throw new Error("ログインセッションの確認に失敗しました。再ログインしてからお試しください。");
+  }
+
+  const serialRecord = await issueGachaSerialFromApi({
+    rarity: record.rarity,
+    source: "exchange",
+    wonAt: record.exchangedAt,
+    prizeTitle: record.prizeTitle,
+    prizeSubtitle: record.prizeSubtitle,
+  });
+
+  return (
+    updateCollectionExchangeRecordSerial(userKey, record.id, serialRecord.serial) ?? {
+      ...record,
+      serialNumber: serialRecord.serial,
+      serialStatus: serialRecord.status,
+    }
+  );
 }
 
 export async function attachSerialToDrawResult(

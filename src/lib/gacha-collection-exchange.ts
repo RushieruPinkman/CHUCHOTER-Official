@@ -209,7 +209,8 @@ function trimExchangeHistoryRecords(
 
 function writeCollectionExchangeHistory(
   userKey: string,
-  records: CollectionExchangeRecord[]
+  records: CollectionExchangeRecord[],
+  options: { syncRemote?: boolean } = {}
 ): void {
   if (typeof window === "undefined" || !userKey) return;
 
@@ -217,6 +218,8 @@ function writeCollectionExchangeHistory(
   window.dispatchEvent(
     new CustomEvent(GACHA_COLLECTION_EXCHANGE_UPDATED_EVENT, { detail: { userKey } })
   );
+
+  if (options.syncRemote === false) return;
 
   if (userKey.startsWith("auth:")) {
     void import("@/lib/gacha-exchange-history-client").then(
@@ -283,7 +286,8 @@ export function performCollectionExchange(
   const history = readCollectionExchangeHistory(userKey);
   writeCollectionExchangeHistory(
     userKey,
-    trimExchangeHistoryRecords([record, ...history])
+    trimExchangeHistoryRecords([record, ...history]),
+    { syncRemote: false }
   );
 
   return { ok: true, record };
@@ -437,10 +441,14 @@ export function exchangeRecordToGachaDrawResult(
 
   return {
     rarity: record.rarity,
-    prize: getPrizeByRarity(record.rarity),
+    prize: {
+      ...getPrizeByRarity(record.rarity),
+      title: record.prizeTitle,
+      subtitle: record.prizeSubtitle,
+    },
     wonAt: record.exchangedAt,
     serialNumber: record.serialNumber,
-    serialStatus: record.serialNumber ? "issued" : undefined,
+    serialStatus: record.serialNumber ? (record.serialStatus ?? "issued") : undefined,
   };
 }
 

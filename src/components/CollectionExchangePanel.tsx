@@ -1,13 +1,14 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { issueGachaSerialFromApi } from "@/lib/gacha-serial-client";
-import { shouldTrackGachaPrizeSerial } from "@/lib/gacha-serial";
+import { isAuthDevEnabled } from "@/lib/auth-dev";
+import { isRemoteCollectionUserKey } from "@/lib/gacha-collection-client";
+import { saveCollectionExchangeHistoryRemoteClient } from "@/lib/gacha-exchange-history-client";
 import {
   GACHA_COLLECTION_EXCHANGE_UPDATED_EVENT,
   getAllCollectionExchangeStatuses,
   performCollectionExchange,
-  updateCollectionExchangeRecordSerial,
+  readCollectionExchangeHistory,
   type CollectionExchangeRecord,
   type CollectionExchangeStatus,
   type CollectionExchangeTier,
@@ -17,6 +18,9 @@ import {
   GACHA_COLLECTION_UPDATED_EVENT,
   readGachaCollection,
 } from "@/lib/gacha-collection";
+import { shouldTrackGachaPrizeSerial } from "@/lib/gacha-serial";
+import { attachSerialToExchangeRecord } from "@/lib/gacha-serial-client";
+import { isUserAuthEnabled } from "@/lib/supabase/config";
 
 interface CollectionExchangePanelProps {
   userKey: string;
@@ -63,36 +67,42 @@ export default function CollectionExchangePanel({
     setError(null);
     setPendingTier(tier);
 
+    const devMode = isAuthDevEnabled() && !isUserAuthEnabled();
     const result = performCollectionExchange(userKey, residents, tier);
-    setPendingTier(null);
 
     if (!result.ok) {
+      setPendingTier(null);
       setError(result.error);
       return;
     }
 
     let record = result.record;
 
-    if (shouldTrackGachaPrizeSerial(record.rarity)) {
-      try {
-        const serialRecord = await issueGachaSerialFromApi({
-          rarity: record.rarity,
-          source: "exchange",
-          wonAt: record.exchangedAt,
-          prizeTitle: record.prizeTitle,
-          prizeSubtitle: record.prizeSubtitle,
-        });
-        const updated = updateCollectionExchangeRecordSerial(userKey, record.id, serialRecord.serial);
-        if (updated) record = updated;
-      } catch (issueError) {
-        setError(
-          issueError instanceof Error
-            ? issueError.message
-            : "交換は完了しましたが、シリアルNo.の発行に失敗しました。"
-        );
+    try {
+      if (shouldTrackGachaPrizeSerial(record.rarity)) {
+        record = await attachSerialToExchangeRecord(userKey, record, { devMode });
+        if (!record.serialNumber?.trim()) {
+          throw new Error("景品受け取り用のシリアルNo.を発行できませんでした。");
+        }
+
+        if (isRemoteCollectionUserKey(userKey)) {
+          await saveCollectionExchangeHistoryRemoteClient(
+            userKey,
+            readCollectionExchangeHistory(userKey)
+          );
+        }
       }
+    } catch (issueError) {
+      setPendingTier(null);
+      setError(
+        issueError instanceof Error
+          ? issueError.message
+          : "交換は完了しましたが、シリアルNo.の発行に失敗しました。"
+      );
+      return;
     }
 
+    setPendingTier(null);
     onExchanged?.(record);
     refresh();
   };
