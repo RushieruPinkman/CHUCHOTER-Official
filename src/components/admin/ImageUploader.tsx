@@ -10,6 +10,8 @@ interface ImageUploaderProps {
   onChange: (url: string) => void;
   authToken: string;
   label?: string;
+  /** true のときトリミングせず、選択した画像をそのままアップロード */
+  skipCrop?: boolean;
 }
 
 export default function ImageUploader({
@@ -17,6 +19,7 @@ export default function ImageUploader({
   onChange,
   authToken,
   label = "ポートレート画像",
+  skipCrop = false,
 }: ImageUploaderProps) {
   const [dragOver, setDragOver] = useState(false);
   const [cropSrc, setCropSrc] = useState<string | null>(null);
@@ -30,9 +33,49 @@ export default function ImageUploader({
     setCroppedArea(pixels);
   }, []);
 
+  const uploadFile = async (file: File) => {
+    if (!file.type.startsWith("image/")) {
+      setError("画像ファイルを選択してください");
+      return;
+    }
+    setUploading(true);
+    setError("");
+    try {
+      const formData = new FormData();
+      formData.append("file", file, file.name);
+      if (skipCrop) {
+        formData.append("raw", "true");
+        formData.append("filename", file.name);
+      }
+
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${authToken}` },
+        body: formData,
+      });
+
+      if (!res.ok) {
+        const body = (await res.json().catch(() => null)) as { error?: string } | null;
+        throw new Error(body?.error || "Upload failed");
+      }
+      const { url } = (await res.json()) as { url: string };
+      onChange(url);
+      setCropSrc(null);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "アップロードに失敗しました";
+      setError(message.includes("fetch") ? "サーバーに接続できません" : message);
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const openCropper = async (file: File) => {
     if (!file.type.startsWith("image/")) {
       setError("画像ファイルを選択してください");
+      return;
+    }
+    if (skipCrop) {
+      await uploadFile(file);
       return;
     }
     setError("");
@@ -85,14 +128,21 @@ export default function ImageUploader({
     }
   };
 
+  const previewClassName = skipCrop
+    ? "h-auto w-full max-h-[320px] object-contain"
+    : "h-full w-full object-cover";
+  const previewWrapperClassName = skipCrop
+    ? "relative mx-auto w-full max-w-[320px] overflow-hidden border border-[var(--color-border)] bg-deep/40"
+    : "relative mx-auto aspect-[3/4] w-full max-w-[200px] overflow-hidden border border-[var(--color-border)]";
+
   return (
     <div className="space-y-3">
       <span className="block text-sm text-cream-muted">{label}</span>
 
       {value && (
-        <div className="relative mx-auto aspect-[3/4] w-full max-w-[200px] overflow-hidden border border-[var(--color-border)]">
+        <div className={previewWrapperClassName}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={value} alt="プレビュー" className="h-full w-full object-cover" />
+          <img src={value} alt="プレビュー" className={previewClassName} />
         </div>
       )}
 
@@ -108,14 +158,15 @@ export default function ImageUploader({
         }`}
       >
         <p className="mb-3 text-sm text-cream-muted">
-          画像をドラッグ＆ドロップ
+          {skipCrop ? "画像をドラッグ＆ドロップ（そのまま保存）" : "画像をドラッグ＆ドロップ"}
         </p>
         <label className="btn-ghost inline-block cursor-pointer text-xs">
-          ファイルを選択
+          {uploading ? "アップロード中…" : "ファイルを選択"}
           <input
             type="file"
             accept="image/*"
             className="sr-only"
+            disabled={uploading}
             onChange={handleFileInput}
           />
         </label>
@@ -123,7 +174,7 @@ export default function ImageUploader({
 
       {error && <p className="text-sm text-red-400">{error}</p>}
 
-      {cropSrc && (
+      {!skipCrop && cropSrc && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 p-4">
           <div className="panel w-full max-w-lg p-4 md:p-6" data-lenis-prevent>
             <h4 className="mb-4 text-gold">画像をトリミング</h4>

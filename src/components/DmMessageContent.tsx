@@ -8,7 +8,10 @@ interface DmMessageContentProps {
 }
 
 async function downloadAttachment(url: string, filename: string, headers?: HeadersInit) {
-  const response = await fetch(url, { headers });
+  const response = await fetch(url, {
+    headers,
+    credentials: "same-origin",
+  });
   if (!response.ok) {
     throw new Error("ダウンロードに失敗しました");
   }
@@ -25,7 +28,7 @@ async function downloadAttachment(url: string, filename: string, headers?: Heade
 export default function DmMessageContent({ message, downloadHeaders }: DmMessageContentProps) {
   const attachment = message.attachment;
 
-  const onDownload = async (event: React.MouseEvent<HTMLButtonElement>) => {
+  const onDownload = async (event: React.MouseEvent<HTMLElement>) => {
     event.preventDefault();
     if (!attachment) return;
 
@@ -44,12 +47,19 @@ export default function DmMessageContent({ message, downloadHeaders }: DmMessage
 
       {attachment?.type === "image" && (
         <figure className="dm-attachment dm-attachment--image min-w-0 max-w-full overflow-hidden">
-          <a href={attachment.url} target="_blank" rel="noopener noreferrer" className="block">
+          <a
+            href={attachment.downloadUrl}
+            onClick={(event) => {
+              event.preventDefault();
+              void onDownload(event);
+            }}
+            className="block"
+          >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={attachment.url}
               alt={attachment.name}
-              className="dm-attachment__image max-h-48 w-full rounded-xl object-cover md:max-h-64"
+              className="dm-attachment__image max-h-48 w-full rounded-xl object-contain md:max-h-64"
               loading="lazy"
             />
           </a>

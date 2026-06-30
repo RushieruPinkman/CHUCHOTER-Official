@@ -7,7 +7,7 @@ import { getMissingSupabaseEnvVars, getSupabaseAdmin } from "@/lib/supabase-admi
 import type { DmAttachmentKind, DmMessageAttachment } from "@/lib/dm";
 
 export const DM_ATTACHMENTS_BUCKET = "dm-attachments";
-export const DM_IMAGE_MAX_BYTES = 5 * 1024 * 1024;
+export const DM_IMAGE_MAX_BYTES = 10 * 1024 * 1024;
 export const DM_AUDIO_MAX_BYTES = 10 * 1024 * 1024;
 const SIGNED_URL_TTL_SECONDS = 60 * 60;
 
@@ -129,6 +129,8 @@ export async function uploadDmAttachment(params: {
   file: Blob;
   filename?: string;
   pathPrefix: string;
+  /** true のとき画像を WebP 変換せず元ファイルのまま保存 */
+  preserveOriginal?: boolean;
 }): Promise<DmAttachmentUploadInput> {
   const kind = resolveAttachmentKind(params.file, params.filename);
   if (!kind) {
@@ -137,7 +139,7 @@ export async function uploadDmAttachment(params: {
 
   if (params.file.size > getMaxBytes(kind)) {
     throw new Error(
-      kind === "image" ? "画像は5MB以下にしてください。" : "音声ファイルは10MB以下にしてください。"
+      kind === "image" ? "画像は10MB以下にしてください。" : "音声ファイルは10MB以下にしてください。"
     );
   }
 
@@ -148,11 +150,11 @@ export async function uploadDmAttachment(params: {
 
   const rawBuffer = Buffer.from(await params.file.arrayBuffer());
   const processed =
-    kind === "image"
+    kind === "image" && !params.preserveOriginal
       ? await processImageBuffer(rawBuffer, params.file.type || `image/${ext}`)
       : {
           buffer: rawBuffer,
-          mime: params.file.type || `audio/${ext === "mp3" ? "mpeg" : ext}`,
+          mime: params.file.type || (kind === "image" ? `image/${ext}` : `audio/${ext === "mp3" ? "mpeg" : ext}`),
           ext,
         };
 

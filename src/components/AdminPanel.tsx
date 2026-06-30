@@ -559,6 +559,7 @@ export default function AdminPanel({
               }
               authToken={token}
               label="ガチャ景品：サインカード（★4）"
+              skipCrop
             />
             <VoiceUploader
               value={editingCast.gachaVoiceUrl}

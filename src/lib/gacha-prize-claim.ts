@@ -9,6 +9,12 @@ import type { Cast } from "@/types";
 
 export const GACHA_PRIZE_CONGRATS_MESSAGE = "おめでとうございます！";
 
+export const GACHA_PRIZE_SIGN_DELIVERY_MESSAGE = `おめでとうございます！
+サインカードをお届けします。下の「ダウンロード」から画像を保存できます。`;
+
+export const GACHA_PRIZE_VOICE_DELIVERY_MESSAGE = `おめでとうございます！
+ボイスをお届けします。下の「ダウンロード」から音声ファイルを保存できます。`;
+
 export const GACHA_PRIZE_PENDING_SIGN_MESSAGE =
   "ただいま住民さんが心を込めてサインを書いてくれているので少々お待ちください。";
 
@@ -102,7 +108,7 @@ export async function claimGachaPrize(input: ClaimGachaPrizeInput): Promise<Clai
     if (cast.gachaSignCardUrl?.trim()) {
       const delivered = await deliverAdminPrizeMessage({
         threadId: thread.id,
-        body: GACHA_PRIZE_CONGRATS_MESSAGE,
+        body: GACHA_PRIZE_SIGN_DELIVERY_MESSAGE,
         assetUrl: cast.gachaSignCardUrl,
         assetKind: "image",
       });
@@ -138,7 +144,7 @@ export async function claimGachaPrize(input: ClaimGachaPrizeInput): Promise<Clai
     if (cast.gachaVoiceUrl?.trim()) {
       const delivered = await deliverAdminPrizeMessage({
         threadId: thread.id,
-        body: GACHA_PRIZE_CONGRATS_MESSAGE,
+        body: GACHA_PRIZE_VOICE_DELIVERY_MESSAGE,
         assetUrl: cast.gachaVoiceUrl,
         assetKind: "audio",
       });

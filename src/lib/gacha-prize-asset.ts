@@ -68,5 +68,6 @@ export async function copyCastPrizeAssetToDmAttachment(params: {
     file: blob,
     filename,
     pathPrefix: buildAdminAttachmentPathPrefix(params.threadId),
+    preserveOriginal: true,
   });
 }
