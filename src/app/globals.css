@@ -3402,7 +3402,15 @@ html.theme-transition *::after {
     margin-top: 1rem;
   }
 
-  .gacha-share__actions,
+  .gacha-share__actions {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+    width: 100%;
+    max-width: 28rem;
+    margin-inline: auto;
+  }
+
   .gacha-machine__actions {
     display: grid;
     grid-template-columns: 1fr;
@@ -3413,17 +3421,14 @@ html.theme-transition *::after {
   }
 
   @media (min-width: 640px) {
-    .gacha-share__actions,
     .gacha-machine__actions {
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }
   }
 
-  .gacha-share__actions .gacha-share__action--primary,
   .gacha-machine__actions .gacha-machine__action--primary,
   .gacha-machine__actions .gacha-machine__auth,
-  .gacha-machine__actions .gacha-machine__draw-actions,
-  .gacha-share__actions .gacha-share__action--wide {
+  .gacha-machine__actions .gacha-machine__draw-actions {
     grid-column: 1 / -1;
   }
 
