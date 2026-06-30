@@ -1,40 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState, useSyncExternalStore } from "react";
+import { useMemo, useState } from "react";
 import CastPortrait from "@/components/CastPortrait";
 import CastRoleBadge from "@/components/CastRoleBadge";
+import GridColumnPicker, { gridColumnStyle, useGridColumnCount } from "@/components/GridColumnPicker";
 import type { Cast } from "@/types";
 
-type Columns = 1 | 2 | 3 | 4 | 5 | 6;
 type GenderFilter = "all" | "male" | "female";
-
-const DESKTOP_COLUMN_OPTIONS: Columns[] = [1, 2, 3, 4, 5, 6];
-const COMPACT_COLUMN_OPTIONS: Columns[] = [1, 2];
-
-const DESKTOP_MEDIA_QUERY = "(min-width: 1024px)";
-
-function subscribeDesktopMedia(onChange: () => void) {
-  const mq = window.matchMedia(DESKTOP_MEDIA_QUERY);
-  mq.addEventListener("change", onChange);
-  return () => mq.removeEventListener("change", onChange);
-}
-
-function getDesktopMediaSnapshot() {
-  return window.matchMedia(DESKTOP_MEDIA_QUERY).matches;
-}
-
-function getDesktopMediaServerSnapshot() {
-  return false;
-}
-
-function useIsDesktop() {
-  return useSyncExternalStore(
-    subscribeDesktopMedia,
-    getDesktopMediaSnapshot,
-    getDesktopMediaServerSnapshot
-  );
-}
 
 const GENDER_FILTERS: { value: GenderFilter; label: string }[] = [
   { value: "all", label: "すべて" },
@@ -42,39 +15,14 @@ const GENDER_FILTERS: { value: GenderFilter; label: string }[] = [
   { value: "female", label: "女性" },
 ];
 
-function ColumnIcon({ cols }: { cols: Columns }) {
-  const gap = cols >= 5 ? 1 : 2;
-  const barWidth = (16 - gap * (cols - 1)) / cols;
-  return (
-    <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true" className="text-current">
-      {Array.from({ length: cols }).map((_, i) => (
-        <rect
-          key={i}
-          x={1 + i * (barWidth + gap)}
-          y="2"
-          width={barWidth}
-          height="14"
-          rx="0.5"
-          fill="currentColor"
-        />
-      ))}
-    </svg>
-  );
-}
-
 export default function CastsGrid({ casts }: { casts: Cast[] }) {
-  const isDesktop = useIsDesktop();
-  const [columns, setColumns] = useState<Columns>(4);
+  const { columns, setColumns, displayColumns } = useGridColumnCount(4);
   const [genderFilter, setGenderFilter] = useState<GenderFilter>("all");
-
-  const displayColumns: Columns = isDesktop ? columns : columns > 2 ? 2 : columns;
 
   const filteredCasts = useMemo(
     () =>
       casts.filter(
-        (cast) =>
-          genderFilter === "all" ||
-          (cast.gender ?? "female") === genderFilter
+        (cast) => genderFilter === "all" || (cast.gender ?? "female") === genderFilter
       ),
     [casts, genderFilter]
   );
@@ -108,53 +56,11 @@ export default function CastsGrid({ casts }: { casts: Cast[] }) {
             </div>
           </div>
 
-          <div className="flex min-w-0 flex-wrap items-center gap-3 sm:flex-nowrap">
-            <p className="shrink-0 text-sm text-cream-muted">表示列数</p>
-            <div
-              className="flex max-w-full gap-1 overflow-x-auto border border-[var(--color-border)] p-1 touch-pan-x lg:hidden"
-              role="group"
-              aria-label="カラム数を変更"
-            >
-              {COMPACT_COLUMN_OPTIONS.map((n) => (
-                <button
-                  key={n}
-                  type="button"
-                  onClick={() => setColumns(n)}
-                  className={`flex h-10 w-10 shrink-0 items-center justify-center transition-colors ${
-                    displayColumns === n
-                      ? "bg-gold/15 text-gold"
-                      : "text-cream-muted hover:text-gold"
-                  }`}
-                  aria-label={`${n}列表示`}
-                  aria-pressed={displayColumns === n}
-                >
-                  <ColumnIcon cols={n} />
-                </button>
-              ))}
-            </div>
-            <div
-              className="hidden max-w-full gap-1 overflow-x-auto border border-[var(--color-border)] p-1 lg:flex"
-              role="group"
-              aria-label="カラム数を変更"
-            >
-              {DESKTOP_COLUMN_OPTIONS.map((n) => (
-                <button
-                  key={n}
-                  type="button"
-                  onClick={() => setColumns(n)}
-                  className={`flex h-10 w-10 shrink-0 items-center justify-center transition-colors ${
-                    columns === n
-                      ? "bg-gold/15 text-gold"
-                      : "text-cream-muted hover:text-gold"
-                  }`}
-                  aria-label={`${n}列表示`}
-                  aria-pressed={columns === n}
-                >
-                  <ColumnIcon cols={n} />
-                </button>
-              ))}
-            </div>
-          </div>
+          <GridColumnPicker
+            columns={columns}
+            displayColumns={displayColumns}
+            onChange={setColumns}
+          />
         </div>
 
         <p className="sr-only" aria-live="polite" aria-atomic="true">
@@ -168,9 +74,9 @@ export default function CastsGrid({ casts }: { casts: Cast[] }) {
             該当する住人がいません。
           </p>
         ) : (
-          <div className="grid gap-4 min-w-0" style={{ gridTemplateColumns: `repeat(${displayColumns}, minmax(0, 1fr))` }}>
+          <div className="grid min-w-0 gap-4" style={gridColumnStyle(displayColumns)}>
             {filteredCasts.map((cast) => (
-              <article key={cast.id} className="min-w-0 h-full">
+              <article key={cast.id} className="h-full min-w-0">
                 <Link
                   href={`/casts/${cast.id}`}
                   className="group panel panel-hover flex h-full w-full flex-col overflow-hidden text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold"
@@ -187,9 +93,7 @@ export default function CastsGrid({ casts }: { casts: Cast[] }) {
                     </div>
                     <div className="absolute inset-x-0 bottom-0 z-[2] p-6">
                       <CastRoleBadge role={cast.role} className="mb-2" />
-                      <p className="font-display text-xl text-gold">
-                        {cast.nameEn}
-                      </p>
+                      <p className="font-display text-xl text-gold">{cast.nameEn}</p>
                       <p className="text-sm text-cream-muted">{cast.name}</p>
                     </div>
                   </div>

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import CastPortrait from "@/components/CastPortrait";
 import CollectionRelocationNoticesHost from "@/components/CollectionRelocationNoticesHost";
+import GridColumnPicker, { gridColumnStyle, useGridColumnCount } from "@/components/GridColumnPicker";
 import type { ResidentCastRef } from "@/lib/gacha-collection-exchange";
 import {
   buildCollectionDisplayItems,
@@ -104,6 +105,7 @@ export default function ProfileCollection({
 }: ProfileCollectionProps) {
   const [entries, setEntries] = useState<GachaCollectionEntry[]>([]);
   const [sortMode, setSortMode] = useState<CollectionSortMode>("owned-first");
+  const { columns, setColumns, displayColumns } = useGridColumnCount(4);
   const [hydrated, setHydrated] = useState(false);
   const { syncing, synced } = useGachaUserDataSync(userKey, {
     authReady: isRemoteCollectionUserKey(userKey),
@@ -161,7 +163,7 @@ export default function ProfileCollection({
   return (
     <>
       <section
-        className={`profile-collection mx-auto max-w-3xl ${className}`.trim()}
+        className={`profile-collection mx-auto ${showCatalog ? "w-full" : "max-w-3xl"} ${className}`.trim()}
         aria-labelledby={headingId}
       >
       <div className="mb-5 flex flex-wrap items-end justify-between gap-3 border-b border-[var(--color-border)] pb-4">
@@ -197,28 +199,45 @@ export default function ProfileCollection({
       </div>
 
       {showCatalog && hydrated && (
-        <div className="profile-collection__sort mb-6 flex flex-wrap items-center gap-2">
-          <span className="text-[11px] tracking-[0.08em] text-cream-faint">表示順</span>
-          <div className="inline-flex flex-wrap gap-2">
-            {SORT_OPTIONS.map((option) => {
-              const active = sortMode === option.value;
-              return (
-                <button
-                  key={option.value}
-                  type="button"
-                  onClick={() => setSortMode(option.value)}
-                  aria-pressed={active}
-                  className={`profile-collection__sort-btn min-h-9 px-3 text-[11px] tracking-[0.08em] transition-colors ${
-                    active
-                      ? "border border-gold/50 bg-gold/10 text-gold"
-                      : "border border-[var(--color-border)] bg-deep/60 text-cream-muted hover:border-gold/30 hover:text-cream"
-                  }`}
-                >
-                  {option.label}
-                </button>
-              );
-            })}
+        <div className="profile-collection__sort mb-6 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-[11px] tracking-[0.08em] text-cream-faint">表示順</span>
+            <div className="inline-flex flex-wrap gap-2">
+              {SORT_OPTIONS.map((option) => {
+                const active = sortMode === option.value;
+                return (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => setSortMode(option.value)}
+                    aria-pressed={active}
+                    className={`profile-collection__sort-btn min-h-9 px-3 text-[11px] tracking-[0.08em] transition-colors ${
+                      active
+                        ? "border border-gold/50 bg-gold/10 text-gold"
+                        : "border border-[var(--color-border)] bg-deep/60 text-cream-muted hover:border-gold/30 hover:text-cream"
+                    }`}
+                  >
+                    {option.label}
+                  </button>
+                );
+              })}
+            </div>
           </div>
+          <GridColumnPicker
+            columns={columns}
+            displayColumns={displayColumns}
+            onChange={setColumns}
+          />
+        </div>
+      )}
+
+      {!showCatalog && hydrated && (totalOwned > 0 || entries.length > 0) && (
+        <div className="mb-6 flex flex-wrap items-center justify-end gap-3">
+          <GridColumnPicker
+            columns={columns}
+            displayColumns={displayColumns}
+            onChange={setColumns}
+          />
         </div>
       )}
 
@@ -278,7 +297,7 @@ export default function ProfileCollection({
                   </p>
                 </div>
 
-                <ul className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:gap-5">
+                <ul className="grid min-w-0 gap-4 md:gap-5" style={gridColumnStyle(displayColumns)}>
                   {sectionItems.map((item) => (
                     <CollectionCard key={item.castId} item={item} />
                   ))}
@@ -319,7 +338,7 @@ export default function ProfileCollection({
                     まだ{labelJa}の住人はコレクションにありません。
                   </p>
                 ) : (
-                  <ul className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:gap-5">
+                  <ul className="grid min-w-0 gap-4 md:gap-5" style={gridColumnStyle(displayColumns)}>
                     {sectionEntries.map((entry) => (
                       <CollectionCard key={entry.castId} item={entry} />
                     ))}
