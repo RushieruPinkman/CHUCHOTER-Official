@@ -52,6 +52,47 @@ async function postDiscordWebhook(
   }
 }
 
+export async function notifyDiscordGachaPrizePending(params: {
+  userDisplayName: string;
+  userEmail: string | null;
+  threadId: string;
+  rarity: number;
+  prizeTitle: string;
+  castName: string;
+  reason: "sign_card_missing" | "voice_missing";
+}): Promise<void> {
+  const settings = await getDmSettingsFresh();
+  const webhookUrl = normalizeDiscordWebhookUrl(settings.discordWebhookUrl);
+  if (!webhookUrl) {
+    console.warn("[dm-discord] gacha pending webhook skipped: URL is not configured");
+    return;
+  }
+
+  const assetLabel = params.reason === "sign_card_missing" ? "サインカード" : "シチュエーションボイス";
+  const description = [
+    `★${params.rarity}「${params.prizeTitle}」の景品受け取りで、${params.castName} さんの${assetLabel}が未登録のため待機メッセージを自動送信しました。`,
+    "住民管理で景品を登録し、DMから手動でお届けください。",
+  ].join("\n");
+
+  await postDiscordWebhook(webhookUrl, {
+    embeds: [
+      {
+        title: "【CHUCHOTER】ガチャ景品 — 手動対応が必要です",
+        description: description.slice(0, 4000),
+        color: 0xc9a962,
+        fields: [
+          { name: "会員名", value: params.userDisplayName, inline: true },
+          { name: "メール", value: params.userEmail || "—", inline: true },
+          { name: "希望キャスト", value: params.castName, inline: true },
+          { name: "スレッドID", value: params.threadId, inline: false },
+        ],
+        footer: { text: "管理画面 → DM タブで返信できます" },
+        timestamp: new Date().toISOString(),
+      },
+    ],
+  });
+}
+
 export async function notifyDiscordDmMessage(params: {
   userDisplayName: string;
   userEmail: string | null;

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { storageErrorResponse } from "@/lib/api-error";
 import { buildAuthCollectionUserKey } from "@/lib/gacha-collection";
-import { shouldIssueGachaSerialNumber } from "@/lib/gacha-serial";
+import { shouldTrackGachaPrizeSerial } from "@/lib/gacha-serial";
 import { getGachaSerialsForUser, issueGachaSerial } from "@/lib/gacha-serial-store";
 import { createClient } from "@/lib/supabase/server";
 import { isUserAuthEnabledOnServer } from "@/lib/supabase/config";
@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
     const wonAt = String(body.wonAt ?? "").trim();
     const prizeTitle = String(body.prizeTitle ?? "").trim();
 
-    if (!shouldIssueGachaSerialNumber(rarity as 1)) {
+    if (!shouldTrackGachaPrizeSerial(rarity as 1)) {
       return NextResponse.json({ error: "この結果にはシリアルNo.は不要です。" }, { status: 400 });
     }
     if (!wonAt || !prizeTitle) {

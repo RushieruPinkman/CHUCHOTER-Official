@@ -550,6 +550,21 @@ export default function AdminPanel({
               value={editingCast.voiceUrl}
               onChange={(voiceUrl) => setEditingCast({ ...editingCast, voiceUrl })}
               authToken={token}
+              label="プロフィール用ボイス"
+            />
+            <ImageUploader
+              value={editingCast.gachaSignCardUrl ?? ""}
+              onChange={(url) =>
+                setEditingCast({ ...editingCast, gachaSignCardUrl: url || undefined })
+              }
+              authToken={token}
+              label="ガチャ景品：サインカード（★4）"
+            />
+            <VoiceUploader
+              value={editingCast.gachaVoiceUrl}
+              onChange={(gachaVoiceUrl) => setEditingCast({ ...editingCast, gachaVoiceUrl })}
+              authToken={token}
+              label="ガチャ景品：シチュエーションボイス（★5）"
             />
             {(
               [

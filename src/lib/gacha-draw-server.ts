@@ -3,7 +3,7 @@ import "server-only";
 import type { Cast } from "@/types";
 import type { GachaCastSnapshot, GachaDrawResult } from "@/lib/gacha";
 import { pickGachaPrize, RARITY_RATE } from "@/lib/gacha";
-import { shouldIssueGachaSerialNumber } from "@/lib/gacha-serial";
+import { shouldTrackGachaPrizeSerial } from "@/lib/gacha-serial";
 import { issueGachaSerial } from "@/lib/gacha-serial-store";
 
 export function toGachaCastSnapshots(casts: Cast[]): GachaCastSnapshot[] {
@@ -27,7 +27,7 @@ export async function performGachaDrawsForUser(
 
   for (let index = 0; index < count; index++) {
     const draw = pickGachaPrize(casts, RARITY_RATE);
-    if (shouldIssueGachaSerialNumber(draw.rarity)) {
+    if (shouldTrackGachaPrizeSerial(draw.rarity)) {
       const record = await issueGachaSerial({
         rarity: draw.rarity,
         source: "draw",

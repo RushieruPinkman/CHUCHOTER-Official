@@ -169,34 +169,22 @@ export function shouldShowGachaWonAt(rarity: GachaRarity): boolean {
   return rarity >= 4;
 }
 
-/** ★4・★5はDMで希望キャスト名の指定が必要 */
-export function shouldIncludeCastNameInGachaDm(rarity: GachaRarity): boolean {
-  return rarity === 4 || rarity === 5;
+/** ★4〜★6は運営DMで景品を受け取る */
+export function shouldClaimGachaPrizeViaDm(rarity: GachaRarity): boolean {
+  return rarity >= 4 && rarity <= 6;
 }
 
 export function getGachaDmReceiveLine(rarity: GachaRarity): string {
-  if (shouldIncludeCastNameInGachaDm(rarity)) {
-    if (shouldIssueGachaSerialNumber(rarity)) {
-      return "当選内容・シリアルNo.・希望のキャスト名をサイトの運営DMからお送りください。";
-    }
-    return "当選内容と希望のキャスト名をサイトの運営DMからお送りください。";
-  }
-  if (shouldIssueGachaSerialNumber(rarity)) {
-    return "当選内容とシリアルNo.をサイトの運営DMからお送りください。";
+  if (shouldClaimGachaPrizeViaDm(rarity)) {
+    return "下のボタンから希望キャストを選び、運営DMで景品を受け取ってください。";
   }
   return "当選内容をサイトの運営DMからお送りください。";
 }
 
 /** 画面表示用（運営DM案内） */
 export function getGachaOperationsDmHint(rarity: GachaRarity): string {
-  if (shouldIncludeCastNameInGachaDm(rarity)) {
-    if (shouldIssueGachaSerialNumber(rarity)) {
-      return "当選内容・シリアルNo.・希望のキャスト名を運営DMからお送りください。";
-    }
-    return "当選内容と希望のキャスト名を運営DMからお送りください。";
-  }
-  if (shouldIssueGachaSerialNumber(rarity)) {
-    return "当選内容とシリアルNo.を運営DMからお送りください。";
+  if (shouldClaimGachaPrizeViaDm(rarity)) {
+    return "希望キャストを選んで運営DMで景品を受け取れます。";
   }
   return "当選内容を運営DMからお送りください。";
 }
@@ -357,9 +345,8 @@ export function buildGachaOperationsDmText(
     lines.push("", `★1 登場住人: ${result.cast.name}`);
   }
 
-  if (shouldIncludeCastNameInGachaDm(result.rarity)) {
-    const castName = options?.castName?.trim();
-    lines.push("", `希望キャスト: ${castName || "（未記入）"}`);
+  if (shouldClaimGachaPrizeViaDm(result.rarity) && options?.castName?.trim()) {
+    lines.push("", `希望キャスト: ${options.castName.trim()}`);
   }
 
   const text = lines.join("\n");
@@ -482,10 +469,7 @@ export function getResultMessage(rarity: GachaRarity, title: string, castName?: 
   if (rarity === 6) return `最高賞「${title}」の当選です！`;
   if (rarity === 5) return `「${title}」が当選しました！`;
   if (rarity >= 4) {
-    if (shouldIncludeCastNameInGachaDm(rarity)) {
-      return `「${title}」を獲得しました。当選内容と希望のキャスト名を運営DMでお送りください。`;
-    }
-    return `「${title}」を獲得しました。当選内容を運営DMでお送りください。`;
+    return `「${title}」を獲得しました。希望キャストを選んで運営DMで景品を受け取ってください。`;
   }
   if (isGachaPrizeSiteDownloadable(rarity)) {
     return `「${title}」が当たりました。下のボタンから景品データをダウンロードできます。`;

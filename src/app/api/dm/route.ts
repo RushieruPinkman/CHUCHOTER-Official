@@ -82,13 +82,18 @@ export async function POST(request: NextRequest) {
     );
 
     const lastMessage = detail.messages.at(-1);
-    await notifyDiscordDmMessage({
-      userDisplayName: user.displayName,
-      userEmail: user.email,
-      body: lastMessage?.body ?? "",
-      threadId: detail.thread.id,
-      attachmentType: lastMessage?.attachment?.type ?? null,
-    });
+    const messageBody = lastMessage?.body ?? "";
+    const isLegacyGachaReport = messageBody.includes("【ガチャ当選報告】");
+
+    if (!isLegacyGachaReport) {
+      await notifyDiscordDmMessage({
+        userDisplayName: user.displayName,
+        userEmail: user.email,
+        body: messageBody,
+        threadId: detail.thread.id,
+        attachmentType: lastMessage?.attachment?.type ?? null,
+      });
+    }
 
     return NextResponse.json(detail);
   } catch (error) {

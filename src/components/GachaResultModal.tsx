@@ -4,6 +4,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import GachaPrizeCard from "@/components/GachaPrizeCard";
 import GachaSharePanel from "@/components/GachaSharePanel";
+import type { GachaPrizeCastOption } from "@/components/GachaPrizeClaimModal";
 import { lockBodyScroll, unlockBodyScroll } from "@/lib/body-scroll-lock";
 import { useGachaSerialStatusSync } from "@/hooks/useGachaSerialStatus";
 import { getRarityLabel } from "@/lib/gacha";
@@ -15,6 +16,7 @@ interface GachaResultModalProps {
   titleEn?: string;
   titleJa?: string;
   userKey?: string | null;
+  prizeCasts?: GachaPrizeCastOption[];
 }
 
 export default function GachaResultModal({
@@ -23,6 +25,7 @@ export default function GachaResultModal({
   titleEn = "Prize",
   titleJa = "当選",
   userKey = null,
+  prizeCasts = [],
 }: GachaResultModalProps) {
   const syncedResult = useGachaSerialStatusSync(result, userKey) ?? result;
   const [mounted, setMounted] = useState(false);
@@ -136,7 +139,7 @@ export default function GachaResultModal({
             />
           </div>
 
-          <GachaSharePanel result={syncedResult} loginNextPath="/gacha" />
+          <GachaSharePanel result={syncedResult} loginNextPath="/gacha" prizeCasts={prizeCasts} />
         </div>
       </div>
     </div>,

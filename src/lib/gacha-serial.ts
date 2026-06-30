@@ -68,9 +68,24 @@ function buildMixedSerialBody(): string {
 /** 未使用シリアルを保持する日数（この期間を過ぎると自動削除） */
 export const GACHA_SERIAL_UNUSED_RETENTION_DAYS = 30;
 
-/** ★5以上の当選時に当選報告用シリアルを発行 */
+/** 使用済みシリアルを保持する日数（この期間を過ぎると自動削除） */
+export const GACHA_SERIAL_USED_RETENTION_DAYS = 90;
+
+/** ★4〜★6の景品受け取り追跡用シリアルをサーバーに発行 */
+export function shouldTrackGachaPrizeSerial(rarity: GachaSerialRarity): boolean {
+  return rarity >= 4 && rarity <= 6;
+}
+
+/** ★5以上の当選時にユーザーへシリアルNo.を表示 */
 export function shouldIssueGachaSerialNumber(rarity: GachaSerialRarity): boolean {
   return rarity >= 5;
+}
+
+/** 景品受け取りAPIで使うシリアル（★4は非表示だが内部で保持） */
+export function getGachaClaimSerial(result: GachaSerialDraw): string | null {
+  const serial = result.serialNumber?.trim();
+  if (!serial || !shouldTrackGachaPrizeSerial(result.rarity)) return null;
+  return serial;
 }
 
 export function generateGachaSerialNumber(): string {
@@ -92,7 +107,7 @@ export function normalizeGachaSerialNumber(serial: string): string {
 }
 
 export function withGachaSerialNumber<T extends GachaSerialDraw>(result: T): T {
-  if (result.serialNumber || !shouldIssueGachaSerialNumber(result.rarity)) {
+  if (result.serialNumber || !shouldTrackGachaPrizeSerial(result.rarity)) {
     return result;
   }
 
@@ -119,4 +134,8 @@ export function getGachaSerialStatusLabel(status: GachaSerialStatus): string {
 
 export function isGachaSerialUsed(result: GachaSerialDraw): boolean {
   return result.serialStatus === "used";
+}
+
+export function canClaimGachaPrize(result: GachaSerialDraw): boolean {
+  return Boolean(getGachaClaimSerial(result)) && !isGachaSerialUsed(result);
 }

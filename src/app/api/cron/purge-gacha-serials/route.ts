@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { purgeExpiredUnusedGachaSerials } from "@/lib/gacha-serial-store";
+import { purgeExpiredGachaSerials } from "@/lib/gacha-serial-store";
 
 function isAuthorized(request: NextRequest): boolean {
   const secret = process.env.CRON_SECRET?.trim();
@@ -15,8 +15,8 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const deleted = await purgeExpiredUnusedGachaSerials();
-    return NextResponse.json({ deleted });
+    const result = await purgeExpiredGachaSerials();
+    return NextResponse.json(result);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Purge failed";
     return NextResponse.json({ error: message }, { status: 500 });

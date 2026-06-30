@@ -10,6 +10,10 @@ export interface Cast {
   bio: string;
   image: string;
   voiceUrl?: string;
+  /** ガチャ★4景品：サイン入りデジタル記念カード */
+  gachaSignCardUrl?: string;
+  /** ガチャ★5景品：シチュエーションボイス */
+  gachaVoiceUrl?: string;
   xUrl?: string;
   vrchatUrl?: string;
   order: number;

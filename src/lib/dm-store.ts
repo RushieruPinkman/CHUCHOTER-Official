@@ -14,6 +14,7 @@ import {
   buildAdminAttachmentPathPrefix,
   buildDmAttachmentPreview,
   buildUserAttachmentPathPrefix,
+  deleteDmAttachmentStorage,
   isAttachmentPathAllowed,
   resolveDmMessageAttachment,
 } from "@/lib/dm-attachments";
@@ -143,16 +144,54 @@ export function isDmStoreEnabled(): boolean {
   return Boolean(getSupabaseAdmin());
 }
 
-export async function cleanupInactiveDmThreads(): Promise<void> {
+export async function cleanupInactiveDmThreads(): Promise<number> {
   const supabase = getSupabaseAdmin();
-  if (!supabase) return;
+  if (!supabase) return 0;
 
   const cutoff = new Date(Date.now() - DM_INACTIVITY_MS).toISOString();
-  const { error } = await supabase.from("dm_threads").delete().lt("last_message_at", cutoff);
 
-  if (error && !isMissingTableError(error)) {
-    console.error("[dm-store] cleanup failed:", error.message);
+  const { data: staleThreads, error: fetchError } = await supabase
+    .from("dm_threads")
+    .select("id")
+    .lt("last_message_at", cutoff);
+
+  if (fetchError) {
+    if (!isMissingTableError(fetchError)) {
+      console.error("[dm-store] cleanup fetch failed:", fetchError.message);
+    }
+    return 0;
   }
+
+  if (!staleThreads?.length) {
+    return 0;
+  }
+
+  const threadIds = staleThreads.map((thread) => thread.id);
+  const { data: messages, error: messagesError } = await supabase
+    .from("dm_messages")
+    .select("attachment_path")
+    .in("thread_id", threadIds)
+    .not("attachment_path", "is", null);
+
+  if (messagesError && !isMissingTableError(messagesError)) {
+    console.error("[dm-store] cleanup attachment lookup failed:", messagesError.message);
+  } else {
+    const attachmentPaths = (messages ?? [])
+      .map((message) => message.attachment_path)
+      .filter((pathValue): pathValue is string => Boolean(pathValue?.trim()));
+    if (attachmentPaths.length > 0) {
+      await deleteDmAttachmentStorage(attachmentPaths);
+    }
+  }
+
+  const { error: deleteError } = await supabase.from("dm_threads").delete().lt("last_message_at", cutoff);
+
+  if (deleteError && !isMissingTableError(deleteError)) {
+    console.error("[dm-store] cleanup failed:", deleteError.message);
+    return 0;
+  }
+
+  return staleThreads.length;
 }
 
 export async function getUserDmThread(userKey: string): Promise<DmThreadSummary | null> {
@@ -335,6 +374,14 @@ async function getOrCreateThread(
   }
 
   return mapThread(data as DmThreadRow);
+}
+
+export async function ensureUserDmThread(
+  userKey: string,
+  userDisplayName: string,
+  userEmail: string | null
+): Promise<DmThreadSummary> {
+  return getOrCreateThread(userKey, userDisplayName, userEmail);
 }
 
 export async function sendUserDmMessage(

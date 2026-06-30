@@ -3,6 +3,7 @@ import "server-only";
 import { buildAuthCollectionUserKey } from "@/lib/gacha-collection";
 import {
   GACHA_SERIAL_UNUSED_RETENTION_DAYS,
+  GACHA_SERIAL_USED_RETENTION_DAYS,
   generateGachaSerialNumber,
   isValidGachaSerialNumber,
   normalizeGachaSerialNumber,
@@ -66,11 +67,11 @@ export async function issueGachaSerial(input: IssueGachaSerialInput): Promise<Ga
     throw new Error("Supabase が未設定のためシリアルを発行できません。");
   }
 
-  if (input.rarity < 5 || input.rarity > 6) {
+  if (input.rarity < 4 || input.rarity > 6) {
     throw new Error("シリアル発行対象のレアリティが不正です。");
   }
 
-  void purgeExpiredUnusedGachaSerials().catch(() => {});
+  void purgeExpiredGachaSerials().catch(() => {});
 
   for (let attempt = 0; attempt < 8; attempt++) {
     const serial = generateGachaSerialNumber();
@@ -171,7 +172,8 @@ export async function getGachaSerialsForUser(
 }
 
 export async function markGachaSerialUsed(
-  serial: string
+  serial: string,
+  options?: { castName?: string | null }
 ): Promise<
   | { ok: true; record: GachaSerialPublicRecord; alreadyUsed: boolean }
   | { ok: false; error: string; notFound?: boolean }
@@ -196,9 +198,17 @@ export async function markGachaSerialUsed(
   }
 
   const usedAt = new Date().toISOString();
+  const updatePayload: { status: "used"; used_at: string; cast_name?: string | null } = {
+    status: "used",
+    used_at: usedAt,
+  };
+  if (options?.castName !== undefined) {
+    updatePayload.cast_name = options.castName;
+  }
+
   const { data, error } = await supabase
     .from("gacha_serials")
-    .update({ status: "used", used_at: usedAt })
+    .update(updatePayload)
     .eq("serial", normalized)
     .select("*")
     .single();
@@ -255,4 +265,38 @@ export async function purgeExpiredUnusedGachaSerials(
   }
 
   return data?.length ?? 0;
+}
+
+export async function purgeExpiredUsedGachaSerials(
+  retentionDays = GACHA_SERIAL_USED_RETENTION_DAYS
+): Promise<number> {
+  const supabase = getSupabaseAdmin();
+  if (!supabase) return 0;
+
+  const cutoff = new Date(Date.now() - retentionDays * 24 * 60 * 60 * 1000).toISOString();
+  const { data, error } = await supabase
+    .from("gacha_serials")
+    .delete()
+    .eq("status", "used")
+    .not("used_at", "is", null)
+    .lt("used_at", cutoff)
+    .select("serial");
+
+  if (error) {
+    if (isMissingTableError(error)) return 0;
+    throw new Error(error.message);
+  }
+
+  return data?.length ?? 0;
+}
+
+export async function purgeExpiredGachaSerials(): Promise<{
+  unusedDeleted: number;
+  usedDeleted: number;
+}> {
+  const [unusedDeleted, usedDeleted] = await Promise.all([
+    purgeExpiredUnusedGachaSerials(),
+    purgeExpiredUsedGachaSerials(),
+  ]);
+  return { unusedDeleted, usedDeleted };
 }

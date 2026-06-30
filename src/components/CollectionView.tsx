@@ -76,6 +76,7 @@ export default function CollectionView({
           result={modalResult}
           onClose={closeModal}
           userKey={userKey}
+          prizeCasts={residents.map((resident) => ({ id: resident.id, name: resident.name }))}
           titleEn="Exchange"
           titleJa="交換完了"
         />

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { issueGachaSerialFromApi } from "@/lib/gacha-serial-client";
-import { shouldIssueGachaSerialNumber } from "@/lib/gacha-serial";
+import { shouldTrackGachaPrizeSerial } from "@/lib/gacha-serial";
 import {
   GACHA_COLLECTION_EXCHANGE_UPDATED_EVENT,
   getAllCollectionExchangeStatuses,
@@ -73,7 +73,7 @@ export default function CollectionExchangePanel({
 
     let record = result.record;
 
-    if (shouldIssueGachaSerialNumber(record.rarity)) {
+    if (shouldTrackGachaPrizeSerial(record.rarity)) {
       try {
         const serialRecord = await issueGachaSerialFromApi({
           rarity: record.rarity,

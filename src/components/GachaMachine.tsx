@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import GachaDrawHistory from "@/components/GachaDrawHistory";
 import GachaPrizeCard from "@/components/GachaPrizeCard";
 import GachaResultModal from "@/components/GachaResultModal";
@@ -61,6 +61,10 @@ const PRESENTING_PHASES: DrawPhase[] = ["stage1", "stage2", "stage3"];
 const DRAWING_PHASES: DrawPhase[] = [...PRESENTING_PHASES, "impact"];
 
 export default function GachaMachine({ casts, mode = "production" }: GachaMachineProps) {
+  const prizeCasts = useMemo(
+    () => casts.map((cast) => ({ id: cast.id, name: cast.name })),
+    [casts]
+  );
   const isDevMode = mode === "dev" && isGachaDevEnabled();
   const activeRates = isDevMode ? GACHA_DEV_RATES : RARITY_RATE;
   const { userKey: collectionUserKey, ready: authReady } = useCollectionUserKey();
@@ -475,7 +479,11 @@ export default function GachaMachine({ casts, mode = "production" }: GachaMachin
 
             <div className="gacha-machine__controls">
             {phase === "result" && displayResult && !isDevMode && !tenDrawShowcase && (
-              <GachaSharePanel result={displayResult} loginNextPath={loginNextPath} />
+              <GachaSharePanel
+                result={displayResult}
+                loginNextPath={loginNextPath}
+                prizeCasts={prizeCasts}
+              />
             )}
 
             <div className="gacha-machine__meta mb-5 mt-6 px-1">
@@ -658,6 +666,7 @@ export default function GachaMachine({ casts, mode = "production" }: GachaMachin
           result={historyModalResult}
           onClose={() => setHistoryModalResult(null)}
           userKey={collectionUserKey}
+          prizeCasts={prizeCasts}
           titleEn="History"
           titleJa="抽選結果"
         />
@@ -674,6 +683,7 @@ export default function GachaMachine({ casts, mode = "production" }: GachaMachin
           result={tenDetailDraw}
           onClose={() => setTenDetailDraw(null)}
           userKey={collectionUserKey}
+          prizeCasts={prizeCasts}
           titleEn="10 Draws"
           titleJa="10連結果"
         />

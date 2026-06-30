@@ -1,6 +1,6 @@
 import type { GachaDrawResult } from "@/lib/gacha";
 import {
-  shouldIssueGachaSerialNumber,
+  shouldTrackGachaPrizeSerial,
   withGachaSerialNumber,
   type GachaSerialPublicRecord,
   type GachaSerialStatus,
@@ -66,7 +66,7 @@ export async function attachSerialToDrawResult(
   draw: GachaDrawResult,
   options: { devMode?: boolean } = {}
 ): Promise<GachaDrawResult> {
-  if (!shouldIssueGachaSerialNumber(draw.rarity)) {
+  if (!shouldTrackGachaPrizeSerial(draw.rarity)) {
     return draw;
   }
 

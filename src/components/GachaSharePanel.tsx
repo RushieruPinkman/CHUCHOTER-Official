@@ -7,41 +7,49 @@ import { getAuthLoginHref } from "@/lib/auth-routes";
 import { isAuthDevEnabled } from "@/lib/auth-dev";
 import {
   buildDmUrl,
-  buildGachaOperationsDmText,
   buildShareCardText,
   buildShareText,
   buildTweetUrl,
-  getGachaOperationsDmHint,
   getGachaPrizeDownload,
   isGachaMiss,
   isGachaPrizeSiteDownloadable,
   RARITY_COLORS,
-  shouldIncludeCastNameInGachaDm,
+  shouldClaimGachaPrizeViaDm,
   type GachaDrawResult,
 } from "@/lib/gacha";
-import { getGachaReportSerial, getGachaSerialStatusLabel, isGachaSerialUsed } from "@/lib/gacha-serial";
+import {
+  canClaimGachaPrize,
+  getGachaClaimSerial,
+  getGachaReportSerial,
+  getGachaSerialStatusLabel,
+  isGachaSerialUsed,
+} from "@/lib/gacha-serial";
 import { renderGachaShareImageFromResult } from "@/lib/gacha-share-image";
-import { sendUserDmMessage } from "@/lib/dm-client";
 import { completeDailyTaskFromClient } from "@/lib/cp-client";
 import { isUserAuthEnabled } from "@/lib/supabase/config";
 import { SITE } from "@/lib/site";
 import GachaPrizeTextCard from "@/components/GachaPrizeTextCard";
+import GachaPrizeClaimModal, { type GachaPrizeCastOption } from "@/components/GachaPrizeClaimModal";
 import XIcon from "@/components/XIcon";
 
 interface GachaSharePanelProps {
   result: GachaDrawResult;
   loginNextPath?: string;
+  prizeCasts?: GachaPrizeCastOption[];
+  onPrizeClaimed?: () => void;
 }
 
 export default function GachaSharePanel({
   result,
   loginNextPath = "/gacha",
+  prizeCasts = [],
+  onPrizeClaimed,
 }: GachaSharePanelProps) {
   const { userKey, ready: authReady } = useCollectionUserKey();
   const devMode = isAuthDevEnabled() && !isUserAuthEnabled();
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
-  const [castNameDraft, setCastNameDraft] = useState("");
+  const [claimModalOpen, setClaimModalOpen] = useState(false);
 
   const shareText = buildShareText(result, SITE.url);
   const cardText = buildShareCardText(result, SITE.url);
@@ -52,10 +60,11 @@ export default function GachaSharePanel({
   const prizeDownload = getGachaPrizeDownload(result.prize);
   const siteDownloadable = isGachaPrizeSiteDownloadable(result.rarity) && prizeDownload !== null;
   const isMiss = isGachaMiss(result.rarity);
-  const needsOperationsDm = !siteDownloadable && !isMiss;
+  const needsPrizeClaim = shouldClaimGachaPrizeViaDm(result.rarity) && !isMiss;
   const reportSerial = getGachaReportSerial(result);
+  const claimSerial = getGachaClaimSerial(result);
   const serialUsed = isGachaSerialUsed(result);
-  const needsCastName = shouldIncludeCastNameInGachaDm(result.rarity);
+  const canClaim = canClaimGachaPrize(result) && Boolean(claimSerial);
 
   const getBlob = useCallback(async () => {
     return renderGachaShareImageFromResult(result);
@@ -153,27 +162,6 @@ export default function GachaSharePanel({
     }
   };
 
-  const sendToOperationsDm = async () => {
-    if (!userKey) return;
-
-    setBusy(true);
-    setStatus(null);
-
-    try {
-      const message = buildGachaOperationsDmText(result, SITE.url, {
-        castName: castNameDraft,
-      });
-      await sendUserDmMessage(userKey, devMode, message);
-      setStatus(
-        "運営DMに当選内容を送信しました。返信は運営DMページ（/dm）でご確認ください。"
-      );
-    } catch (error) {
-      setStatus(error instanceof Error ? error.message : "運営DMへの送信に失敗しました。");
-    } finally {
-      setBusy(false);
-    }
-  };
-
   const nativeShare = async () => {
     setBusy(true);
     setStatus(null);
@@ -202,17 +190,23 @@ export default function GachaSharePanel({
         ) : siteDownloadable ? (
           <>
             当選おめでとうございます。下のボタンから「{result.prize.title}」をダウンロードできます。
-            ★4以上の景品は
-            <Link href="/dm" className="link-gold text-gold">
-              運営DM
-            </Link>
-            から当選内容をお送りください（★5以上はシリアルNo.も）。★4・★5は希望のキャスト名もあわせてお知らせください。
+            {needsPrizeClaim && (
+              <>
+                {" "}
+                ★4以上の景品は
+                <Link href="/dm" className="link-gold text-gold">
+                  運営DM
+                </Link>
+                で受け取れます。
+              </>
+            )}
+          </>
+        ) : needsPrizeClaim ? (
+          <>
+            当選おめでとうございます。下の「運営DMで受け取る」から希望キャストを選び、景品を受け取ってください。
           </>
         ) : (
-          <>
-            当選おめでとうございます。下の「運営DMで送信」から当選内容を運営へお送りください。
-            {needsCastName && " ★4・★5は希望のキャスト名も入力してください。"}
-          </>
+          <>当選おめでとうございます。</>
         )}
       </p>
 
@@ -241,27 +235,16 @@ export default function GachaSharePanel({
               </button>
               {serialUsed && (
                 <p className="mt-2 text-[11px] leading-relaxed text-cream-faint">
-                  このシリアルNo.は使用済みです。再報告は不要です。
+                  この景品は受け取り済みです。
                 </p>
               )}
             </div>
           )}
 
-          {needsOperationsDm && needsCastName && !serialUsed && (
-            <label className="mx-auto block max-w-md text-left">
-              <span className="mb-1.5 block text-xs text-cream-muted">希望キャスト名</span>
-              <input
-                value={castNameDraft}
-                onChange={(event) => setCastNameDraft(event.target.value)}
-                maxLength={80}
-                className="w-full border border-[var(--color-border)] bg-deep px-3 py-2 text-sm text-cream focus:border-gold focus:outline-none"
-                placeholder="例: 黒糖アメ"
-                autoComplete="off"
-              />
-              <span className="mt-1 block text-[11px] text-cream-faint">
-                {getGachaOperationsDmHint(result.rarity)}
-              </span>
-            </label>
+          {needsPrizeClaim && serialUsed && !reportSerial && (
+            <p className="mx-auto max-w-md text-center text-[11px] leading-relaxed text-cream-faint">
+              この景品は受け取り済みです。
+            </p>
           )}
 
           <div className={`gacha-share-card gacha-share-card--r${result.rarity}`} data-rarity={result.rarity}>
@@ -279,24 +262,30 @@ export default function GachaSharePanel({
       )}
 
       <div className="gacha-share__actions">
-        {needsOperationsDm && !serialUsed && (
+        {needsPrizeClaim && canClaim && (
           authReady && userKey ? (
             <button
               type="button"
-              onClick={sendToOperationsDm}
-              disabled={busy}
+              onClick={() => setClaimModalOpen(true)}
+              disabled={busy || prizeCasts.length === 0}
               className="btn-primary gacha-share__action--primary"
             >
-              {busy ? "送信中…" : "運営DMで送信"}
+              運営DMで受け取る
             </button>
           ) : (
             <Link
               href={getAuthLoginHref(loginNextPath)}
               className="btn-primary gacha-share__action--primary inline-flex min-h-11 items-center justify-center"
             >
-              ログインして運営DMで送信
+              ログインして運営DMで受け取る
             </Link>
           )
+        )}
+
+        {needsPrizeClaim && !canClaim && !serialUsed && (
+          <p className="w-full text-center text-xs leading-relaxed text-cream-faint">
+            景品の受け取り準備中です。ページを再読み込みしてください。
+          </p>
         )}
 
         {siteDownloadable && prizeDownload && (
@@ -304,13 +293,13 @@ export default function GachaSharePanel({
             type="button"
             onClick={downloadPrize}
             disabled={busy}
-            className={`btn-primary ${needsOperationsDm && !serialUsed ? "" : "gacha-share__action--primary"}`}
+            className={`btn-primary ${needsPrizeClaim && canClaim ? "" : "gacha-share__action--primary"}`}
           >
             景品をダウンロード
           </button>
         )}
 
-        {needsOperationsDm && (
+        {needsPrizeClaim && (
           <button type="button" onClick={copyShareCard} disabled={busy} className="btn-ghost">
             当選カードをコピー
           </button>
@@ -324,13 +313,13 @@ export default function GachaSharePanel({
           {isMiss ? "結果文をコピー" : "当選文をコピー"}
         </button>
 
-        {needsOperationsDm && userKey && (
+        {needsPrizeClaim && userKey && (
           <Link href="/dm" className="btn-ghost inline-flex items-center justify-center">
             運営DMを開く
           </Link>
         )}
 
-        {needsOperationsDm && (
+        {needsPrizeClaim && (
           <a
             href={xDmUrl}
             target="_blank"
@@ -362,6 +351,18 @@ export default function GachaSharePanel({
         <p className="text-center text-xs leading-relaxed text-cream-muted" role="status">
           {status}
         </p>
+      )}
+
+      {claimModalOpen && userKey && claimSerial && (
+        <GachaPrizeClaimModal
+          open={claimModalOpen}
+          onClose={() => setClaimModalOpen(false)}
+          result={result}
+          casts={prizeCasts}
+          userKey={userKey}
+          devMode={devMode}
+          onClaimed={onPrizeClaimed}
+        />
       )}
     </div>
   );

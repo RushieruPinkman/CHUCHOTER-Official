@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
+import { redistributeDeletedCastForAllUsers } from "@/lib/cast-collection-redistribution-server";
+import { cleanupDeletedCastAssets, cleanupReplacedCastAssets } from "@/lib/cast-storage";
 import { getAdminPassword, getAllCasts, saveCasts } from "@/lib/data";
 
 import { storageErrorResponse } from "@/lib/api-error";
@@ -82,6 +84,10 @@ export async function POST(request: NextRequest) {
 
       voiceUrl: body.voiceUrl,
 
+      gachaSignCardUrl: body.gachaSignCardUrl,
+
+      gachaVoiceUrl: body.gachaVoiceUrl,
+
       xUrl: body.xUrl,
 
       vrchatUrl: body.vrchatUrl,
@@ -136,9 +142,17 @@ export async function PUT(request: NextRequest) {
 
 
 
+    const previous = casts[index];
+
     casts[index] = normalizeCast(body);
 
     await saveCasts(casts);
+
+    try {
+      await cleanupReplacedCastAssets(previous, casts[index], casts);
+    } catch (error) {
+      console.error("[casts] storage cleanup failed:", error);
+    }
 
     revalidateSiteContent();
 
@@ -176,11 +190,13 @@ export async function DELETE(request: NextRequest) {
 
     const casts = await getAllCasts();
 
+    const removed = casts.find((cast) => cast.id === id);
+
     const filtered = casts.filter((c) => c.id !== id);
 
 
 
-    if (filtered.length === casts.length) {
+    if (!removed || filtered.length === casts.length) {
 
       return NextResponse.json({ error: "Cast not found" }, { status: 404 });
 
@@ -197,6 +213,18 @@ export async function DELETE(request: NextRequest) {
 
 
     await saveCasts(reindexed);
+
+    try {
+      await cleanupDeletedCastAssets(removed, reindexed);
+    } catch (error) {
+      console.error("[casts] storage cleanup failed:", error);
+    }
+
+    try {
+      await redistributeDeletedCastForAllUsers(removed, reindexed);
+    } catch (error) {
+      console.error("[casts] collection redistribution failed:", error);
+    }
 
     revalidateSiteContent();
 

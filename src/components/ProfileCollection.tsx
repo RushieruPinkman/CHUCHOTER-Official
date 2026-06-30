@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import CastPortrait from "@/components/CastPortrait";
+import CollectionRelocationNoticesHost from "@/components/CollectionRelocationNoticesHost";
 import type { ResidentCastRef } from "@/lib/gacha-collection-exchange";
 import {
   buildCollectionDisplayItems,
@@ -104,7 +105,7 @@ export default function ProfileCollection({
   const [entries, setEntries] = useState<GachaCollectionEntry[]>([]);
   const [sortMode, setSortMode] = useState<CollectionSortMode>("owned-first");
   const [hydrated, setHydrated] = useState(false);
-  const { syncing } = useGachaUserDataSync(userKey, {
+  const { syncing, synced } = useGachaUserDataSync(userKey, {
     authReady: isRemoteCollectionUserKey(userKey),
   });
 
@@ -158,10 +159,11 @@ export default function ProfileCollection({
   const catalogTotal = catalogItems.length;
 
   return (
-    <section
-      className={`profile-collection mx-auto max-w-3xl ${className}`.trim()}
-      aria-labelledby={headingId}
-    >
+    <>
+      <section
+        className={`profile-collection mx-auto max-w-3xl ${className}`.trim()}
+        aria-labelledby={headingId}
+      >
       <div className="mb-5 flex flex-wrap items-end justify-between gap-3 border-b border-[var(--color-border)] pb-4">
         <div>
           <p className="section-label mb-1">Collection</p>
@@ -328,6 +330,8 @@ export default function ProfileCollection({
           })}
         </div>
       )}
-    </section>
+      </section>
+      <CollectionRelocationNoticesHost userKey={userKey} synced={synced && hydrated} />
+    </>
   );
 }

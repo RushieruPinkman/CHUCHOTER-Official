@@ -263,3 +263,33 @@ export async function resolveDmMessageAttachment(
     downloadUrl: `${downloadBasePath}/${encodeURIComponent(messageId)}`,
   };
 }
+
+export async function deleteDmAttachmentStorage(paths: string[]): Promise<number> {
+  const uniquePaths = [...new Set(paths.map((value) => value.trim()).filter(Boolean))];
+  if (uniquePaths.length === 0) return 0;
+
+  const supabase = getSupabaseAdmin();
+  let deleted = 0;
+
+  if (supabase) {
+    const { error } = await supabase.storage.from(DM_ATTACHMENTS_BUCKET).remove(uniquePaths);
+    if (error) {
+      console.error("[dm-attachments] storage delete failed:", error.message);
+    } else {
+      deleted += uniquePaths.length;
+    }
+  }
+
+  if (!supabase || process.env.VERCEL !== "1") {
+    for (const storagePath of uniquePaths) {
+      try {
+        await fs.unlink(getLocalAttachmentPath(storagePath));
+        deleted += 1;
+      } catch {
+        /* 既に無い場合は無視 */
+      }
+    }
+  }
+
+  return deleted;
+}
