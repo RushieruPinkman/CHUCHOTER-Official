@@ -2,9 +2,16 @@ import "server-only";
 
 import { getCasts } from "@/lib/data";
 import { copyCastPrizeAssetToDmAttachment } from "@/lib/gacha-prize-asset";
+import {
+  buildGachaOperationsDmText,
+  getPrizeByRarity,
+  type GachaDrawResult,
+} from "@/lib/gacha";
 import { getGachaSerialsForUser, markGachaSerialUsed } from "@/lib/gacha-serial-store";
-import { notifyDiscordGachaPrizePending } from "@/lib/dm-discord";
-import { ensureUserDmThread, sendAdminDmMessage } from "@/lib/dm-store";
+import type { GachaSerialPublicRecord } from "@/lib/gacha-serial";
+import { notifyDiscordDmMessage, notifyDiscordGachaPrizePending } from "@/lib/dm-discord";
+import { sendAdminDmMessage, sendUserDmMessage } from "@/lib/dm-store";
+import { SITE } from "@/lib/site";
 import type { Cast } from "@/types";
 
 export const GACHA_PRIZE_CONGRATS_MESSAGE = "おめでとうございます！";
@@ -41,6 +48,56 @@ export interface ClaimGachaPrizeInput {
 
 function findActiveCast(casts: Cast[], castId: string): Cast | null {
   return casts.find((cast) => cast.id === castId && cast.active) ?? null;
+}
+
+function buildDrawResultFromSerial(
+  serialRecord: GachaSerialPublicRecord,
+  serial: string
+): GachaDrawResult {
+  const basePrize = getPrizeByRarity(serialRecord.rarity);
+
+  return {
+    rarity: serialRecord.rarity,
+    prize: {
+      ...basePrize,
+      title: serialRecord.prizeTitle || basePrize.title,
+      subtitle: serialRecord.prizeSubtitle || basePrize.subtitle,
+    },
+    wonAt: serialRecord.wonAt,
+    serialNumber: serial,
+    serialStatus: serialRecord.status,
+  };
+}
+
+async function sendGachaPrizeClaimReportToOperations(params: {
+  userKey: string;
+  userDisplayName: string;
+  userEmail: string | null;
+  serialRecord: GachaSerialPublicRecord;
+  serial: string;
+  castName: string;
+}): Promise<string> {
+  const reportBody = buildGachaOperationsDmText(
+    buildDrawResultFromSerial(params.serialRecord, params.serial),
+    SITE.url,
+    { castName: params.castName }
+  );
+
+  const detail = await sendUserDmMessage(
+    params.userKey,
+    reportBody,
+    params.userDisplayName,
+    params.userEmail
+  );
+
+  await notifyDiscordDmMessage({
+    userDisplayName: params.userDisplayName,
+    userEmail: params.userEmail,
+    body: reportBody,
+    threadId: detail.thread.id,
+  });
+
+  return detail.thread.id;
 }
 
 async function deliverAdminPrizeMessage(params: {
@@ -99,7 +156,14 @@ export async function claimGachaPrize(input: ClaimGachaPrizeInput): Promise<Clai
     throw new Error("この景品はすでに受け取り済みです。");
   }
 
-  const thread = await ensureUserDmThread(input.userKey, input.userDisplayName, input.userEmail);
+  const threadId = await sendGachaPrizeClaimReportToOperations({
+    userKey: input.userKey,
+    userDisplayName: input.userDisplayName,
+    userEmail: input.userEmail,
+    serialRecord,
+    serial,
+    castName: cast.name,
+  });
 
   let fulfilledAutomatically = false;
   let pendingManualFulfillment = false;
@@ -107,7 +171,7 @@ export async function claimGachaPrize(input: ClaimGachaPrizeInput): Promise<Clai
   if (serialRecord.rarity === 4) {
     if (cast.gachaSignCardUrl?.trim()) {
       const delivered = await deliverAdminPrizeMessage({
-        threadId: thread.id,
+        threadId,
         body: GACHA_PRIZE_SIGN_DELIVERY_MESSAGE,
         assetUrl: cast.gachaSignCardUrl,
         assetKind: "image",
@@ -115,12 +179,12 @@ export async function claimGachaPrize(input: ClaimGachaPrizeInput): Promise<Clai
       if (delivered) {
         fulfilledAutomatically = true;
       } else {
-        await sendAdminDmMessage(thread.id, GACHA_PRIZE_PENDING_SIGN_MESSAGE);
+        await sendAdminDmMessage(threadId, GACHA_PRIZE_PENDING_SIGN_MESSAGE);
         pendingManualFulfillment = true;
         await notifyDiscordGachaPrizePending({
           userDisplayName: input.userDisplayName,
           userEmail: input.userEmail,
-          threadId: thread.id,
+          threadId,
           rarity: serialRecord.rarity,
           prizeTitle: serialRecord.prizeTitle,
           castName: cast.name,
@@ -128,12 +192,12 @@ export async function claimGachaPrize(input: ClaimGachaPrizeInput): Promise<Clai
         });
       }
     } else {
-      await sendAdminDmMessage(thread.id, GACHA_PRIZE_PENDING_SIGN_MESSAGE);
+      await sendAdminDmMessage(threadId, GACHA_PRIZE_PENDING_SIGN_MESSAGE);
       pendingManualFulfillment = true;
       await notifyDiscordGachaPrizePending({
         userDisplayName: input.userDisplayName,
         userEmail: input.userEmail,
-        threadId: thread.id,
+        threadId,
         rarity: serialRecord.rarity,
         prizeTitle: serialRecord.prizeTitle,
         castName: cast.name,
@@ -143,7 +207,7 @@ export async function claimGachaPrize(input: ClaimGachaPrizeInput): Promise<Clai
   } else if (serialRecord.rarity === 5) {
     if (cast.gachaVoiceUrl?.trim()) {
       const delivered = await deliverAdminPrizeMessage({
-        threadId: thread.id,
+        threadId,
         body: GACHA_PRIZE_VOICE_DELIVERY_MESSAGE,
         assetUrl: cast.gachaVoiceUrl,
         assetKind: "audio",
@@ -151,12 +215,12 @@ export async function claimGachaPrize(input: ClaimGachaPrizeInput): Promise<Clai
       if (delivered) {
         fulfilledAutomatically = true;
       } else {
-        await sendAdminDmMessage(thread.id, GACHA_PRIZE_PENDING_VOICE_MESSAGE);
+        await sendAdminDmMessage(threadId, GACHA_PRIZE_PENDING_VOICE_MESSAGE);
         pendingManualFulfillment = true;
         await notifyDiscordGachaPrizePending({
           userDisplayName: input.userDisplayName,
           userEmail: input.userEmail,
-          threadId: thread.id,
+          threadId,
           rarity: serialRecord.rarity,
           prizeTitle: serialRecord.prizeTitle,
           castName: cast.name,
@@ -164,12 +228,12 @@ export async function claimGachaPrize(input: ClaimGachaPrizeInput): Promise<Clai
         });
       }
     } else {
-      await sendAdminDmMessage(thread.id, GACHA_PRIZE_PENDING_VOICE_MESSAGE);
+      await sendAdminDmMessage(threadId, GACHA_PRIZE_PENDING_VOICE_MESSAGE);
       pendingManualFulfillment = true;
       await notifyDiscordGachaPrizePending({
         userDisplayName: input.userDisplayName,
         userEmail: input.userEmail,
-        threadId: thread.id,
+        threadId,
         rarity: serialRecord.rarity,
         prizeTitle: serialRecord.prizeTitle,
         castName: cast.name,
@@ -177,13 +241,13 @@ export async function claimGachaPrize(input: ClaimGachaPrizeInput): Promise<Clai
       });
     }
   } else if (serialRecord.rarity === 6) {
-    await sendAdminDmMessage(thread.id, GACHA_PRIZE_CONGRATS_MESSAGE);
-    await sendAdminDmMessage(thread.id, GACHA_PRIZE_VIP_FOLLOWUP_MESSAGE);
+    await sendAdminDmMessage(threadId, GACHA_PRIZE_CONGRATS_MESSAGE);
+    await sendAdminDmMessage(threadId, GACHA_PRIZE_VIP_FOLLOWUP_MESSAGE);
     fulfilledAutomatically = true;
   }
 
   return {
-    threadId: thread.id,
+    threadId,
     fulfilledAutomatically,
     pendingManualFulfillment,
   };
