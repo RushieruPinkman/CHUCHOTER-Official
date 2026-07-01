@@ -96,7 +96,7 @@ export const GACHA_PRIZES: Record<GachaRarity, GachaPrize> = {
     rarity: 5,
     title: "シチュエーションボイス",
     subtitle: "Voice",
-    description: "当選者名入り・オリジナルシチュエーションボイス",
+    description: "オリジナルシチュエーションボイス",
   },
   6: {
     rarity: 6,
