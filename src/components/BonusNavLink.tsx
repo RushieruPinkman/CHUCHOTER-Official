@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useDmUnreadSummary } from "@/hooks/useDmUnread";
+import { useBonusUnclaimedCount } from "@/hooks/useBonusUnclaimed";
 
-interface DmNavLinkProps {
+interface BonusNavLinkProps {
   href: string;
   label: string;
   labelJa: string;
@@ -13,7 +13,7 @@ interface DmNavLinkProps {
   tabIndex?: number;
 }
 
-export default function DmNavLink({
+export default function BonusNavLink({
   href,
   label,
   labelJa,
@@ -21,9 +21,9 @@ export default function DmNavLink({
   compact = false,
   onClick,
   tabIndex,
-}: DmNavLinkProps) {
-  const { unreadCount, ready } = useDmUnreadSummary();
-  const showBadge = ready && unreadCount > 0;
+}: BonusNavLinkProps) {
+  const { count, ready } = useBonusUnclaimedCount();
+  const showBadge = ready && count > 0;
 
   return (
     <Link
@@ -41,8 +41,8 @@ export default function DmNavLink({
       <span className="relative inline-flex items-center justify-center gap-1.5 text-[11px] sm:text-[13px]">
         {labelJa}
         {showBadge && (
-          <span className="nav-count-badge" aria-label={`未読 ${unreadCount} 件`}>
-            {unreadCount > 99 ? "99+" : unreadCount}
+          <span className="nav-count-badge" aria-label={`未受取ボーナス ${count} 件`}>
+            {count > 99 ? "99+" : count}
           </span>
         )}
       </span>

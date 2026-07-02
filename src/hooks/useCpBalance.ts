@@ -2,7 +2,11 @@
 
 import { useCallback, useEffect, useState } from "react";
 import type { CpState } from "@/lib/cp";
+import { buildEmptyCpState } from "@/lib/cp";
 import { CP_UPDATED_EVENT, fetchCpState } from "@/lib/cp-client";
+import { getDevCpBalance } from "@/lib/cp-dev-balance";
+import { isAuthDevEnabled } from "@/lib/auth-dev";
+import { getGachaDayJst } from "@/lib/gacha-daily-limit";
 import { useCollectionUserKey } from "@/hooks/useCollectionUserKey";
 
 export function useCpBalance() {
@@ -21,6 +25,19 @@ export function useCpBalance() {
     setError(null);
     try {
       const next = await fetchCpState();
+      if (next?.enabled) {
+        setState(next);
+        return;
+      }
+
+      if (isAuthDevEnabled() && userKey && !next?.enabled) {
+        setState({
+          ...buildEmptyCpState(getGachaDayJst(), true),
+          balance: getDevCpBalance(userKey),
+        });
+        return;
+      }
+
       setState(next);
     } catch (fetchError) {
       setError(fetchError instanceof Error ? fetchError.message : "CP の読み込みに失敗しました");

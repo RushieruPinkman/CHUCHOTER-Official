@@ -34,12 +34,17 @@ export const NAV_ITEMS = [
   { href: "/schedule", label: "Schedule", labelJa: "予定表" },
   { href: "/media", label: "Lounge", labelJa: "ラウンジ" },
   { href: "/gacha", label: "Fortune", labelJa: "ガチャ" },
+  { href: "/bonus", label: "Bonus", labelJa: "ボーナス" },
   { href: "/collection", label: "Collection", labelJa: "コレクション" },
   { href: "/dm", label: "Contact", labelJa: "運営DM" },
 ] as const;
 
 export function isGachaNavItem(href: string): boolean {
   return href === "/gacha";
+}
+
+export function isBonusNavItem(href: string): boolean {
+  return href === "/bonus" || href === "/bonus/dev";
 }
 
 export function isCollectionNavItem(href: string): boolean {

@@ -4,11 +4,12 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import AuthNav from "@/components/AuthNav";
+import BonusNavLink from "@/components/BonusNavLink";
 import DmNavLink from "@/components/DmNavLink";
 import Logo from "@/components/Logo";
 import ThemeToggle from "@/components/ThemeToggle";
 import { lockBodyScroll, unlockBodyScroll } from "@/lib/body-scroll-lock";
-import { isGachaNavItem, isDmNavItem, NAV_ITEMS } from "@/lib/site";
+import { isBonusNavItem, isGachaNavItem, isDmNavItem, NAV_ITEMS } from "@/lib/site";
 
 export default function Header() {
   const pathname = usePathname();
@@ -111,14 +112,31 @@ export default function Header() {
 
               <nav className="header-bar__nav" aria-label="メインナビゲーション">
                 {NAV_ITEMS.map((item) => {
-                  const isActive = pathname === item.href;
+                  const isActive =
+                    item.href === "/bonus"
+                      ? pathname === "/bonus" || pathname === "/bonus/dev"
+                      : pathname === item.href;
                   const isGacha = isGachaNavItem(item.href);
+                  const isBonus = isBonusNavItem(item.href);
                   const isDm = isDmNavItem(item.href);
 
                   if (isDm) {
                     return (
                       <span key={item.href} className="inline-flex">
                         <DmNavLink
+                          href={item.href}
+                          label={item.label}
+                          labelJa={item.labelJa}
+                          active={isActive}
+                        />
+                      </span>
+                    );
+                  }
+
+                  if (isBonus) {
+                    return (
+                      <span key={item.href} className="inline-flex">
+                        <BonusNavLink
                           href={item.href}
                           label={item.label}
                           labelJa={item.labelJa}
@@ -166,8 +184,12 @@ export default function Header() {
         <div className="mobile-nav-panel__inner">
           <ul className="mobile-nav-panel__grid">
             {NAV_ITEMS.map((item) => {
-              const isActive = pathname === item.href;
+              const isActive =
+                item.href === "/bonus"
+                  ? pathname === "/bonus" || pathname === "/bonus/dev"
+                  : pathname === item.href;
               const isGacha = isGachaNavItem(item.href);
+              const isBonus = isBonusNavItem(item.href);
               const isDm = isDmNavItem(item.href);
 
               return (
@@ -178,11 +200,23 @@ export default function Header() {
                       ? "mobile-nav-item--gacha mobile-nav-panel__item"
                       : isDm
                         ? "mobile-nav-panel__item mobile-nav-item--dm"
-                        : "mobile-nav-panel__item"
+                        : isBonus
+                          ? "mobile-nav-panel__item mobile-nav-item--bonus"
+                          : "mobile-nav-panel__item"
                   }
                 >
                   {isDm ? (
                     <DmNavLink
+                      href={item.href}
+                      label={item.label}
+                      labelJa={item.labelJa}
+                      active={isActive}
+                      compact
+                      onClick={() => setMenuOpen(false)}
+                      tabIndex={menuOpen ? 0 : -1}
+                    />
+                  ) : isBonus ? (
+                    <BonusNavLink
                       href={item.href}
                       label={item.label}
                       labelJa={item.labelJa}

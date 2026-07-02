@@ -6,8 +6,6 @@ import DmAttachmentComposer from "@/components/DmAttachmentComposer";
 import DmMessageContent from "@/components/DmMessageContent";
 import { useCollectionUserKey } from "@/hooks/useCollectionUserKey";
 import { getAuthLoginHref, getAuthRegisterHref } from "@/lib/auth-routes";
-import { isAuthDevEnabled } from "@/lib/auth-dev";
-import { isUserAuthEnabled } from "@/lib/supabase/config";
 import {
   DM_RETENTION_NOTICE,
   formatDmTimestamp,
@@ -34,7 +32,6 @@ interface DmPanelProps {
 
 export default function DmPanel({ loginNextPath = "/dm" }: DmPanelProps) {
   const { userKey, memberLabel, ready: authReady } = useCollectionUserKey();
-  const devMode = isAuthDevEnabled() && !isUserAuthEnabled();
   const [thread, setThread] = useState<DmThreadSummary | null>(null);
   const [messages, setMessages] = useState<DmMessage[]>([]);
   const [draft, setDraft] = useState("");
@@ -74,7 +71,7 @@ export default function DmPanel({ loginNextPath = "/dm" }: DmPanelProps) {
     setError(null);
 
     try {
-      const data = await fetchUserDmThread(userKey, devMode);
+      const data = await fetchUserDmThread(userKey);
       setThread(data.thread);
       setMessages(data.messages);
     } catch (fetchError) {
@@ -84,7 +81,7 @@ export default function DmPanel({ loginNextPath = "/dm" }: DmPanelProps) {
         setLoading(false);
       }
     }
-  }, [devMode, userKey]);
+  }, [userKey]);
 
   useEffect(() => {
     if (!authReady) return;
@@ -117,7 +114,7 @@ export default function DmPanel({ loginNextPath = "/dm" }: DmPanelProps) {
     setError(null);
 
     try {
-      const detail = await sendUserDmMessage(userKey, devMode, draft, pendingAttachment);
+      const detail = await sendUserDmMessage(userKey, draft, pendingAttachment);
       setThread(detail.thread);
       setMessages(detail.messages);
       setDraft("");
@@ -142,7 +139,7 @@ export default function DmPanel({ loginNextPath = "/dm" }: DmPanelProps) {
     setUploadingAttachment(true);
     setError(null);
     try {
-      const attachment = await uploadUserDmAttachment(userKey, devMode, file);
+      const attachment = await uploadUserDmAttachment(userKey, file);
       setPendingAttachment(attachment);
       textareaRef.current?.focus();
     } finally {
@@ -264,7 +261,7 @@ export default function DmPanel({ loginNextPath = "/dm" }: DmPanelProps) {
                       <div className="dm-message__bubble min-w-0 max-w-full overflow-hidden">
                         <DmMessageContent
                           message={message}
-                          downloadHeaders={buildDmUploadHeaders(userKey, devMode)}
+                          downloadHeaders={buildDmUploadHeaders(userKey)}
                         />
                       </div>
                       <p className="dm-message__meta">{formatDmTimestamp(message.createdAt)}</p>

@@ -18,6 +18,7 @@ import {
   isAttachmentPathAllowed,
   resolveDmMessageAttachment,
 } from "@/lib/dm-attachments";
+import { isSupabaseConnectionError } from "@/lib/supabase-errors";
 
 const DM_INACTIVITY_MS = 7 * 24 * 60 * 60 * 1000;
 const MESSAGE_MAX_LENGTH = 2000;
@@ -150,82 +151,123 @@ export async function cleanupInactiveDmThreads(): Promise<number> {
 
   const cutoff = new Date(Date.now() - DM_INACTIVITY_MS).toISOString();
 
-  const { data: staleThreads, error: fetchError } = await supabase
-    .from("dm_threads")
-    .select("id")
-    .lt("last_message_at", cutoff);
+  try {
+    const { data: staleThreads, error: fetchError } = await supabase
+      .from("dm_threads")
+      .select("id")
+      .lt("last_message_at", cutoff);
 
-  if (fetchError) {
-    if (!isMissingTableError(fetchError)) {
-      console.error("[dm-store] cleanup fetch failed:", fetchError.message);
+    if (fetchError) {
+      if (!isMissingTableError(fetchError) && !isSupabaseConnectionError(fetchError)) {
+        console.error("[dm-store] cleanup fetch failed:", fetchError.message);
+      }
+      return 0;
+    }
+
+    if (!staleThreads?.length) {
+      return 0;
+    }
+
+    const threadIds = staleThreads.map((thread) => thread.id);
+    const { data: messages, error: messagesError } = await supabase
+      .from("dm_messages")
+      .select("attachment_path")
+      .in("thread_id", threadIds)
+      .not("attachment_path", "is", null);
+
+    if (messagesError && !isMissingTableError(messagesError) && !isSupabaseConnectionError(messagesError)) {
+      console.error("[dm-store] cleanup attachment lookup failed:", messagesError.message);
+    } else {
+      const attachmentPaths = (messages ?? [])
+        .map((message) => message.attachment_path)
+        .filter((pathValue): pathValue is string => Boolean(pathValue?.trim()));
+      if (attachmentPaths.length > 0) {
+        await deleteDmAttachmentStorage(attachmentPaths);
+      }
+    }
+
+    const { error: deleteError } = await supabase.from("dm_threads").delete().lt("last_message_at", cutoff);
+
+    if (deleteError && !isMissingTableError(deleteError) && !isSupabaseConnectionError(deleteError)) {
+      console.error("[dm-store] cleanup failed:", deleteError.message);
+      return 0;
+    }
+
+    return staleThreads.length;
+  } catch (error) {
+    if (!isSupabaseConnectionError(error)) {
+      console.error("[dm-store] cleanup fetch failed:", error);
     }
     return 0;
   }
-
-  if (!staleThreads?.length) {
-    return 0;
-  }
-
-  const threadIds = staleThreads.map((thread) => thread.id);
-  const { data: messages, error: messagesError } = await supabase
-    .from("dm_messages")
-    .select("attachment_path")
-    .in("thread_id", threadIds)
-    .not("attachment_path", "is", null);
-
-  if (messagesError && !isMissingTableError(messagesError)) {
-    console.error("[dm-store] cleanup attachment lookup failed:", messagesError.message);
-  } else {
-    const attachmentPaths = (messages ?? [])
-      .map((message) => message.attachment_path)
-      .filter((pathValue): pathValue is string => Boolean(pathValue?.trim()));
-    if (attachmentPaths.length > 0) {
-      await deleteDmAttachmentStorage(attachmentPaths);
-    }
-  }
-
-  const { error: deleteError } = await supabase.from("dm_threads").delete().lt("last_message_at", cutoff);
-
-  if (deleteError && !isMissingTableError(deleteError)) {
-    console.error("[dm-store] cleanup failed:", deleteError.message);
-    return 0;
-  }
-
-  return staleThreads.length;
 }
 
 export async function getUserDmThread(userKey: string): Promise<DmThreadSummary | null> {
   const supabase = getSupabaseAdmin();
   if (!supabase) return null;
 
-  await cleanupInactiveDmThreads();
+  try {
+    await cleanupInactiveDmThreads();
 
-  const { data, error } = await supabase
-    .from("dm_threads")
-    .select("*")
-    .eq("user_key", userKey)
-    .maybeSingle();
+    const { data, error } = await supabase
+      .from("dm_threads")
+      .select("*")
+      .eq("user_key", userKey)
+      .maybeSingle();
 
-  if (error) {
-    if (isMissingTableError(error)) {
-      throw new Error("dm_threads テーブルが未作成です。scripts/supabase-dm.sql を実行してください。");
+    if (error) {
+      if (isMissingTableError(error)) {
+        throw new Error("dm_threads テーブルが未作成です。scripts/supabase-dm.sql を実行してください。");
+      }
+      if (isSupabaseConnectionError(error)) {
+        return null;
+      }
+      throw new Error(error.message);
     }
-    throw new Error(error.message);
-  }
 
-  return data ? mapThread(data as DmThreadRow) : null;
+    return data ? mapThread(data as DmThreadRow) : null;
+  } catch (error) {
+    if (isSupabaseConnectionError(error)) {
+      return null;
+    }
+    throw error;
+  }
 }
 
 export async function getUserDmUnreadSummary(userKey: string): Promise<DmUnreadSummary> {
-  const thread = await getUserDmThread(userKey);
-  if (!thread) {
+  const supabase = getSupabaseAdmin();
+  if (!supabase) {
     return { unreadCount: 0, hasThread: false };
   }
 
-  return {
-    unreadCount: thread.userUnreadCount,
-    hasThread: true,
-  };
+  try {
+    const { data, error } = await supabase
+      .from("dm_threads")
+      .select("user_unread_count")
+      .eq("user_key", userKey)
+      .maybeSingle();
+
+    if (error) {
+      if (isMissingTableError(error) || isSupabaseConnectionError(error)) {
+        return { unreadCount: 0, hasThread: false };
+      }
+      throw new Error(error.message);
+    }
+
+    if (!data) {
+      return { unreadCount: 0, hasThread: false };
+    }
+
+    return {
+      unreadCount: (data as { user_unread_count: number }).user_unread_count ?? 0,
+      hasThread: true,
+    };
+  } catch (error) {
+    if (isSupabaseConnectionError(error)) {
+      return { unreadCount: 0, hasThread: false };
+    }
+    throw error;
+  }
 }
 
 export async function getUserDmThreadDetail(userKey: string): Promise<DmThreadDetail | null> {
@@ -243,19 +285,24 @@ export async function getThreadMessages(
   const supabase = getSupabaseAdmin();
   if (!supabase) return [];
 
-  const { data, error } = await supabase
-    .from("dm_messages")
-    .select("*")
-    .eq("thread_id", threadId)
-    .order("created_at", { ascending: true });
+  try {
+    const { data, error } = await supabase
+      .from("dm_messages")
+      .select("*")
+      .eq("thread_id", threadId)
+      .order("created_at", { ascending: true });
 
-  if (error) {
-    if (isMissingTableError(error)) return [];
-    throw new Error(error.message);
+    if (error) {
+      if (isMissingTableError(error) || isSupabaseConnectionError(error)) return [];
+      throw new Error(error.message);
+    }
+
+    const rows = (data as DmMessageRow[] | null) ?? [];
+    return mapMessagesWithAttachments(rows, downloadBasePath);
+  } catch (error) {
+    if (isSupabaseConnectionError(error)) return [];
+    throw error;
   }
-
-  const rows = (data as DmMessageRow[] | null) ?? [];
-  return mapMessagesWithAttachments(rows, downloadBasePath);
 }
 
 export async function getDmMessageForDownload(messageId: string): Promise<{

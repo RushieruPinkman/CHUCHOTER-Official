@@ -1,4 +1,5 @@
 import type { DmAttachmentPayload, DmMessage, DmThreadDetail, DmThreadSummary, DmUnreadSummary } from "@/lib/dm";
+import { encodeDevDisplayNameHeader, readDevSession, shouldUseDevApiAuth } from "@/lib/auth-dev";
 
 export const DM_UPDATED_EVENT = "chuchoter-dm-updated";
 
@@ -7,39 +8,48 @@ export function dispatchDmUpdated(): void {
   window.dispatchEvent(new CustomEvent(DM_UPDATED_EVENT));
 }
 
-export function buildDmRequestHeaders(userKey: string | null, devMode: boolean): HeadersInit {
+export function buildDmRequestHeaders(userKey: string | null): HeadersInit {
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
   };
 
-  if (devMode && userKey) {
+  if (shouldUseDevApiAuth(userKey) && userKey) {
     headers["X-Dev-User-Key"] = userKey;
+    const devSession = readDevSession();
+    if (devSession?.displayName?.trim()) {
+      headers["X-Dev-Display-Name"] = encodeDevDisplayNameHeader(devSession.displayName);
+    }
   }
 
   return headers;
 }
 
-export async function fetchDmUnreadSummary(
-  userKey: string | null,
-  devMode: boolean
-): Promise<DmUnreadSummary> {
-  const response = await fetch("/api/dm?summary=1", {
-    headers: buildDmRequestHeaders(userKey, devMode),
-  });
-
-  if (!response.ok) {
+export async function fetchDmUnreadSummary(userKey: string | null): Promise<DmUnreadSummary> {
+  if (shouldUseDevApiAuth(userKey)) {
     return { unreadCount: 0, hasThread: false };
   }
 
-  return (await response.json()) as DmUnreadSummary;
+  try {
+    const response = await fetch("/api/dm?summary=1", {
+      headers: buildDmRequestHeaders(userKey),
+      signal: AbortSignal.timeout(5000),
+    });
+
+    if (!response.ok) {
+      return { unreadCount: 0, hasThread: false };
+    }
+
+    return (await response.json()) as DmUnreadSummary;
+  } catch {
+    return { unreadCount: 0, hasThread: false };
+  }
 }
 
 export async function fetchUserDmThread(
-  userKey: string | null,
-  devMode: boolean
+  userKey: string | null
 ): Promise<{ thread: DmThreadSummary | null; messages: DmMessage[] }> {
   const response = await fetch("/api/dm", {
-    headers: buildDmRequestHeaders(userKey, devMode),
+    headers: buildDmRequestHeaders(userKey),
   });
 
   if (!response.ok) {
@@ -50,11 +60,15 @@ export async function fetchUserDmThread(
   return (await response.json()) as { thread: DmThreadSummary | null; messages: DmMessage[] };
 }
 
-export function buildDmUploadHeaders(userKey: string | null, devMode: boolean): HeadersInit {
+export function buildDmUploadHeaders(userKey: string | null): HeadersInit {
   const headers: Record<string, string> = {};
 
-  if (devMode && userKey) {
+  if (shouldUseDevApiAuth(userKey) && userKey) {
     headers["X-Dev-User-Key"] = userKey;
+    const devSession = readDevSession();
+    if (devSession?.displayName?.trim()) {
+      headers["X-Dev-Display-Name"] = encodeDevDisplayNameHeader(devSession.displayName);
+    }
   }
 
   return headers;
@@ -62,7 +76,6 @@ export function buildDmUploadHeaders(userKey: string | null, devMode: boolean): 
 
 export async function uploadUserDmAttachment(
   userKey: string | null,
-  devMode: boolean,
   file: File
 ): Promise<DmAttachmentPayload> {
   const formData = new FormData();
@@ -71,7 +84,7 @@ export async function uploadUserDmAttachment(
 
   const response = await fetch("/api/dm/upload", {
     method: "POST",
-    headers: buildDmUploadHeaders(userKey, devMode),
+    headers: buildDmUploadHeaders(userKey),
     body: formData,
   });
 
@@ -86,13 +99,12 @@ export async function uploadUserDmAttachment(
 
 export async function sendUserDmMessage(
   userKey: string | null,
-  devMode: boolean,
   message: string,
   attachment?: DmAttachmentPayload | null
 ): Promise<DmThreadDetail> {
   const response = await fetch("/api/dm", {
     method: "POST",
-    headers: buildDmRequestHeaders(userKey, devMode),
+    headers: buildDmRequestHeaders(userKey),
     body: JSON.stringify({ message, attachment: attachment ?? null }),
   });
 

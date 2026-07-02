@@ -17,6 +17,28 @@ export function isAuthDevEnabled(): boolean {
   return process.env.NODE_ENV === "development";
 }
 
+export function isDevCollectionUserKey(userKey: string | null | undefined): boolean {
+  return Boolean(userKey?.startsWith("dev:"));
+}
+
+/** Supabase 設定の有無に関わらず、開発用 userKey なら API に dev ヘッダーを送る */
+export function shouldUseDevApiAuth(userKey: string | null | undefined): boolean {
+  return isAuthDevEnabled() && isDevCollectionUserKey(userKey);
+}
+
+/** fetch の Header に載せるため ASCII 安全にエンコード */
+export function encodeDevDisplayNameHeader(displayName: string): string {
+  return encodeURIComponent(displayName.trim());
+}
+
+export function decodeDevDisplayNameHeader(value: string): string {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
+}
+
 export function createDevSession(email: string, displayName: string): AuthDevSession {
   return {
     userId: `dev-${Date.now()}`,

@@ -2,30 +2,35 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useCollectionUserKey } from "@/hooks/useCollectionUserKey";
-import { DM_UPDATED_EVENT, fetchDmUnreadSummary } from "@/lib/dm-client";
-import type { DmUnreadSummary } from "@/lib/dm";
+import { BONUS_UPDATED_EVENT, countUnclaimedBonuses } from "@/lib/bonus-roulette-shared";
+import { fetchBonusRouletteState } from "@/lib/bonus-roulette-client";
 
-const EMPTY_SUMMARY: DmUnreadSummary = { unreadCount: 0, hasThread: false };
-
-export function useDmUnreadSummary(): DmUnreadSummary & { ready: boolean } {
+export function useBonusUnclaimedCount(): { count: number; ready: boolean } {
   const { userKey, ready: authReady } = useCollectionUserKey();
-  const [summary, setSummary] = useState<DmUnreadSummary>(EMPTY_SUMMARY);
+  const [count, setCount] = useState(0);
   const [ready, setReady] = useState(false);
 
   const refresh = useCallback(async () => {
     if (!authReady) return;
+
     if (!userKey) {
-      setSummary(EMPTY_SUMMARY);
+      setCount(0);
       setReady(true);
       return;
     }
 
-    const next = await fetchDmUnreadSummary(userKey);
-    setSummary(next);
-    setReady(true);
+    try {
+      const state = await fetchBonusRouletteState();
+      setCount(countUnclaimedBonuses(state));
+    } catch {
+      setCount(0);
+    } finally {
+      setReady(true);
+    }
   }, [authReady, userKey]);
 
   useEffect(() => {
+    setReady(false);
     void refresh();
   }, [refresh]);
 
@@ -34,16 +39,16 @@ export function useDmUnreadSummary(): DmUnreadSummary & { ready: boolean } {
       void refresh();
     };
 
-    window.addEventListener(DM_UPDATED_EVENT, onUpdated);
+    window.addEventListener(BONUS_UPDATED_EVENT, onUpdated);
     const interval = window.setInterval(() => {
       void refresh();
-    }, 30000);
+    }, 60000);
 
     return () => {
-      window.removeEventListener(DM_UPDATED_EVENT, onUpdated);
+      window.removeEventListener(BONUS_UPDATED_EVENT, onUpdated);
       window.clearInterval(interval);
     };
   }, [refresh]);
 
-  return { ...summary, ready };
+  return { count, ready };
 }

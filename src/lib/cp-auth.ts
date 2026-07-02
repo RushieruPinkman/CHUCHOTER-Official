@@ -1,6 +1,6 @@
 import type { NextRequest } from "next/server";
-import { buildAuthCollectionUserKey, buildDevCollectionUserKey } from "@/lib/gacha-collection";
-import { readDevSession, isAuthDevEnabled } from "@/lib/auth-dev";
+import { buildAuthCollectionUserKey } from "@/lib/gacha-collection";
+import { resolveDevRequestUserKey } from "@/lib/auth-dev-request";
 import { createClient } from "@/lib/supabase/server";
 import { isUserAuthEnabledOnServer } from "@/lib/supabase/config";
 
@@ -9,15 +9,9 @@ export interface CpRequestUser {
 }
 
 export async function resolveCpRequestUser(request: NextRequest): Promise<CpRequestUser | null> {
-  if (isAuthDevEnabled()) {
-    const devHeader = request.headers.get("x-dev-user-key")?.trim();
-    if (devHeader?.startsWith("dev:")) {
-      const devSession = readDevSession();
-      const devKey = devSession?.email ? buildDevCollectionUserKey(devSession.email) : null;
-      if (devSession && devKey && devHeader === devKey) {
-        return { userKey: devKey };
-      }
-    }
+  const devUserKey = resolveDevRequestUserKey(request);
+  if (devUserKey) {
+    return { userKey: devUserKey };
   }
 
   if (!isUserAuthEnabledOnServer()) return null;

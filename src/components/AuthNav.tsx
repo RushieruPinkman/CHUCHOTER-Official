@@ -48,7 +48,7 @@ export default function AuthNav({
   const dmNoticeLink = showDmNotice ? (
     <Link href="/dm" className="auth-dm-notice" aria-label={`運営から未読返信 ${dmUnreadCount} 件`}>
       運営返信
-      <span className="dm-nav-badge">{dmUnreadCount > 99 ? "99+" : dmUnreadCount}</span>
+      <span className="nav-count-badge">{dmUnreadCount > 99 ? "99+" : dmUnreadCount}</span>
     </Link>
   ) : null;
 
@@ -219,7 +219,7 @@ export default function AuthNav({
               aria-label={`運営から未読返信 ${dmUnreadCount} 件`}
             >
               運営返信
-              <span className="dm-nav-badge">{dmUnreadCount > 99 ? "99+" : dmUnreadCount}</span>
+              <span className="nav-count-badge">{dmUnreadCount > 99 ? "99+" : dmUnreadCount}</span>
             </Link>
           )}
           <ProfileNavLink
@@ -276,7 +276,7 @@ export default function AuthNav({
               aria-label={`運営から未読返信 ${dmUnreadCount} 件`}
             >
               運営返信
-              <span className="dm-nav-badge">{dmUnreadCount > 99 ? "99+" : dmUnreadCount}</span>
+              <span className="nav-count-badge">{dmUnreadCount > 99 ? "99+" : dmUnreadCount}</span>
             </Link>
           )}
           <ProfileNavLink

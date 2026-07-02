@@ -13,6 +13,7 @@ import {
 } from "@/lib/cp";
 import { buildAuthCollectionUserKey } from "@/lib/gacha-collection";
 import { getGachaDayJst } from "@/lib/gacha-daily-limit";
+import { isSupabaseConnectionError } from "@/lib/supabase-errors";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 
 interface CpBalanceRow {
@@ -108,37 +109,50 @@ export async function getCpState(userKey: string, taskDate = getGachaDayJst()): 
 
   const supabase = getSupabaseAdmin()!;
 
-  const [{ data: balanceRow, error: balanceError }, { data: taskRows, error: taskError }, freeDrawUsed] =
-    await Promise.all([
-      supabase.from("user_cp_balances").select("balance").eq("user_key", userKey).maybeSingle(),
-      supabase
-        .from("user_daily_task_completions")
-        .select("task_id")
-        .eq("user_key", userKey)
-        .eq("task_date", taskDate),
-      hasUsedFreeDrawToday(userKey, taskDate),
-    ]);
+  try {
+    const [{ data: balanceRow, error: balanceError }, { data: taskRows, error: taskError }, freeDrawUsed] =
+      await Promise.all([
+        supabase.from("user_cp_balances").select("balance").eq("user_key", userKey).maybeSingle(),
+        supabase
+          .from("user_daily_task_completions")
+          .select("task_id")
+          .eq("user_key", userKey)
+          .eq("task_date", taskDate),
+        hasUsedFreeDrawToday(userKey, taskDate),
+      ]);
 
-  if (balanceError && !isMissingTableError(balanceError)) {
-    throw new Error(balanceError.message);
-  }
-  if (taskError && !isMissingTableError(taskError)) {
-    throw new Error(taskError.message);
-  }
-  if (isMissingTableError(balanceError) || isMissingTableError(taskError)) {
-    return buildEmptyCpState(taskDate, false);
-  }
+    if (balanceError && !isMissingTableError(balanceError)) {
+      if (isSupabaseConnectionError(balanceError)) {
+        return buildEmptyCpState(taskDate, false);
+      }
+      throw new Error(balanceError.message);
+    }
+    if (taskError && !isMissingTableError(taskError)) {
+      if (isSupabaseConnectionError(taskError)) {
+        return buildEmptyCpState(taskDate, false);
+      }
+      throw new Error(taskError.message);
+    }
+    if (isMissingTableError(balanceError) || isMissingTableError(taskError)) {
+      return buildEmptyCpState(taskDate, false);
+    }
 
-  const completedTaskIds = ((taskRows as TaskCompletionRow[] | null) ?? [])
-    .map((row) => row.task_id)
-    .filter(isDailyTaskId);
+    const completedTaskIds = ((taskRows as TaskCompletionRow[] | null) ?? [])
+      .map((row) => row.task_id)
+      .filter(isDailyTaskId);
 
-  return buildCpState(
-    (balanceRow as CpBalanceRow | null)?.balance ?? 0,
-    completedTaskIds,
-    taskDate,
-    !freeDrawUsed
-  );
+    return buildCpState(
+      (balanceRow as CpBalanceRow | null)?.balance ?? 0,
+      completedTaskIds,
+      taskDate,
+      !freeDrawUsed
+    );
+  } catch (error) {
+    if (isSupabaseConnectionError(error)) {
+      return buildEmptyCpState(taskDate, false);
+    }
+    throw error;
+  }
 }
 
 async function addCpLedgerEntry(

@@ -1,8 +1,10 @@
 import type { NextRequest } from "next/server";
 import { buildAuthCollectionUserKey } from "@/lib/gacha-collection";
-import { buildDevCollectionUserKey } from "@/lib/gacha-collection";
 import { getUserProfileLabel } from "@/lib/auth-messages";
-import { readDevSession, isAuthDevEnabled } from "@/lib/auth-dev";
+import {
+  resolveDevRequestDisplayName,
+  resolveDevRequestUserKey,
+} from "@/lib/auth-dev-request";
 import { createClient } from "@/lib/supabase/server";
 import { isUserAuthEnabledOnServer } from "@/lib/supabase/config";
 
@@ -13,19 +15,14 @@ export interface DmRequestUser {
 }
 
 export async function resolveDmRequestUser(request: NextRequest): Promise<DmRequestUser | null> {
-  if (isAuthDevEnabled()) {
-    const devHeader = request.headers.get("x-dev-user-key")?.trim();
-    if (devHeader?.startsWith("dev:")) {
-      const devSession = readDevSession();
-      const devKey = devSession?.email ? buildDevCollectionUserKey(devSession.email) : null;
-      if (devSession && devKey && devHeader === devKey) {
-        return {
-          userKey: devKey,
-          displayName: devSession.displayName,
-          email: devSession.email,
-        };
-      }
-    }
+  const devUserKey = resolveDevRequestUserKey(request);
+  if (devUserKey) {
+    const email = devUserKey.slice(4);
+    return {
+      userKey: devUserKey,
+      displayName: resolveDevRequestDisplayName(request, email),
+      email,
+    };
   }
 
   if (!isUserAuthEnabledOnServer()) return null;

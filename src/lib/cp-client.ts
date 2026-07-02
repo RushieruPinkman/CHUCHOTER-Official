@@ -1,7 +1,10 @@
 import type { CpState, DailyTaskId } from "@/lib/cp";
+import { buildEmptyCpState } from "@/lib/cp";
 import type { GachaDrawResult } from "@/lib/gacha";
 import { buildDevCollectionUserKey, buildAuthCollectionUserKey } from "@/lib/gacha-collection";
-import { readDevSession } from "@/lib/auth-dev";
+import { encodeDevDisplayNameHeader, isAuthDevEnabled, isDevCollectionUserKey, readDevSession } from "@/lib/auth-dev";
+import { getDevCpBalance } from "@/lib/cp-dev-balance";
+import { getGachaDayJst } from "@/lib/gacha-daily-limit";
 import { createClient } from "@/lib/supabase/client";
 import { isUserAuthEnabled } from "@/lib/supabase/config";
 
@@ -12,7 +15,7 @@ export function dispatchCpUpdated(): void {
   window.dispatchEvent(new CustomEvent(CP_UPDATED_EVENT));
 }
 
-async function buildCpRequestHeaders(): Promise<HeadersInit> {
+export async function buildCpRequestHeaders(): Promise<HeadersInit> {
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
   };
@@ -20,6 +23,9 @@ async function buildCpRequestHeaders(): Promise<HeadersInit> {
   const devSession = readDevSession();
   if (devSession?.email) {
     headers["X-Dev-User-Key"] = buildDevCollectionUserKey(devSession.email);
+    if (devSession.displayName?.trim()) {
+      headers["X-Dev-Display-Name"] = encodeDevDisplayNameHeader(devSession.displayName);
+    }
     return headers;
   }
 
@@ -41,18 +47,46 @@ async function buildCpRequestHeaders(): Promise<HeadersInit> {
 }
 
 export async function fetchCpState(): Promise<CpState | null> {
-  const response = await fetch("/api/user/cp", {
-    headers: await buildCpRequestHeaders(),
-    cache: "no-store",
-  });
-
-  if (response.status === 401) return null;
-  if (!response.ok) {
-    const body = (await response.json().catch(() => null)) as { error?: string } | null;
-    throw new Error(body?.error || "CP 情報の取得に失敗しました");
+  const userKey = await resolveClientCpUserKey();
+  if (isAuthDevEnabled() && isDevCollectionUserKey(userKey) && userKey) {
+    return {
+      ...buildEmptyCpState(getGachaDayJst(), true),
+      balance: getDevCpBalance(userKey),
+    };
   }
 
-  return (await response.json()) as CpState;
+  try {
+    const response = await fetch("/api/user/cp", {
+      headers: await buildCpRequestHeaders(),
+      cache: "no-store",
+      signal: AbortSignal.timeout(5000),
+    });
+
+    if (response.status === 401) return null;
+    if (!response.ok) {
+      if (isAuthDevEnabled() && isDevCollectionUserKey(userKey) && userKey) {
+        return {
+          ...buildEmptyCpState(getGachaDayJst(), true),
+          balance: getDevCpBalance(userKey),
+        };
+      }
+      const body = (await response.json().catch(() => null)) as { error?: string } | null;
+      throw new Error(body?.error || "CP 情報の取得に失敗しました");
+    }
+
+    return (await response.json()) as CpState;
+  } catch (error) {
+    if (isAuthDevEnabled() && isDevCollectionUserKey(userKey) && userKey) {
+      return {
+        ...buildEmptyCpState(getGachaDayJst(), true),
+        balance: getDevCpBalance(userKey),
+      };
+    }
+    if (error instanceof Error && /CP 情報の取得に失敗/.test(error.message)) {
+      throw error;
+    }
+    return buildEmptyCpState(getGachaDayJst(), false);
+  }
 }
 
 export async function completeDailyTaskFromClient(taskId: DailyTaskId): Promise<CpState | null> {
