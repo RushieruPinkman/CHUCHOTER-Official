@@ -126,6 +126,21 @@ export default function BonusRouletteApp({
     );
   }
 
+  if (!state) {
+    return (
+      <section className="site-container pb-16">
+        <div className="panel mx-auto max-w-3xl p-8 text-center text-sm text-cream-faint">
+          ボーナス情報を取得できませんでした。
+          {error && (
+            <p className="mt-3 text-red-300" role="alert">
+              {error}
+            </p>
+          )}
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section className="site-container pb-16">
       <div className="mx-auto mb-8 flex max-w-3xl flex-wrap items-center justify-between gap-4">

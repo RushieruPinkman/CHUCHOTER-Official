@@ -63,6 +63,7 @@ function shouldUseDevBonusStore(
   if (!prefersLocalBonusStore(devUserKey, forceDev)) return false;
   if (forceDev || isDevCollectionUserKey(devUserKey)) return true;
   if (remote === "unauthorized") return true;
+  if (!remote) return true;
   return !remote.enabled;
 }
 

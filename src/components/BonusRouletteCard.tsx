@@ -42,7 +42,6 @@ export default function BonusRouletteCard({
     if (phaseRef.current === "spinning") return;
 
     if (devMode) {
-      if (phaseRef.current === "spinning") return;
       if (entry.status === "pending") {
         setPhase("result");
         return;
@@ -96,7 +95,7 @@ export default function BonusRouletteCard({
       setPhase("ready");
       setBusy(false);
     }
-  }, [busy, clientOptions, disabled, entry.type, onEntryChange, phase]);
+  }, [busy, clientOptions, disabled, entry.type, phase]);
 
   const handleSpinEnd = useCallback(() => {
     if (spunEntryRef.current) {
