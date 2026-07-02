@@ -1,5 +1,6 @@
 import "server-only";
 
+import { notifyDmReplyPush } from "@/lib/push-send";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import type {
   DmAttachmentKind,
@@ -548,6 +549,15 @@ export async function sendAdminDmMessage(
   }
 
   const messages = await getThreadMessages(thread.id, "/api/admin/dm/attachments");
+
+  void notifyDmReplyPush(
+    thread.userKey,
+    buildPreview(trimmed, attachment),
+    messageRow.id
+  ).catch((error) => {
+    console.error("[dm-store] DM push notify failed:", error);
+  });
+
   return {
     thread: mapThread(updatedThread as DmThreadRow),
     messages,

@@ -5,6 +5,7 @@ import ProfilePanel from "@/components/ProfilePanel";
 import ProfileCollection from "@/components/ProfileCollection";
 import ProfileSignOut from "@/components/ProfileSignOut";
 import DailyTasksPanel from "@/components/DailyTasksPanel";
+import PushNotificationSettings from "@/components/PushNotificationSettings";
 import { AUTH_DEV_LOGIN_PATH } from "@/lib/auth-dev";
 import { getUserProfileLabel, isDisplayNameMatchingEmail } from "@/lib/auth-messages";
 import { buildAuthCollectionUserKey } from "@/lib/gacha-collection";
@@ -60,6 +61,7 @@ export default async function ProfilePage() {
             showDisplayNameEmailWarning: isDisplayNameMatchingEmail(user.email, rawDisplayName || null),
           }}
         />
+        <PushNotificationSettings />
         <DailyTasksPanel className="mx-auto mt-10 max-w-lg" />
         <ProfileCollection userKey={buildAuthCollectionUserKey(user.id)} className="mt-10" />
         <div className="mx-auto mt-6 max-w-lg text-center">
