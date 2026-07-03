@@ -9,7 +9,7 @@ import {
 } from "@/lib/gacha";
 import { getGachaSerialsForUser, markGachaSerialUsed } from "@/lib/gacha-serial-store";
 import type { GachaSerialPublicRecord } from "@/lib/gacha-serial";
-import { notifyDiscordDmMessage, notifyDiscordGachaPrizePending } from "@/lib/dm-discord";
+import { notifyDiscordGachaPrizePending } from "@/lib/dm-discord";
 import { sendAdminDmMessage, sendUserDmMessage } from "@/lib/dm-store";
 import { SITE } from "@/lib/site";
 import type { Cast } from "@/types";
@@ -89,13 +89,6 @@ async function sendGachaPrizeClaimReportToOperations(params: {
     params.userDisplayName,
     params.userEmail
   );
-
-  await notifyDiscordDmMessage({
-    userDisplayName: params.userDisplayName,
-    userEmail: params.userEmail,
-    body: reportBody,
-    threadId: detail.thread.id,
-  });
 
   return detail.thread.id;
 }
