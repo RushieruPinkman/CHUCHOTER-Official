@@ -8,11 +8,14 @@ import { isAuthDevEnabled } from "@/lib/auth-dev";
 import {
   buildShareText,
   buildTweetUrl,
+  getGachaPrizeDownload,
   isGachaMiss,
+  isGachaPrizeSiteDownloadable,
   RARITY_COLORS,
   shouldClaimGachaPrizeViaDm,
   type GachaDrawResult,
 } from "@/lib/gacha";
+import { downloadGachaPrizeAsset } from "@/lib/gacha-prize-download-client";
 import {
   canClaimGachaPrize,
   getGachaClaimSerial,
@@ -47,6 +50,9 @@ export default function GachaSharePanel({
   const colors = RARITY_COLORS[result.rarity];
   const footer = `${colors.label} · ${SITE.url.replace(/^https?:\/\//, "")}`;
   const isMiss = isGachaMiss(result.rarity);
+  const siteDownload = isGachaPrizeSiteDownloadable(result.rarity)
+    ? getGachaPrizeDownload(result.prize)
+    : null;
   const needsPrizeClaim = shouldClaimGachaPrizeViaDm(result.rarity) && !isMiss;
   const claimSerial = getGachaClaimSerial(result);
   const serialUsed = isGachaSerialUsed(result);
@@ -71,6 +77,8 @@ export default function GachaSharePanel({
           ) : (
             <>当選おめでとうございます。運営DMで景品を受け取るか、Xで当選を投稿できます。</>
           )
+        ) : siteDownload ? (
+          <>当選おめでとうございます。サイトから景品をダウンロードするか、Xで当選を投稿できます。</>
         ) : (
           <>当選おめでとうございます。Xで当選を投稿できます。</>
         )}
@@ -97,6 +105,16 @@ export default function GachaSharePanel({
       )}
 
       <div className="gacha-share__actions">
+        {siteDownload && (
+          <button
+            type="button"
+            onClick={() => downloadGachaPrizeAsset(siteDownload)}
+            className="btn-primary"
+          >
+            景品をダウンロード
+          </button>
+        )}
+
         {showDmClaim &&
           (authReady && userKey ? (
             <button
