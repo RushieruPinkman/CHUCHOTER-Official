@@ -7,7 +7,7 @@ import {
   getPrizeByRarity,
   type GachaDrawResult,
 } from "@/lib/gacha";
-import { getGachaSerialsForUser, markGachaSerialUsed } from "@/lib/gacha-serial-store";
+import { getGachaSerialsForUser, markGachaSerialFulfilled, markGachaSerialUsed, setGachaSerialFulfillmentPending } from "@/lib/gacha-serial-store";
 import type { GachaSerialPublicRecord } from "@/lib/gacha-serial";
 import { notifyDiscordGachaPrizePending } from "@/lib/dm-discord";
 import { sendAdminDmMessage, sendUserDmMessage } from "@/lib/dm-store";
@@ -27,6 +27,8 @@ export const GACHA_PRIZE_PENDING_SIGN_MESSAGE =
 
 export const GACHA_PRIZE_PENDING_VOICE_MESSAGE =
   "ただいま住民さんが心を込めてボイスを収録してくれているので少々お待ちください。";
+
+export const GACHA_PRIZE_READY_MESSAGE = "お待たせしました。";
 
 export const GACHA_PRIZE_VIP_FOLLOWUP_MESSAGE = `おめでとうございます！
 次回営業日以降使用可能ですので、利用される場合にまたご連絡ください。
@@ -93,7 +95,7 @@ async function sendGachaPrizeClaimReportToOperations(params: {
   return detail.thread.id;
 }
 
-async function deliverAdminPrizeMessage(params: {
+export async function deliverAdminPrizeMessage(params: {
   threadId: string;
   body: string;
   assetUrl?: string | null;
@@ -141,7 +143,7 @@ export async function claimGachaPrize(input: ClaimGachaPrizeInput): Promise<Clai
     throw new Error("選択したキャストが見つかりません。");
   }
 
-  const markResult = await markGachaSerialUsed(serial, { castName: cast.name });
+  const markResult = await markGachaSerialUsed(serial, { castName: cast.name, castId: cast.id });
   if (!markResult.ok) {
     throw new Error(markResult.error);
   }
@@ -171,9 +173,11 @@ export async function claimGachaPrize(input: ClaimGachaPrizeInput): Promise<Clai
       });
       if (delivered) {
         fulfilledAutomatically = true;
+        await markGachaSerialFulfilled(serial);
       } else {
         await sendAdminDmMessage(threadId, GACHA_PRIZE_PENDING_SIGN_MESSAGE);
         pendingManualFulfillment = true;
+        await setGachaSerialFulfillmentPending(serial, { threadId, castId: cast.id });
         await notifyDiscordGachaPrizePending({
           userDisplayName: input.userDisplayName,
           userEmail: input.userEmail,
@@ -187,6 +191,7 @@ export async function claimGachaPrize(input: ClaimGachaPrizeInput): Promise<Clai
     } else {
       await sendAdminDmMessage(threadId, GACHA_PRIZE_PENDING_SIGN_MESSAGE);
       pendingManualFulfillment = true;
+      await setGachaSerialFulfillmentPending(serial, { threadId, castId: cast.id });
       await notifyDiscordGachaPrizePending({
         userDisplayName: input.userDisplayName,
         userEmail: input.userEmail,
@@ -207,9 +212,11 @@ export async function claimGachaPrize(input: ClaimGachaPrizeInput): Promise<Clai
       });
       if (delivered) {
         fulfilledAutomatically = true;
+        await markGachaSerialFulfilled(serial);
       } else {
         await sendAdminDmMessage(threadId, GACHA_PRIZE_PENDING_VOICE_MESSAGE);
         pendingManualFulfillment = true;
+        await setGachaSerialFulfillmentPending(serial, { threadId, castId: cast.id });
         await notifyDiscordGachaPrizePending({
           userDisplayName: input.userDisplayName,
           userEmail: input.userEmail,
@@ -223,6 +230,7 @@ export async function claimGachaPrize(input: ClaimGachaPrizeInput): Promise<Clai
     } else {
       await sendAdminDmMessage(threadId, GACHA_PRIZE_PENDING_VOICE_MESSAGE);
       pendingManualFulfillment = true;
+      await setGachaSerialFulfillmentPending(serial, { threadId, castId: cast.id });
       await notifyDiscordGachaPrizePending({
         userDisplayName: input.userDisplayName,
         userEmail: input.userEmail,

@@ -24,8 +24,20 @@ interface GachaSerialRow {
   prize_title: string;
   prize_subtitle: string | null;
   cast_name: string | null;
+  cast_id: string | null;
+  dm_thread_id: string | null;
+  fulfillment_status: "pending" | "fulfilled" | null;
   used_at: string | null;
   created_at: string;
+}
+
+export type GachaSerialFulfillmentStatus = "pending" | "fulfilled";
+
+export interface GachaSerialFulfillmentRecord extends GachaSerialPublicRecord {
+  userKey: string;
+  castId: string | null;
+  dmThreadId: string | null;
+  fulfillmentStatus: GachaSerialFulfillmentStatus | null;
 }
 
 export interface IssueGachaSerialInput {
@@ -36,6 +48,21 @@ export interface IssueGachaSerialInput {
   prizeTitle: string;
   prizeSubtitle?: string | null;
   castName?: string | null;
+}
+
+function mapFulfillmentRow(row: GachaSerialRow): GachaSerialFulfillmentRecord {
+  return {
+    ...mapRow(row),
+    userKey: row.user_key,
+    castId: row.cast_id,
+    dmThreadId: row.dm_thread_id,
+    fulfillmentStatus: row.fulfillment_status,
+  };
+}
+
+function isMissingFulfillmentColumnError(error: { message?: string; code?: string } | null): boolean {
+  if (!error) return false;
+  return /fulfillment_status|dm_thread_id|cast_id/.test(error.message ?? "");
 }
 
 function mapRow(row: GachaSerialRow): GachaSerialPublicRecord {
@@ -173,7 +200,7 @@ export async function getGachaSerialsForUser(
 
 export async function markGachaSerialUsed(
   serial: string,
-  options?: { castName?: string | null }
+  options?: { castName?: string | null; castId?: string | null }
 ): Promise<
   | { ok: true; record: GachaSerialPublicRecord; alreadyUsed: boolean }
   | { ok: false; error: string; notFound?: boolean }
@@ -198,12 +225,20 @@ export async function markGachaSerialUsed(
   }
 
   const usedAt = new Date().toISOString();
-  const updatePayload: { status: "used"; used_at: string; cast_name?: string | null } = {
+  const updatePayload: {
+    status: "used";
+    used_at: string;
+    cast_name?: string | null;
+    cast_id?: string | null;
+  } = {
     status: "used",
     used_at: usedAt,
   };
   if (options?.castName !== undefined) {
     updatePayload.cast_name = options.castName;
+  }
+  if (options?.castId !== undefined) {
+    updatePayload.cast_id = options.castId;
   }
 
   const { data, error } = await supabase
@@ -217,10 +252,127 @@ export async function markGachaSerialUsed(
     if (isMissingTableError(error)) {
       return { ok: false, error: "gacha_serials テーブルが未作成です。" };
     }
+    if (isMissingFulfillmentColumnError(error) && options?.castId !== undefined) {
+      delete updatePayload.cast_id;
+      const retry = await supabase
+        .from("gacha_serials")
+        .update(updatePayload)
+        .eq("serial", normalized)
+        .select("*")
+        .single();
+      if (retry.error || !retry.data) {
+        return { ok: false, error: retry.error?.message || "使用済みへの更新に失敗しました。" };
+      }
+      return { ok: true, record: mapRow(retry.data as GachaSerialRow), alreadyUsed: false };
+    }
     return { ok: false, error: error?.message || "使用済みへの更新に失敗しました。" };
   }
 
   return { ok: true, record: mapRow(data as GachaSerialRow), alreadyUsed: false };
+}
+
+export async function setGachaSerialFulfillmentPending(
+  serial: string,
+  params: { threadId: string; castId: string }
+): Promise<void> {
+  const supabase = getSupabaseAdmin();
+  if (!supabase) return;
+
+  const normalized = normalizeGachaSerialNumber(serial);
+  const { error } = await supabase
+    .from("gacha_serials")
+    .update({
+      fulfillment_status: "pending",
+      dm_thread_id: params.threadId,
+      cast_id: params.castId,
+    })
+    .eq("serial", normalized);
+
+  if (error && !isMissingTableError(error) && !isMissingFulfillmentColumnError(error)) {
+    throw new Error(error.message);
+  }
+}
+
+export async function markGachaSerialFulfilled(serial: string): Promise<void> {
+  const supabase = getSupabaseAdmin();
+  if (!supabase) return;
+
+  const normalized = normalizeGachaSerialNumber(serial);
+  const { error } = await supabase
+    .from("gacha_serials")
+    .update({ fulfillment_status: "fulfilled" })
+    .eq("serial", normalized);
+
+  if (error && !isMissingTableError(error) && !isMissingFulfillmentColumnError(error)) {
+    throw new Error(error.message);
+  }
+}
+
+export async function listPendingGachaSerialFulfillmentsForCast(params: {
+  castId: string;
+  castName: string;
+  rarity: 4 | 5;
+}): Promise<GachaSerialFulfillmentRecord[]> {
+  const supabase = getSupabaseAdmin();
+  if (!supabase) return [];
+
+  const base = () =>
+    supabase
+      .from("gacha_serials")
+      .select("*")
+      .eq("status", "used")
+      .eq("rarity", params.rarity)
+      .or("fulfillment_status.eq.pending,fulfillment_status.is.null");
+
+  const [byCastId, byCastName] = await Promise.all([
+    base().eq("cast_id", params.castId),
+    base().is("cast_id", null).eq("cast_name", params.castName),
+  ]);
+
+  const error = byCastId.error ?? byCastName.error;
+  if (error) {
+    if (isMissingTableError(error) || isMissingFulfillmentColumnError(error)) {
+      return listPendingGachaSerialFulfillmentsLegacy(params);
+    }
+    throw new Error(error.message);
+  }
+
+  const merged = new Map<string, GachaSerialRow>();
+  for (const row of [...(byCastId.data ?? []), ...(byCastName.data ?? [])] as GachaSerialRow[]) {
+    merged.set(row.serial, row);
+  }
+
+  return [...merged.values()]
+    .map(mapFulfillmentRow)
+    .filter((record) => record.fulfillmentStatus !== "fulfilled");
+}
+
+async function listPendingGachaSerialFulfillmentsLegacy(params: {
+  castId: string;
+  castName: string;
+  rarity: 4 | 5;
+}): Promise<GachaSerialFulfillmentRecord[]> {
+  const supabase = getSupabaseAdmin();
+  if (!supabase) return [];
+
+  const { data, error } = await supabase
+    .from("gacha_serials")
+    .select("*")
+    .eq("status", "used")
+    .eq("rarity", params.rarity)
+    .eq("cast_name", params.castName);
+
+  if (error) {
+    if (isMissingTableError(error)) return [];
+    throw new Error(error.message);
+  }
+
+  return ((data as GachaSerialRow[] | null) ?? []).map((row) => mapFulfillmentRow({
+    ...row,
+    cast_id: row.cast_id ?? params.castId,
+    dm_thread_id: row.dm_thread_id ?? null,
+    fulfillment_status: row.fulfillment_status ?? null,
+  }));
 }
 
 export async function listIssuedGachaSerialsForUser(

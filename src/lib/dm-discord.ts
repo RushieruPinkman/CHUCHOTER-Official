@@ -71,7 +71,7 @@ export async function notifyDiscordGachaPrizePending(params: {
   const assetLabel = params.reason === "sign_card_missing" ? "サインカード" : "シチュエーションボイス";
   const description = [
     `★${params.rarity}「${params.prizeTitle}」の景品受け取りで、${params.castName} さんの${assetLabel}が未登録のため待機メッセージを自動送信しました。`,
-    "住民管理で景品を登録し、DMから手動でお届けください。",
+    "住民管理で景品を登録すると、待機中の会員へ自動でDMお届けします。",
   ].join("\n");
 
   await postDiscordWebhook(webhookUrl, {

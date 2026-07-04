@@ -11,6 +11,9 @@ create table if not exists public.gacha_serials (
   prize_title text not null,
   prize_subtitle text,
   cast_name text,
+  cast_id text,
+  dm_thread_id text,
+  fulfillment_status text check (fulfillment_status is null or fulfillment_status in ('pending', 'fulfilled')),
   used_at timestamptz,
   created_at timestamptz not null default now()
 );
@@ -18,6 +21,9 @@ create table if not exists public.gacha_serials (
 create index if not exists gacha_serials_user_key_idx on public.gacha_serials (user_key);
 create index if not exists gacha_serials_status_idx on public.gacha_serials (status);
 create index if not exists gacha_serials_won_at_idx on public.gacha_serials (won_at desc);
+create index if not exists gacha_serials_pending_fulfillment_idx
+  on public.gacha_serials (cast_id, rarity, fulfillment_status)
+  where fulfillment_status = 'pending';
 
 alter table public.gacha_serials enable row level security;
 

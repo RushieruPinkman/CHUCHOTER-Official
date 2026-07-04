@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
+import { fulfillPendingGachaPrizesForCast } from "@/lib/gacha-prize-fulfillment";
 import { redistributeDeletedCastForAllUsers } from "@/lib/cast-collection-redistribution-server";
 import { cleanupDeletedCastAssets, cleanupReplacedCastAssets } from "@/lib/cast-storage";
 import { getAdminPassword, getAllCasts, saveCasts } from "@/lib/data";
@@ -155,6 +156,12 @@ export async function PUT(request: NextRequest) {
     }
 
     revalidateSiteContent();
+
+    try {
+      await fulfillPendingGachaPrizesForCast(casts[index]);
+    } catch (error) {
+      console.error("[casts] gacha prize auto-fulfillment failed:", error);
+    }
 
     return NextResponse.json(casts[index]);
 
