@@ -46,6 +46,35 @@ export async function issueGachaSerialFromApi(
   return body.record;
 }
 
+export function serialRecordToDrawResult(record: GachaSerialPublicRecord): GachaDrawResult {
+  const basePrize = getPrizeByRarity(record.rarity);
+
+  return {
+    rarity: record.rarity,
+    prize: {
+      ...basePrize,
+      title: record.prizeTitle || basePrize.title,
+      subtitle: record.prizeSubtitle || basePrize.subtitle,
+    },
+    wonAt: record.wonAt,
+    serialNumber: record.serial,
+    serialStatus: record.status,
+  };
+}
+
+export async function fetchPendingGachaPrizes(): Promise<GachaDrawResult[]> {
+  const response = await fetch("/api/gacha/serials?pending=1", {
+    credentials: "same-origin",
+    cache: "no-store",
+  });
+
+  if (response.status === 401) return [];
+  if (!response.ok) return [];
+
+  const body = (await response.json()) as { records?: GachaSerialPublicRecord[] };
+  return (body.records ?? []).map(serialRecordToDrawResult);
+}
+
 export async function fetchGachaSerialStatuses(
   serials: string[]
 ): Promise<Record<string, GachaSerialStatus>> {

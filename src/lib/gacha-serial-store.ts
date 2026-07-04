@@ -223,6 +223,27 @@ export async function markGachaSerialUsed(
   return { ok: true, record: mapRow(data as GachaSerialRow), alreadyUsed: false };
 }
 
+export async function listIssuedGachaSerialsForUser(
+  userKey: string
+): Promise<GachaSerialPublicRecord[]> {
+  const supabase = getSupabaseAdmin();
+  if (!supabase) return [];
+
+  const { data, error } = await supabase
+    .from("gacha_serials")
+    .select("*")
+    .eq("user_key", userKey)
+    .eq("status", "issued")
+    .order("won_at", { ascending: false });
+
+  if (error) {
+    if (isMissingTableError(error)) return [];
+    throw new Error(error.message);
+  }
+
+  return (data as GachaSerialRow[] | null)?.map(mapRow) ?? [];
+}
+
 export async function listRecentGachaSerials(limit = 20): Promise<GachaSerialPublicRecord[]> {
   const supabase = getSupabaseAdmin();
   if (!supabase) return [];

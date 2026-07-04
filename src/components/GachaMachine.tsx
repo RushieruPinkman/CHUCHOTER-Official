@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import GachaDrawHistory from "@/components/GachaDrawHistory";
+import GachaPrizeStoragePanel from "@/components/GachaPrizeStoragePanel";
 import GachaPrizeCard from "@/components/GachaPrizeCard";
 import GachaResultModal from "@/components/GachaResultModal";
 import GachaSharePanel from "@/components/GachaSharePanel";
@@ -16,7 +17,7 @@ import { useCollectionUserKey } from "@/hooks/useCollectionUserKey";
 import { useGachaUserDataSync } from "@/hooks/useGachaUserDataSync";
 import { useCpBalance } from "@/hooks/useCpBalance";
 import { CP_GACHA_SINGLE_COST, CP_GACHA_TEN_COST } from "@/lib/cp";
-import { GACHA_SERIAL_UNUSED_RETENTION_DAYS } from "@/lib/gacha-serial";
+import { GACHA_SERIAL_UNUSED_RETENTION_DAYS, shouldTrackGachaPrizeSerial } from "@/lib/gacha-serial";
 import { drawGacha } from "@/lib/cp-client";
 import {
   buildGachaPresentation,
@@ -45,6 +46,7 @@ import {
   isRemoteCollectionUserKey,
 } from "@/lib/gacha-collection-client";
 import { appendGachaDrawHistory, buildGachaHistoryKey } from "@/lib/gacha-history";
+import { GACHA_SERIAL_STATUS_UPDATED_EVENT } from "@/lib/gacha-serial-client";
 import { useGachaSerialStatusSync } from "@/hooks/useGachaSerialStatus";
 
 type GachaMachineMode = "production" | "dev";
@@ -138,6 +140,12 @@ export default function GachaMachine({ casts, mode = "production" }: GachaMachin
   const schedule = useCallback((fn: () => void, ms: number) => {
     const id = window.setTimeout(fn, ms);
     timersRef.current.push(id);
+  }, []);
+
+  const notifyPendingPrizeStorageRefresh = useCallback((draws: GachaDrawResult[]) => {
+    if (draws.some((draw) => shouldTrackGachaPrizeSerial(draw.rarity))) {
+      window.dispatchEvent(new CustomEvent(GACHA_SERIAL_STATUS_UPDATED_EVENT));
+    }
   }, []);
 
   useEffect(() => () => clearDrawTimers(), [clearDrawTimers]);
@@ -248,6 +256,7 @@ export default function GachaMachine({ casts, mode = "production" }: GachaMachin
       const response = await drawGacha({ payment: "free", count: 1 });
       const draw = response.draws[0]!;
       persistDrawResult(draw);
+      notifyPendingPrizeStorageRefresh(response.draws);
       playDrawResult(draw);
     } catch (error) {
       setDrawError(error instanceof Error ? error.message : "抽選処理に失敗しました。");
@@ -266,6 +275,7 @@ export default function GachaMachine({ casts, mode = "production" }: GachaMachin
       const response = await drawGacha({ payment: "cp", count: 1 });
       const draw = response.draws[0]!;
       persistDrawResult(draw);
+      notifyPendingPrizeStorageRefresh(response.draws);
       playDrawResult(draw);
     } catch (error) {
       setDrawError(error instanceof Error ? error.message : "抽選処理に失敗しました。");
@@ -314,6 +324,7 @@ export default function GachaMachine({ casts, mode = "production" }: GachaMachin
       for (const draw of response.draws) {
         persistDrawResult(draw);
       }
+      notifyPendingPrizeStorageRefresh(response.draws);
 
       const showcaseDraw = pickTenDrawPresentationDraw(response.draws);
       setTenDrawShowcase(true);
@@ -621,6 +632,17 @@ export default function GachaMachine({ casts, mode = "production" }: GachaMachin
           </div>
 
         {!isDevMode && (
+          <ScrollReveal delay={0.04} className="mx-auto mt-10 max-w-xl">
+            <GachaPrizeStoragePanel
+              userKey={collectionUserKey}
+              authReady={authReady}
+              prizeCasts={prizeCasts}
+              loginNextPath={loginNextPath}
+            />
+          </ScrollReveal>
+        )}
+
+        {!isDevMode && (
           <ScrollReveal delay={0.05} className="mx-auto mt-10 max-w-xl">
             <DailyTasksPanel showGachaHint={false} />
           </ScrollReveal>
@@ -640,18 +662,17 @@ export default function GachaMachine({ casts, mode = "production" }: GachaMachin
             <p>★1はランダムで住人が現れます。</p>
             <p>★2〜★3の景品は当選後にサイトからダウンロードできます。</p>
             <p>
-              ★4は
+              ★4以上の景品は景品保管庫に保存され、
               <Link href="/dm" className="link-gold text-gold">
                 運営DM
               </Link>
-              に当選内容と希望のキャスト名をお送りください。
+              で使用するまで保管されます。
             </p>
             <p>
-              ★5・★6は
-              <Link href="/dm" className="link-gold text-gold">
-                運営DM
-              </Link>
-              に当選内容・シリアルNo.をお送りください（★5は希望のキャスト名も）。
+              ★4は運営DMで当選内容と希望のキャスト名をお送りください。
+            </p>
+            <p>
+              ★5・★6は運営DMで当選内容・シリアルNo.をお送りください（★5は希望のキャスト名も）。
             </p>
             <p className="text-[10px] text-cream-faint/80">
               シリアルNo.は★5以上の景品にのみ発行されます。未使用のシリアルNo.は発行から

@@ -2,7 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { storageErrorResponse } from "@/lib/api-error";
 import { buildAuthCollectionUserKey } from "@/lib/gacha-collection";
 import { shouldTrackGachaPrizeSerial } from "@/lib/gacha-serial";
-import { getGachaSerialsForUser, issueGachaSerial } from "@/lib/gacha-serial-store";
+import {
+  getGachaSerialsForUser,
+  issueGachaSerial,
+  listIssuedGachaSerialsForUser,
+} from "@/lib/gacha-serial-store";
 import { createClient } from "@/lib/supabase/server";
 import { isUserAuthEnabledOnServer } from "@/lib/supabase/config";
 
@@ -73,6 +77,14 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "ログインが必要です。" }, { status: 401 });
     }
 
+    const userKey = buildAuthCollectionUserKey(user.id);
+    const pending = request.nextUrl.searchParams.get("pending") === "1";
+
+    if (pending) {
+      const records = await listIssuedGachaSerialsForUser(userKey);
+      return NextResponse.json({ records });
+    }
+
     const serialsParam = request.nextUrl.searchParams.get("serials") ?? "";
     const serials = serialsParam
       .split(",")
@@ -83,7 +95,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ records: [] });
     }
 
-    const records = await getGachaSerialsForUser(serials, buildAuthCollectionUserKey(user.id));
+    const records = await getGachaSerialsForUser(serials, userKey);
     return NextResponse.json({ records });
   } catch (error) {
     return storageErrorResponse(error, "シリアルNo.の取得に失敗しました");
