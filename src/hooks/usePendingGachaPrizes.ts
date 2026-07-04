@@ -1,7 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { GACHA_HISTORY_UPDATED_EVENT } from "@/lib/gacha-history";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { GachaDrawResult } from "@/lib/gacha";
 import {
   ensureUserApiSession,
@@ -12,19 +11,38 @@ import {
   GACHA_SERIAL_STATUS_UPDATED_EVENT,
 } from "@/lib/gacha-serial-client";
 
+function pendingPrizesEqual(left: GachaDrawResult[], right: GachaDrawResult[]): boolean {
+  if (left.length !== right.length) return false;
+  return left.every((prize, index) => {
+    const other = right[index];
+    return (
+      prize.serialNumber === other.serialNumber &&
+      prize.serialStatus === other.serialStatus &&
+      prize.wonAt === other.wonAt &&
+      prize.rarity === other.rarity
+    );
+  });
+}
+
 export function usePendingGachaPrizes(userKey: string | null, authReady = true) {
   const [prizes, setPrizes] = useState<GachaDrawResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [hydrated, setHydrated] = useState(false);
+  const initialLoadDoneRef = useRef(false);
 
   const refresh = useCallback(async () => {
     if (!authReady || !userKey || !isRemoteCollectionUserKey(userKey)) {
       setPrizes([]);
       setHydrated(true);
+      initialLoadDoneRef.current = true;
       return;
     }
 
-    setLoading(true);
+    const isInitialLoad = !initialLoadDoneRef.current;
+    if (isInitialLoad) {
+      setLoading(true);
+    }
+
     try {
       const hasSession = await ensureUserApiSession();
       if (!hasSession) {
@@ -33,14 +51,20 @@ export function usePendingGachaPrizes(userKey: string | null, authReady = true) 
       }
 
       const next = await fetchPendingGachaPrizes();
-      setPrizes(next);
+      setPrizes((current) => (pendingPrizesEqual(current, next) ? current : next));
     } finally {
-      setLoading(false);
+      if (isInitialLoad) {
+        setLoading(false);
+      }
+      initialLoadDoneRef.current = true;
       setHydrated(true);
     }
   }, [authReady, userKey]);
 
   useEffect(() => {
+    initialLoadDoneRef.current = false;
+    setHydrated(false);
+    setLoading(false);
     void refresh();
   }, [refresh]);
 
@@ -50,10 +74,8 @@ export function usePendingGachaPrizes(userKey: string | null, authReady = true) 
     };
 
     window.addEventListener(GACHA_SERIAL_STATUS_UPDATED_EVENT, onUpdated);
-    window.addEventListener(GACHA_HISTORY_UPDATED_EVENT, onUpdated);
     return () => {
       window.removeEventListener(GACHA_SERIAL_STATUS_UPDATED_EVENT, onUpdated);
-      window.removeEventListener(GACHA_HISTORY_UPDATED_EVENT, onUpdated);
     };
   }, [refresh]);
 

@@ -31,7 +31,11 @@ export function cacheGachaDrawHistoryLocal(
   records: GachaDrawHistoryRecord[]
 ): void {
   if (typeof window === "undefined" || !historyKey) return;
-  window.localStorage.setItem(historyKey, JSON.stringify(records));
+
+  const serialized = JSON.stringify(records);
+  if (window.localStorage.getItem(historyKey) === serialized) return;
+
+  window.localStorage.setItem(historyKey, serialized);
   window.dispatchEvent(
     new CustomEvent(GACHA_HISTORY_UPDATED_EVENT, { detail: { historyKey } })
   );

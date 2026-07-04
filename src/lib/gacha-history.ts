@@ -164,6 +164,7 @@ export function updateGachaDrawHistorySerialStatus(
 
   const nextRecords = records.map((record) => {
     if (record.result.serialNumber?.trim() !== normalized) return record;
+    if (record.result.serialStatus === serialStatus) return record;
     changed = true;
     return {
       ...record,
