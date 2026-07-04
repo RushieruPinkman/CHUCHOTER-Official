@@ -4050,6 +4050,7 @@ html.theme-transition *::after {
 }
 
 .dm-panel__notice {
+  flex-shrink: 0;
   margin-bottom: 0.75rem;
   border: 1px solid var(--color-border);
   background: color-mix(in srgb, var(--theme-deep) 65%, transparent);
@@ -4091,6 +4092,8 @@ html.theme-transition *::after {
 }
 
 .dm-panel__chat {
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
   border: 1px solid var(--color-border);
   border-radius: 1rem;
@@ -4099,6 +4102,7 @@ html.theme-transition *::after {
 
 .dm-panel__chat-header {
   display: flex;
+  flex-shrink: 0;
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
@@ -4171,7 +4175,17 @@ html.theme-transition *::after {
 }
 
 .dm-panel--user .dm-panel__chat {
-  min-height: min(68dvh, 36rem);
+  flex: 1;
+  min-height: 0;
+}
+
+.dm-panel--user .dm-panel__messages--user {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
 }
 
 .dm-panel__messages {
@@ -4458,6 +4472,7 @@ html.theme-transition *::after {
   .dm-panel--user .dm-panel__chat {
     flex: 1;
     min-height: 0;
+    max-height: none;
     border-radius: 0;
     border-inline: none;
   }
@@ -4499,6 +4514,7 @@ html.theme-transition *::after {
 
   .dm-panel--user .dm-panel__chat {
     min-height: min(72dvh, 40rem);
+    max-height: min(72dvh, 40rem);
   }
 }
 

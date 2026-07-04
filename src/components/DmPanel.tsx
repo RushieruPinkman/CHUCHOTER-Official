@@ -202,7 +202,7 @@ export default function DmPanel({ loginNextPath = "/dm" }: DmPanelProps) {
       </details>
 
       <div className="dm-panel__chat flex min-h-0 flex-1 flex-col overflow-hidden">
-        <header className="dm-panel__chat-header">
+        <header className="dm-panel__chat-header shrink-0">
           <div className="min-w-0">
             <p className="dm-panel__chat-label">Contact</p>
             <h2 className="dm-panel__chat-title">運営DM</h2>
