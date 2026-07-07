@@ -2,6 +2,7 @@ import "server-only";
 
 import { notifyDmReplyPush } from "@/lib/push-send";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
+import { DM_INACTIVITY_DAYS } from "@/lib/dm";
 import type {
   DmAttachmentKind,
   DmAttachmentPayload,
@@ -21,7 +22,7 @@ import {
 } from "@/lib/dm-attachments";
 import { isSupabaseConnectionError } from "@/lib/supabase-errors";
 
-const DM_INACTIVITY_MS = 7 * 24 * 60 * 60 * 1000;
+const DM_INACTIVITY_MS = DM_INACTIVITY_DAYS * 24 * 60 * 60 * 1000;
 const MESSAGE_MAX_LENGTH = 2000;
 const PREVIEW_MAX_LENGTH = 120;
 
