@@ -1,49 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { useCollectionUserKey } from "@/hooks/useCollectionUserKey";
-import { DM_UPDATED_EVENT, fetchDmUnreadSummary } from "@/lib/dm-client";
+import { useNavBadges } from "@/components/NavBadgesProvider";
 import type { DmUnreadSummary } from "@/lib/dm";
 
-const EMPTY_SUMMARY: DmUnreadSummary = { unreadCount: 0, hasThread: false };
-
+/**
+ * Header DM unread badge — sourced from the shared NavBadgesProvider poll.
+ * Multiple nav mounts (desktop + mobile) read the same context; no duplicate fetches.
+ */
 export function useDmUnreadSummary(): DmUnreadSummary & { ready: boolean } {
-  const { userKey, ready: authReady } = useCollectionUserKey();
-  const [summary, setSummary] = useState<DmUnreadSummary>(EMPTY_SUMMARY);
-  const [ready, setReady] = useState(false);
-
-  const refresh = useCallback(async () => {
-    if (!authReady) return;
-    if (!userKey) {
-      setSummary(EMPTY_SUMMARY);
-      setReady(true);
-      return;
-    }
-
-    const next = await fetchDmUnreadSummary(userKey);
-    setSummary(next);
-    setReady(true);
-  }, [authReady, userKey]);
-
-  useEffect(() => {
-    void refresh();
-  }, [refresh]);
-
-  useEffect(() => {
-    const onUpdated = () => {
-      void refresh();
-    };
-
-    window.addEventListener(DM_UPDATED_EVENT, onUpdated);
-    const interval = window.setInterval(() => {
-      void refresh();
-    }, 30000);
-
-    return () => {
-      window.removeEventListener(DM_UPDATED_EVENT, onUpdated);
-      window.clearInterval(interval);
-    };
-  }, [refresh]);
-
-  return { ...summary, ready };
+  const { dm, ready } = useNavBadges();
+  return { ...dm, ready };
 }
