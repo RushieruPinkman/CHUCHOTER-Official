@@ -13,6 +13,8 @@ export const metadata: Metadata = buildPageMetadata({
   follow: false,
 });
 
+export const revalidate = 86400;
+
 export default function DmPage() {
   return (
     <div className="dm-page">

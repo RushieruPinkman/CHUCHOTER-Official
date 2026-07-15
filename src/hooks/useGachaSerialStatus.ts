@@ -34,6 +34,7 @@ export function useGachaSerialStatusSync(
 ): GachaDrawResult | null {
   const [syncedDraw, setSyncedDraw] = useState(draw);
   const drawSerial = draw?.serialNumber?.trim() ?? "";
+  const terminal = syncedDraw?.serialStatus === "used";
 
   useEffect(() => {
     setSyncedDraw(draw);
@@ -63,6 +64,8 @@ export function useGachaSerialStatusSync(
   }, [refreshStatus]);
 
   useEffect(() => {
+    if (!drawSerial || terminal) return;
+
     const onUpdated = () => {
       void refreshStatus();
     };
@@ -76,7 +79,7 @@ export function useGachaSerialStatusSync(
       window.removeEventListener(GACHA_SERIAL_STATUS_UPDATED_EVENT, onUpdated);
       stopPoll();
     };
-  }, [refreshStatus]);
+  }, [drawSerial, refreshStatus, terminal]);
 
   return syncedDraw;
 }

@@ -72,7 +72,7 @@ export default function DmPanel({ loginNextPath = "/dm" }: DmPanelProps) {
     setError(null);
 
     try {
-      const data = await fetchUserDmThread(userKey);
+      const data = await fetchUserDmThread(userKey, { poll: silent });
       setThread(data.thread);
       setMessages(data.messages);
     } catch (fetchError) {

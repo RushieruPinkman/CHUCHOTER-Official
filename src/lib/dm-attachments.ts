@@ -2,7 +2,6 @@ import "server-only";
 
 import { promises as fs } from "fs";
 import path from "path";
-import sharp from "sharp";
 import { getMissingSupabaseEnvVars, getSupabaseAdmin } from "@/lib/supabase-admin";
 import type { DmAttachmentKind, DmMessageAttachment } from "@/lib/dm";
 
@@ -94,6 +93,8 @@ async function processImageBuffer(
     return { buffer, mime, ext: "gif" };
   }
 
+  // Dynamic import keeps sharp out of cold-start RAM for download/redirect routes.
+  const { default: sharp } = await import("sharp");
   const processed = await sharp(buffer)
     .rotate()
     .resize(2048, 2048, { fit: "inside", withoutEnlargement: true })

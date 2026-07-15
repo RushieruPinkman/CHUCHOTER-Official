@@ -14,6 +14,8 @@ export const metadata: Metadata = buildPageMetadata({
   path: "/bonus",
 });
 
+export const revalidate = 86400;
+
 export default function BonusPage() {
   if (isAuthDevEnabled() && !isUserAuthEnabledOnServer()) {
     redirect("/bonus/dev");

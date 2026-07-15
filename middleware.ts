@@ -6,15 +6,9 @@ export async function middleware(request: NextRequest) {
 }
 
 /**
- * Opt-in matcher: only routes that need Supabase session refresh for SSR.
- *
- * Public pages (/, /casts, /schedule, /system, /media, …) skip middleware
- * entirely — this is the main lever for Edge Middleware / Edge Request volume.
- * API routes authenticate themselves and are intentionally excluded.
- *
- * Logged-in browsing of public pages still works: the browser Supabase client
- * and API Route Handlers refresh cookies when needed. No Supabase table
- * reads/writes happen here.
+ * Session refresh only where SSR auth cookies matter.
+ * Member feature pages (/gacha, /bonus, /collection, /dm) authenticate via
+ * client + API routes — keeping them out of the matcher cuts Edge Requests.
  */
 export const config = {
   matcher: [
@@ -24,14 +18,6 @@ export const config = {
     "/register",
     "/profile",
     "/profile/:path*",
-    "/dm",
-    "/dm/:path*",
-    "/bonus",
-    "/bonus/:path*",
-    "/gacha",
-    "/gacha/:path*",
-    "/collection",
-    "/collection/:path*",
     "/admin",
     "/admin/:path*",
   ],

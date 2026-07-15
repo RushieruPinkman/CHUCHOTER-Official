@@ -83,9 +83,10 @@ export default function DmAdmin({ authJsonHeaders, remoteStorage }: DmAdminProps
   }, [selectedId]);
 
   const loadThread = useCallback(
-    async (threadId: string) => {
+    async (threadId: string, options?: { poll?: boolean }) => {
       const requestId = ++loadThreadRequestRef.current;
-      const res = await fetch(`/api/admin/dm?threadId=${encodeURIComponent(threadId)}`, {
+      const poll = options?.poll ? "&poll=1" : "";
+      const res = await fetch(`/api/admin/dm?threadId=${encodeURIComponent(threadId)}${poll}`, {
         headers: authJsonHeaders(),
       });
 
@@ -103,9 +104,7 @@ export default function DmAdmin({ authJsonHeaders, remoteStorage }: DmAdminProps
       setSelectedId(threadId);
       selectedIdRef.current = threadId;
       setThreads((current) =>
-        current.map((thread) =>
-          thread.id === threadId ? { ...thread, adminUnreadCount: 0 } : thread
-        )
+        current.map((thread) => (thread.id === threadId ? body.thread : thread))
       );
     },
     [authJsonHeaders]
@@ -126,7 +125,7 @@ export default function DmAdmin({ authJsonHeaders, remoteStorage }: DmAdminProps
         if (activeId) {
           const stillExists = nextThreads.some((thread) => thread.id === activeId);
           if (stillExists) {
-            await loadThread(activeId);
+            await loadThread(activeId, { poll: silent });
           } else if (selectedIdRef.current === activeId) {
             setSelectedId(null);
             selectedIdRef.current = null;
