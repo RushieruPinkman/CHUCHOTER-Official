@@ -15,7 +15,7 @@ import { buildHomePageJsonLd, buildPageMetadata } from "@/lib/seo";
 import Link from "next/link";
 import type { Metadata } from "next";
 
-export const revalidate = 3600;
+export const revalidate = 86400;
 
 export const metadata: Metadata = buildPageMetadata({
   description: SITE.description,

@@ -9,7 +9,8 @@ import type { DmAttachmentKind, DmMessageAttachment } from "@/lib/dm";
 export const DM_ATTACHMENTS_BUCKET = "dm-attachments";
 export const DM_IMAGE_MAX_BYTES = 10 * 1024 * 1024;
 export const DM_AUDIO_MAX_BYTES = 10 * 1024 * 1024;
-const SIGNED_URL_TTL_SECONDS = 60 * 60;
+const SIGNED_URL_TTL_SECONDS = 60 * 60 * 2;
+
 
 const IMAGE_MIME_TO_EXT: Record<string, string> = {
   "image/jpeg": "jpg",
@@ -195,13 +196,18 @@ export async function uploadDmAttachment(params: {
   };
 }
 
-export async function resolveDmAttachmentAccessUrl(storagePath: string): Promise<string | null> {
+export async function resolveDmAttachmentAccessUrl(
+  storagePath: string,
+  options: { download?: string | boolean } = {}
+): Promise<string | null> {
   const supabase = getSupabaseAdmin();
 
   if (supabase) {
     const { data, error } = await supabase.storage
       .from(DM_ATTACHMENTS_BUCKET)
-      .createSignedUrl(storagePath, SIGNED_URL_TTL_SECONDS);
+      .createSignedUrl(storagePath, SIGNED_URL_TTL_SECONDS, {
+        download: options.download,
+      });
 
     if (error || !data?.signedUrl) {
       console.error("[dm-attachments] signed url failed:", error?.message);
@@ -256,13 +262,23 @@ export async function resolveDmMessageAttachment(
   const url = await resolveDmAttachmentAccessUrl(row.attachment_path);
   if (!url) return null;
 
+  let downloadUrl = `${downloadBasePath}/${encodeURIComponent(messageId)}`;
+  if (url.startsWith("http")) {
+    downloadUrl =
+      (await resolveDmAttachmentAccessUrl(row.attachment_path, {
+        download: row.attachment_name,
+      })) ?? url;
+  } else if (url.startsWith("/")) {
+    downloadUrl = url;
+  }
+
   return {
     type: row.attachment_type,
     path: row.attachment_path,
     name: row.attachment_name,
     mime: row.attachment_mime,
     url,
-    downloadUrl: `${downloadBasePath}/${encodeURIComponent(messageId)}`,
+    downloadUrl,
   };
 }
 

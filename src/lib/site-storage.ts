@@ -5,7 +5,7 @@ import { unstable_cache } from "next/cache";
 import { getMissingSupabaseEnvVars, getSupabaseAdmin, isRemoteStorageEnabled } from "@/lib/supabase-admin";
 
 export const SITE_DATA_CACHE_TAG = "site-data";
-const SITE_DATA_REVALIDATE_SECONDS = 3600;
+const SITE_DATA_REVALIDATE_SECONDS = 86400;
 
 const DATA_DIR = path.join(process.cwd(), "data");
 

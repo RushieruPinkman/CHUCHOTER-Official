@@ -7,13 +7,44 @@ interface DmMessageContentProps {
   downloadHeaders?: HeadersInit;
 }
 
+function isDirectStorageUrl(url: string): boolean {
+  return /^https?:\/\//i.test(url) || url.startsWith("/dm-attachments/");
+}
+
 async function downloadAttachment(url: string, filename: string, headers?: HeadersInit) {
+  // Signed Supabase URLs / local static paths: let the browser fetch storage directly
+  // so file bytes never pass through Vercel Origin.
+  if (isDirectStorageUrl(url) && !headers) {
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = filename;
+    anchor.rel = "noopener";
+    anchor.target = "_blank";
+    document.body.appendChild(anchor);
+    anchor.click();
+    document.body.removeChild(anchor);
+    return;
+  }
+
   const response = await fetch(url, {
     headers,
     credentials: "same-origin",
   });
   if (!response.ok) {
     throw new Error("ダウンロードに失敗しました");
+  }
+
+  // Follow redirects to signed storage URLs without buffering through our origin path.
+  if (response.redirected && isDirectStorageUrl(response.url)) {
+    const anchor = document.createElement("a");
+    anchor.href = response.url;
+    anchor.download = filename;
+    anchor.rel = "noopener";
+    anchor.target = "_blank";
+    document.body.appendChild(anchor);
+    anchor.click();
+    document.body.removeChild(anchor);
+    return;
   }
 
   const blob = await response.blob();
@@ -32,10 +63,21 @@ export default function DmMessageContent({ message, downloadHeaders }: DmMessage
     event.preventDefault();
     if (!attachment) return;
 
+    const targetUrl =
+      isDirectStorageUrl(attachment.downloadUrl) || isDirectStorageUrl(attachment.url)
+        ? isDirectStorageUrl(attachment.downloadUrl)
+          ? attachment.downloadUrl
+          : attachment.url
+        : attachment.downloadUrl;
+
     try {
-      await downloadAttachment(attachment.downloadUrl, attachment.name, downloadHeaders);
+      await downloadAttachment(
+        targetUrl,
+        attachment.name,
+        isDirectStorageUrl(targetUrl) ? undefined : downloadHeaders
+      );
     } catch {
-      window.open(attachment.downloadUrl, "_blank", "noopener,noreferrer");
+      window.open(targetUrl, "_blank", "noopener,noreferrer");
     }
   };
 

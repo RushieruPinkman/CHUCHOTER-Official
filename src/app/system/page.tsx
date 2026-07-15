@@ -10,7 +10,7 @@ import FaqSection from "@/components/FaqSection";
 import SeoJsonLd from "@/components/SeoJsonLd";
 import { buildFaqJsonLd, buildPageMetadata, buildPublicPageBreadcrumb } from "@/lib/seo";
 
-export const revalidate = 3600;
+export const revalidate = 86400;
 
 export const metadata: Metadata = buildPageMetadata({
   title: "ご案内",

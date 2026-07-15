@@ -13,6 +13,8 @@ export const metadata: Metadata = buildPageMetadata({
   path: "/media",
 });
 
+export const revalidate = 86400;
+
 const POSTER_SRC = "/images/lounge/poster.png";
 
 export default function MediaPage() {

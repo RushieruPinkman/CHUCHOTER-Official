@@ -6,7 +6,7 @@ import PageHero from "@/components/PageHero";
 import { getCasts } from "@/lib/data";
 import SeoJsonLd from "@/components/SeoJsonLd";
 import { buildCastListJsonLd, buildPageMetadata, buildPublicPageBreadcrumb } from "@/lib/seo";
-export const revalidate = 3600;
+export const revalidate = 86400;
 
 export const metadata: Metadata = buildPageMetadata({
   title: "住人紹介",
