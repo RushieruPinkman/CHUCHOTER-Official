@@ -29,6 +29,7 @@ export default function Footer() {
           <div className="flex flex-col items-center border-b border-[var(--color-border)] pb-6 text-center lg:items-start lg:border-b-0 lg:pb-0 lg:text-left">
             <Link
               href="/"
+              prefetch={false}
               aria-label="CHUCHOTER 公式サイト トップページへ"
               title="CHUCHOTER 公式サイト"
               className="inline-block opacity-90 transition-opacity hover:opacity-100"
@@ -41,7 +42,7 @@ export default function Footer() {
             >
               {SITE.tagline}
             </p>
-            <Link href="/" className="footer-link mt-2 inline-block text-[12px] tracking-wide">
+            <Link href="/" prefetch={false} className="footer-link mt-2 inline-block text-[12px] tracking-wide">
               公式サイト（エントランス）
             </Link>
           </div>
@@ -51,7 +52,7 @@ export default function Footer() {
               <ul className="grid grid-cols-2 gap-x-4 gap-y-2 sm:block sm:space-y-2.5">
                 {NAV_ITEMS.map((item) => (
                   <li key={item.href}>
-                    <Link href={item.href} className="footer-link">
+                    <Link href={item.href} prefetch={false} className="footer-link">
                       {item.labelJa}
                     </Link>
                   </li>
@@ -68,7 +69,7 @@ export default function Footer() {
                   2部 {SITE.part2Time}〜
                 </li>
                 <li>
-                  <Link href="/schedule" className="footer-link">
+                  <Link href="/schedule" prefetch={false} className="footer-link">
                     予定表 →
                   </Link>
                 </li>
@@ -108,10 +109,10 @@ export default function Footer() {
                   </a>
                 </li>
                 <li className="space-y-2">
-                  <Link href="/system#request-invite" className="footer-link block leading-snug">
+                  <Link href="/system#request-invite" prefetch={false} className="footer-link block leading-snug">
                     Request Invite →
                   </Link>
-                  <Link href="/media" className="footer-link block leading-snug">
+                  <Link href="/media" prefetch={false} className="footer-link block leading-snug">
                     キャスト・スタッフ募集 →
                   </Link>
                 </li>

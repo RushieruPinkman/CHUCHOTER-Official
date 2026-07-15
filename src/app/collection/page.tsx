@@ -6,7 +6,7 @@ import { toResidentCastRefs } from "@/lib/gacha-collection-exchange";
 import SeoJsonLd from "@/components/SeoJsonLd";
 import { buildPageMetadata, buildPublicPageBreadcrumb } from "@/lib/seo";
 
-export const revalidate = 300;
+export const revalidate = 3600;
 
 export const metadata: Metadata = buildPageMetadata({
   title: "コレクション",

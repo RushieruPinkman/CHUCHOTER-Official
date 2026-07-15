@@ -15,7 +15,7 @@ import { buildHomePageJsonLd, buildPageMetadata } from "@/lib/seo";
 import Link from "next/link";
 import type { Metadata } from "next";
 
-export const revalidate = 300;
+export const revalidate = 3600;
 
 export const metadata: Metadata = buildPageMetadata({
   description: SITE.description,
@@ -146,7 +146,7 @@ export default async function HomePage() {
                 住人紹介
               </h2>
             </div>
-            <Link href="/casts" className="link-gold text-sm tracking-[0.15em] text-gold">
+            <Link href="/casts" prefetch={false} className="link-gold text-sm tracking-[0.15em] text-gold">
               View All →
             </Link>
           </ScrollReveal>
@@ -156,6 +156,7 @@ export default async function HomePage() {
               <ScrollReveal key={cast.id} delay={index * 0.08}>
                 <Link
                   href={`/casts/${cast.id}`}
+                  prefetch={false}
                   className="group panel panel-hover block overflow-hidden"
                 >
                   <div className="cast-card-media aspect-[3/4] shrink-0">

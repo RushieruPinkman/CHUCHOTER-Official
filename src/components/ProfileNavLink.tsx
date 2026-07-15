@@ -31,6 +31,7 @@ export default function ProfileNavLink({
     return (
       <Link
         href={href}
+        prefetch={false}
         className={`profile-nav-link profile-nav-link--icon-only ${
           active ? "profile-nav-link--active text-gold" : "text-cream-muted hover:text-gold"
         } ${className}`.trim()}
@@ -51,6 +52,7 @@ export default function ProfileNavLink({
   return (
     <Link
       href={href}
+      prefetch={false}
       className={`profile-nav-link group transition-colors duration-300 ${
         isStacked
           ? "profile-nav-link--stacked block py-5 text-center"

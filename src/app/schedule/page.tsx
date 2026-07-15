@@ -8,7 +8,7 @@ import { getGachaDayJst } from "@/lib/gacha-daily-limit";
 import SeoJsonLd from "@/components/SeoJsonLd";
 import { buildPageMetadata, buildPublicPageBreadcrumb } from "@/lib/seo";
 
-export const revalidate = 300;
+export const revalidate = 3600;
 
 export const metadata: Metadata = buildPageMetadata({
   title: "営業予定表",

@@ -6,12 +6,33 @@ export async function middleware(request: NextRequest) {
 }
 
 /**
- * Exclude static assets and all `/api/*` routes.
- * API handlers resolve auth themselves; running middleware+getUser on every
- * badge/poll request roughly doubles Observability Events for those paths.
+ * Opt-in matcher: only routes that need Supabase session refresh for SSR.
+ *
+ * Public pages (/, /casts, /schedule, /system, /media, …) skip middleware
+ * entirely — this is the main lever for Edge Middleware / Edge Request volume.
+ * API routes authenticate themselves and are intentionally excluded.
+ *
+ * Logged-in browsing of public pages still works: the browser Supabase client
+ * and API Route Handlers refresh cookies when needed. No Supabase table
+ * reads/writes happen here.
  */
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|api/|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
+    "/auth/:path*",
+    "/login",
+    "/login/:path*",
+    "/register",
+    "/profile",
+    "/profile/:path*",
+    "/dm",
+    "/dm/:path*",
+    "/bonus",
+    "/bonus/:path*",
+    "/gacha",
+    "/gacha/:path*",
+    "/collection",
+    "/collection/:path*",
+    "/admin",
+    "/admin/:path*",
   ],
 };

@@ -66,6 +66,7 @@ export default function Header() {
           <div className="header-bar__mobile lg:hidden">
             <Link
               href="/"
+              prefetch={false}
               className="header-bar__logo focus-visible:outline-offset-4"
               aria-label="CHUCHOTER 公式サイト トップページへ"
             >
@@ -104,6 +105,7 @@ export default function Header() {
             <div className="header-bar__stack">
               <Link
                 href="/"
+                prefetch={false}
                 className="header-bar__logo focus-visible:outline-offset-4"
                 aria-label="CHUCHOTER 公式サイト トップページへ"
               >
@@ -153,6 +155,7 @@ export default function Header() {
                     >
                       <Link
                         href={item.href}
+                        prefetch={false}
                         className={`nav-link group px-2.5 py-1.5 text-center transition-colors duration-300 sm:px-3.5 sm:py-2 ${
                           isActive ? "text-gold" : "text-cream-muted hover:text-gold"
                         }`}
@@ -228,6 +231,7 @@ export default function Header() {
                   ) : (
                     <Link
                       href={item.href}
+                      prefetch={false}
                       onClick={() => setMenuOpen(false)}
                       className={`mobile-nav-panel__link ${isActive ? "mobile-nav-panel__link--active" : ""}`}
                       aria-current={isActive ? "page" : undefined}
