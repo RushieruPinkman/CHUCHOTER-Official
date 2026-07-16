@@ -10,6 +10,9 @@ import {
 import { syncGachaDrawHistoryFromServer } from "@/lib/gacha-history-client";
 import { syncCollectionExchangeHistoryFromServer } from "@/lib/gacha-exchange-history-client";
 
+/** Avoid 3 API calls on every momentary focus blip. */
+const FOCUS_RESYNC_MIN_GAP_MS = 5 * 60_000;
+
 interface UseGachaUserDataSyncOptions {
   /** 認証状態の解決完了後に true */
   authReady?: boolean;
@@ -27,6 +30,7 @@ export function useGachaUserDataSync(
   const [syncing, setSyncing] = useState(false);
   const [synced, setSynced] = useState(false);
   const generationRef = useRef(0);
+  const lastSyncAtRef = useRef(0);
 
   const sync = useCallback(async () => {
     if (!authReady || !userKey || !isRemoteCollectionUserKey(userKey)) {
@@ -50,6 +54,8 @@ export function useGachaUserDataSync(
           : Promise.resolve([]),
         syncCollectionExchangeHistoryFromServer(userKey),
       ]);
+
+      lastSyncAtRef.current = Date.now();
 
       if (generation === generationRef.current) {
         setSynced(true);
@@ -76,11 +82,17 @@ export function useGachaUserDataSync(
     }
 
     const onFocus = () => {
+      if (document.visibilityState !== "visible") return;
+      if (Date.now() - lastSyncAtRef.current < FOCUS_RESYNC_MIN_GAP_MS) return;
       void sync();
     };
 
     window.addEventListener("focus", onFocus);
-    return () => window.removeEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onFocus);
+    return () => {
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onFocus);
+    };
   }, [authReady, resyncOnFocus, sync, userKey]);
 
   return { syncing, synced, resync: sync };

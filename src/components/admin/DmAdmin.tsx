@@ -19,6 +19,7 @@ import {
   buildDmMessageScrollKey,
   useDmMessageListScroll,
 } from "@/hooks/useDmMessageListScroll";
+import { PANEL_POLL_MS, startVisibilityAwarePoll } from "@/lib/visibility-poll";
 
 const inputClass =
   "w-full border border-[var(--color-border)] bg-deep px-3 py-2 text-sm text-cream focus:border-gold focus:outline-none";
@@ -83,9 +84,10 @@ export default function DmAdmin({ authJsonHeaders, remoteStorage }: DmAdminProps
   }, [selectedId]);
 
   const loadThread = useCallback(
-    async (threadId: string) => {
+    async (threadId: string, options?: { poll?: boolean }) => {
       const requestId = ++loadThreadRequestRef.current;
-      const res = await fetch(`/api/admin/dm?threadId=${encodeURIComponent(threadId)}`, {
+      const poll = options?.poll ? "&poll=1" : "";
+      const res = await fetch(`/api/admin/dm?threadId=${encodeURIComponent(threadId)}${poll}`, {
         headers: authJsonHeaders(),
       });
 
@@ -103,9 +105,7 @@ export default function DmAdmin({ authJsonHeaders, remoteStorage }: DmAdminProps
       setSelectedId(threadId);
       selectedIdRef.current = threadId;
       setThreads((current) =>
-        current.map((thread) =>
-          thread.id === threadId ? { ...thread, adminUnreadCount: 0 } : thread
-        )
+        current.map((thread) => (thread.id === threadId ? body.thread : thread))
       );
     },
     [authJsonHeaders]
@@ -126,7 +126,7 @@ export default function DmAdmin({ authJsonHeaders, remoteStorage }: DmAdminProps
         if (activeId) {
           const stillExists = nextThreads.some((thread) => thread.id === activeId);
           if (stillExists) {
-            await loadThread(activeId);
+            await loadThread(activeId, { poll: silent });
           } else if (selectedIdRef.current === activeId) {
             setSelectedId(null);
             selectedIdRef.current = null;
@@ -153,10 +153,10 @@ export default function DmAdmin({ authJsonHeaders, remoteStorage }: DmAdminProps
   }, [refreshAll]);
 
   useEffect(() => {
-    const interval = window.setInterval(() => {
+    const stopPoll = startVisibilityAwarePoll(() => {
       void refreshAll({ silent: true });
-    }, 30000);
-    return () => window.clearInterval(interval);
+    }, PANEL_POLL_MS);
+    return () => stopPoll();
   }, [refreshAll]);
 
   const handleSelectThread = (threadId: string) => {

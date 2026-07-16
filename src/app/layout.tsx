@@ -8,7 +8,7 @@ import { SITE } from "@/lib/site";
 import "./globals.css";
 
 /** 管理画面保存時は revalidateTag / revalidatePath で即時反映 */
-export const revalidate = 300;
+export const revalidate = 86400;
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE.url),

@@ -79,6 +79,7 @@ export default function CastsGrid({ casts }: { casts: Cast[] }) {
               <article key={cast.id} className="h-full min-w-0">
                 <Link
                   href={`/casts/${cast.id}`}
+                  prefetch={false}
                   className="group panel panel-hover flex h-full w-full flex-col overflow-hidden text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold"
                 >
                   <div className="cast-card-media aspect-[3/4] shrink-0">

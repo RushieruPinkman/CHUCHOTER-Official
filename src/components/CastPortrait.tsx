@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { shouldBypassVercelImageOptimizer } from "@/lib/media-cdn";
 
 type CastPortraitProps = {
   src: string;
@@ -23,6 +24,8 @@ export default function CastPortrait({
   sizes,
   className = "",
 }: CastPortraitProps) {
+  const unoptimized = shouldBypassVercelImageOptimizer(src);
+
   if (variant === "natural") {
     return (
       <Image
@@ -31,6 +34,7 @@ export default function CastPortrait({
         width={900}
         height={1200}
         priority={priority}
+        unoptimized={unoptimized}
         sizes={sizes ?? "(max-width: 768px) 100vw, 420px"}
         className={`block h-auto w-full ${className}`.trim()}
       />
@@ -43,6 +47,7 @@ export default function CastPortrait({
       alt={alt}
       fill
       priority={priority}
+      unoptimized={unoptimized}
       sizes={sizes ?? (variant === "cover" ? DEFAULT_COVER_SIZES : DEFAULT_CARD_SIZES)}
       className={`cast-card-media__image ${className}`.trim()}
     />

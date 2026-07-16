@@ -25,6 +25,7 @@ import {
   buildDmMessageScrollKey,
   useDmMessageListScroll,
 } from "@/hooks/useDmMessageListScroll";
+import { PANEL_POLL_MS, startVisibilityAwarePoll } from "@/lib/visibility-poll";
 
 interface DmPanelProps {
   loginNextPath?: string;
@@ -71,7 +72,7 @@ export default function DmPanel({ loginNextPath = "/dm" }: DmPanelProps) {
     setError(null);
 
     try {
-      const data = await fetchUserDmThread(userKey);
+      const data = await fetchUserDmThread(userKey, { poll: silent });
       setThread(data.thread);
       setMessages(data.messages);
     } catch (fetchError) {
@@ -96,13 +97,13 @@ export default function DmPanel({ loginNextPath = "/dm" }: DmPanelProps) {
     };
 
     window.addEventListener(DM_UPDATED_EVENT, onUpdated);
-    const interval = window.setInterval(() => {
+    const stopPoll = startVisibilityAwarePoll(() => {
       void refresh({ silent: true });
-    }, 30000);
+    }, PANEL_POLL_MS);
 
     return () => {
       window.removeEventListener(DM_UPDATED_EVENT, onUpdated);
-      window.clearInterval(interval);
+      stopPoll();
     };
   }, [refresh, userKey]);
 

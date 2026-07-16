@@ -5,8 +5,20 @@ export async function middleware(request: NextRequest) {
   return updateSession(request);
 }
 
+/**
+ * Session refresh only where SSR auth cookies matter.
+ * Member feature pages (/gacha, /bonus, /collection, /dm) authenticate via
+ * client + API routes — keeping them out of the matcher cuts Edge Requests.
+ */
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
+    "/auth/:path*",
+    "/login",
+    "/login/:path*",
+    "/register",
+    "/profile",
+    "/profile/:path*",
+    "/admin",
+    "/admin/:path*",
   ],
 };

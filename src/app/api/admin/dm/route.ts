@@ -33,13 +33,16 @@ export async function GET(request: NextRequest) {
       if (!detail) {
         return NextResponse.json({ error: "DM スレッドが見つかりません。" }, { status: 404 });
       }
-      await markThreadReadByAdmin(threadId);
-      detail.thread.adminUnreadCount = 0;
+      const silentPoll = request.nextUrl.searchParams.get("poll") === "1";
+      if (!silentPoll) {
+        await markThreadReadByAdmin(threadId);
+        detail.thread.adminUnreadCount = 0;
+      }
       return NextResponse.json(detail);
     }
 
     const threads = await listAdminDmThreads();
-    const unreadTotal = await getTotalAdminUnreadCount();
+    const unreadTotal = await getTotalAdminUnreadCount(threads);
     const settings = await getDmSettings();
 
     return NextResponse.json({ threads, unreadTotal, settings });

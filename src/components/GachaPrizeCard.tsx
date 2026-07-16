@@ -31,6 +31,7 @@ export default function GachaPrizeCard({
           src={cast.image}
           alt={cast.name}
           fill
+          unoptimized
           sizes="(max-width: 260px) 260px, 320px"
           className="gacha-prize-card__cast-image object-cover object-top"
           priority

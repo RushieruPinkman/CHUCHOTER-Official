@@ -209,8 +209,6 @@ export async function getUserDmThread(userKey: string): Promise<DmThreadSummary 
   if (!supabase) return null;
 
   try {
-    await cleanupInactiveDmThreads();
-
     const { data, error } = await supabase
       .from("dm_threads")
       .select("*")
@@ -569,8 +567,6 @@ export async function listAdminDmThreads(): Promise<DmThreadSummary[]> {
   const supabase = getSupabaseAdmin();
   if (!supabase) return [];
 
-  await cleanupInactiveDmThreads();
-
   const { data, error } = await supabase
     .from("dm_threads")
     .select("*")
@@ -589,8 +585,6 @@ export async function getAdminDmThreadDetail(threadId: string): Promise<DmThread
   const supabase = getSupabaseAdmin();
   if (!supabase) return null;
 
-  await cleanupInactiveDmThreads();
-
   const { data, error } = await supabase.from("dm_threads").select("*").eq("id", threadId).maybeSingle();
   if (error) {
     if (isMissingTableError(error)) return null;
@@ -605,7 +599,7 @@ export async function getAdminDmThreadDetail(threadId: string): Promise<DmThread
   };
 }
 
-export async function getTotalAdminUnreadCount(): Promise<number> {
-  const threads = await listAdminDmThreads();
-  return threads.reduce((sum, thread) => sum + thread.adminUnreadCount, 0);
+export async function getTotalAdminUnreadCount(threads?: DmThreadSummary[]): Promise<number> {
+  const list = threads ?? (await listAdminDmThreads());
+  return list.reduce((sum, thread) => sum + thread.adminUnreadCount, 0);
 }

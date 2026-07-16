@@ -28,7 +28,8 @@ export async function GET(request: NextRequest) {
     }
 
     const detail = await getUserDmThreadDetail(user.userKey);
-    if (detail) {
+    const silentPoll = request.nextUrl.searchParams.get("poll") === "1";
+    if (detail && !silentPoll) {
       await markThreadReadByUser(detail.thread.id, user.userKey);
       detail.thread.userUnreadCount = 0;
     }

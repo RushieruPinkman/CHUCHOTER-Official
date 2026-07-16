@@ -46,9 +46,11 @@ export async function fetchDmUnreadSummary(userKey: string | null): Promise<DmUn
 }
 
 export async function fetchUserDmThread(
-  userKey: string | null
+  userKey: string | null,
+  options: { poll?: boolean } = {}
 ): Promise<{ thread: DmThreadSummary | null; messages: DmMessage[] }> {
-  const response = await fetch("/api/dm", {
+  const url = options.poll ? "/api/dm?poll=1" : "/api/dm";
+  const response = await fetch(url, {
     headers: buildDmRequestHeaders(userKey),
   });
 

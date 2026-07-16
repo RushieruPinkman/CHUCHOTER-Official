@@ -21,6 +21,7 @@ export default function LoginNavLink({
   return (
     <Link
       href={href}
+      prefetch={false}
       className={`login-nav-link group transition-colors duration-300 ${
         isStacked ? "login-nav-link--stacked block py-5 text-center" : "inline-flex items-center gap-2.5 px-3 py-1.5"
       } ${active ? "login-nav-link--active text-gold" : "text-cream-muted hover:text-gold"} ${className}`.trim()}

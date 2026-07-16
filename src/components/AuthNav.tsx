@@ -46,7 +46,12 @@ export default function AuthNav({
   const showDmNotice = dmReady && dmUnreadCount > 0;
 
   const dmNoticeLink = showDmNotice ? (
-    <Link href="/dm" className="auth-dm-notice" aria-label={`運営から未読返信 ${dmUnreadCount} 件`}>
+    <Link
+      href="/dm"
+      prefetch={false}
+      className="auth-dm-notice"
+      aria-label={`運営から未読返信 ${dmUnreadCount} 件`}
+    >
       運営返信
       <span className="nav-count-badge">{dmUnreadCount > 99 ? "99+" : dmUnreadCount}</span>
     </Link>
@@ -214,6 +219,7 @@ export default function AuthNav({
           {showDmNotice && (
             <Link
               href="/dm"
+              prefetch={false}
               className="auth-dm-notice mx-auto w-fit"
               tabIndex={menuOpen ? 0 : -1}
               aria-label={`運営から未読返信 ${dmUnreadCount} 件`}
@@ -271,6 +277,7 @@ export default function AuthNav({
           {showDmNotice && (
             <Link
               href="/dm"
+              prefetch={false}
               className="auth-dm-notice mx-auto w-fit"
               tabIndex={menuOpen ? 0 : -1}
               aria-label={`運営から未読返信 ${dmUnreadCount} 件`}
@@ -322,6 +329,7 @@ export default function AuthNav({
       <div className={`mobile-nav-panel__auth-grid ${className}`.trim()}>
         <Link
           href={loginHref}
+          prefetch={false}
           className={`mobile-nav-panel__auth-link ${
             isLoginPage && !isRegisterPage ? "mobile-nav-panel__auth-link--active" : ""
           }`}
@@ -333,6 +341,7 @@ export default function AuthNav({
         {authEnabled ? (
           <Link
             href={registerHref}
+            prefetch={false}
             className={`mobile-nav-panel__auth-link ${
               isRegisterPage ? "mobile-nav-panel__auth-link--active" : ""
             }`}
@@ -354,6 +363,7 @@ export default function AuthNav({
       {authEnabled && (
         <Link
           href={registerHref}
+          prefetch={false}
           className={`hidden px-2 py-1.5 text-[11px] tracking-[0.08em] transition-colors sm:inline ${
             isRegisterPage ? "text-gold" : "text-cream-muted hover:text-gold"
           }`}

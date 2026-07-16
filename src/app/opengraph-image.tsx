@@ -4,6 +4,8 @@ import { SITE } from "@/lib/site";
 export const alt = SITE.ogImageAlt;
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
+/** Keep OG image on CDN — crawlers should not regenerate every hit. */
+export const revalidate = 86400;
 
 export default function Image() {
   return new ImageResponse(

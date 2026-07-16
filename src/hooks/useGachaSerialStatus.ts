@@ -12,6 +12,7 @@ import {
   buildGachaHistoryKey,
   updateGachaDrawHistorySerialStatus,
 } from "@/lib/gacha-history";
+import { SERIAL_STATUS_POLL_MS, startVisibilityAwarePoll } from "@/lib/visibility-poll";
 
 function buildSerialsKey(serials: string[]): string {
   return [...new Set(serials.map((serial) => serial.trim()).filter(Boolean))].sort().join("\0");
@@ -33,6 +34,7 @@ export function useGachaSerialStatusSync(
 ): GachaDrawResult | null {
   const [syncedDraw, setSyncedDraw] = useState(draw);
   const drawSerial = draw?.serialNumber?.trim() ?? "";
+  const terminal = syncedDraw?.serialStatus === "used";
 
   useEffect(() => {
     setSyncedDraw(draw);
@@ -62,20 +64,22 @@ export function useGachaSerialStatusSync(
   }, [refreshStatus]);
 
   useEffect(() => {
+    if (!drawSerial || terminal) return;
+
     const onUpdated = () => {
       void refreshStatus();
     };
 
     window.addEventListener(GACHA_SERIAL_STATUS_UPDATED_EVENT, onUpdated);
-    const interval = window.setInterval(() => {
+    const stopPoll = startVisibilityAwarePoll(() => {
       void refreshStatus();
-    }, 30000);
+    }, SERIAL_STATUS_POLL_MS);
 
     return () => {
       window.removeEventListener(GACHA_SERIAL_STATUS_UPDATED_EVENT, onUpdated);
-      window.clearInterval(interval);
+      stopPoll();
     };
-  }, [refreshStatus]);
+  }, [drawSerial, refreshStatus, terminal]);
 
   return syncedDraw;
 }

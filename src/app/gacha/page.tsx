@@ -7,7 +7,7 @@ import type { GachaCastSnapshot } from "@/lib/gacha";
 import SeoJsonLd from "@/components/SeoJsonLd";
 import { buildPageMetadata, buildPublicPageBreadcrumb } from "@/lib/seo";
 
-export const revalidate = 300;
+export const revalidate = 86400;
 
 export const metadata: Metadata = buildPageMetadata({
   title: "ガチャ",

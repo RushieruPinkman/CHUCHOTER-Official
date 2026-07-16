@@ -11,7 +11,7 @@ import {
 } from "@/lib/cast-seo";
 import { absoluteUrl, buildPageMetadata } from "@/lib/seo";
 
-export const revalidate = 300;
+export const revalidate = 86400;
 
 interface CastDetailPageProps {
   params: Promise<{ id: string }>;

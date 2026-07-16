@@ -28,6 +28,7 @@ export default function BonusNavLink({
   return (
     <Link
       href={href}
+      prefetch={false}
       onClick={onClick}
       tabIndex={tabIndex}
       className={`nav-link group relative px-2.5 py-1.5 text-center transition-colors duration-300 sm:px-3.5 sm:py-2 ${

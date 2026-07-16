@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { SITE } from "@/lib/site";
+import { shouldBypassVercelImageOptimizer } from "@/lib/media-cdn";
 
 export default function HeroBackgroundImage() {
   return (
@@ -10,6 +11,7 @@ export default function HeroBackgroundImage() {
         fill
         priority
         fetchPriority="high"
+        unoptimized={shouldBypassVercelImageOptimizer(SITE.heroImage)}
         sizes="100vw"
         className="hero-mv__image"
       />

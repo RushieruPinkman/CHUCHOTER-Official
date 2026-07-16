@@ -11,5 +11,13 @@ export async function GET() {
     return NextResponse.json({ error: "VAPID 公開鍵がありません。" }, { status: 503 });
   }
 
-  return NextResponse.json({ publicKey });
+  return NextResponse.json(
+    { publicKey },
+    {
+      headers: {
+        // Public key is static; serve from CDN to avoid Function origin transfer.
+        "Cache-Control": "public, s-maxage=86400, stale-while-revalidate=604800",
+      },
+    }
+  );
 }
