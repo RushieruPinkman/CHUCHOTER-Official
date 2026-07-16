@@ -316,6 +316,7 @@ export async function listPendingGachaSerialFulfillmentsForCast(params: {
   const supabase = getSupabaseAdmin();
   if (!supabase) return [];
 
+  // pending = 明示待機。null = 移行前データ（DM待機メッセージ有無で後段判定）
   const base = () =>
     supabase
       .from("gacha_serials")

@@ -41,6 +41,7 @@ export default function DmAdmin({ authJsonHeaders, remoteStorage }: DmAdminProps
   const [threadLoading, setThreadLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [sending, setSending] = useState(false);
+  const [savingSettings, setSavingSettings] = useState(false);
   const [uploadingAttachment, setUploadingAttachment] = useState(false);
   const [pendingAttachment, setPendingAttachment] = useState<DmAttachmentPayload | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -258,8 +259,10 @@ export default function DmAdmin({ authJsonHeaders, remoteStorage }: DmAdminProps
 
   const handleSaveSettings = async (event: React.FormEvent) => {
     event.preventDefault();
+    if (savingSettings) return;
     setError(null);
     setMessage(null);
+    setSavingSettings(true);
 
     try {
       const res = await fetch("/api/admin/dm", {
@@ -281,6 +284,8 @@ export default function DmAdmin({ authJsonHeaders, remoteStorage }: DmAdminProps
       setMessage("Discord Webhook URL を保存しました。");
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : "設定の保存に失敗しました");
+    } finally {
+      setSavingSettings(false);
     }
   };
 
@@ -312,8 +317,12 @@ export default function DmAdmin({ authJsonHeaders, remoteStorage }: DmAdminProps
             placeholder="https://discord.com/api/webhooks/..."
             autoComplete="off"
           />
-          <button type="submit" className="btn-primary min-h-10 px-5 text-sm">
-            Webhook を保存
+          <button
+            type="submit"
+            disabled={savingSettings}
+            className="btn-primary min-h-10 px-5 text-sm disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            {savingSettings ? "保存中…" : "Webhook を保存"}
           </button>
           <button
             type="button"

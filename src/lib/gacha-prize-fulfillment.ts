@@ -24,7 +24,8 @@ function getDeliveryMessageForRarity(rarity: 4 | 5): string {
   return rarity === 4 ? GACHA_PRIZE_SIGN_DELIVERY_MESSAGE : GACHA_PRIZE_VOICE_DELIVERY_MESSAGE;
 }
 
-function hasFulfillmentAfterPending(
+/** 待機メッセージがあり、その後まだ景品が届いていない場合のみ true */
+function isAwaitingPendingDelivery(
   messages: Awaited<ReturnType<typeof getThreadMessages>>,
   pendingMessage: string
 ): boolean {
@@ -34,7 +35,7 @@ function hasFulfillmentAfterPending(
   if (pendingIndex === -1) return false;
 
   const afterPending = messages.slice(pendingIndex + 1);
-  return afterPending.some(
+  const alreadyDelivered = afterPending.some(
     (message) =>
       message.sender === "admin" &&
       (message.body === GACHA_PRIZE_READY_MESSAGE ||
@@ -42,6 +43,7 @@ function hasFulfillmentAfterPending(
         message.body === GACHA_PRIZE_VOICE_DELIVERY_MESSAGE ||
         Boolean(message.attachment))
   );
+  return !alreadyDelivered;
 }
 
 async function resolveThreadId(serial: GachaSerialFulfillmentRecord): Promise<string | null> {
@@ -57,8 +59,15 @@ async function isSerialAwaitingFulfillment(
   if (serial.fulfillmentStatus === "fulfilled") return false;
   if (serial.fulfillmentStatus === "pending") return true;
 
+  // 移行前データ: 待機メッセージが残っている場合のみ対象（即時配信済みは除外）
   const messages = await getThreadMessages(threadId);
-  return !hasFulfillmentAfterPending(messages, getPendingMessageForRarity(serial.rarity as 4 | 5));
+  return isAwaitingPendingDelivery(messages, getPendingMessageForRarity(serial.rarity as 4 | 5));
+}
+
+function assetNewlyRegistered(nextUrl: string | undefined, previousUrl: string | undefined): boolean {
+  const next = nextUrl?.trim() ?? "";
+  const previous = previousUrl?.trim() ?? "";
+  return Boolean(next) && next !== previous;
 }
 
 async function fulfillPendingSerial(params: {
@@ -128,15 +137,25 @@ async function fulfillPendingAssetForCast(params: {
   return fulfilled;
 }
 
-export async function fulfillPendingGachaPrizesForCast(cast: Cast): Promise<{
+/**
+ * 今回新たに登録・差し替えされた景品データだけを、
+ * そのレアリティを待機中の会員へ自動配信する。
+ */
+export async function fulfillPendingGachaPrizesForCast(
+  cast: Cast,
+  previous?: Cast | null
+): Promise<{
   signFulfilled: number;
   voiceFulfilled: number;
 }> {
   const signUrl = cast.gachaSignCardUrl?.trim();
   const voiceUrl = cast.gachaVoiceUrl?.trim();
 
+  const shouldFulfillSign = assetNewlyRegistered(signUrl, previous?.gachaSignCardUrl);
+  const shouldFulfillVoice = assetNewlyRegistered(voiceUrl, previous?.gachaVoiceUrl);
+
   const [signFulfilled, voiceFulfilled] = await Promise.all([
-    signUrl
+    shouldFulfillSign && signUrl
       ? fulfillPendingAssetForCast({
           cast,
           rarity: 4,
@@ -144,7 +163,7 @@ export async function fulfillPendingGachaPrizesForCast(cast: Cast): Promise<{
           assetKind: "image",
         })
       : Promise.resolve(0),
-    voiceUrl
+    shouldFulfillVoice && voiceUrl
       ? fulfillPendingAssetForCast({
           cast,
           rarity: 5,

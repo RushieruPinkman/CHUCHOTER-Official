@@ -158,7 +158,7 @@ export async function PUT(request: NextRequest) {
     revalidateSiteContent();
 
     try {
-      await fulfillPendingGachaPrizesForCast(casts[index]);
+      await fulfillPendingGachaPrizesForCast(casts[index], previous);
     } catch (error) {
       console.error("[casts] gacha prize auto-fulfillment failed:", error);
     }

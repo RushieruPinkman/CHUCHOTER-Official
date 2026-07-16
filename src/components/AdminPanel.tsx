@@ -60,6 +60,9 @@ export default function AdminPanel({
   const [isNewAnnouncement, setIsNewAnnouncement] = useState(false);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
+  const [savingCast, setSavingCast] = useState(false);
+  const [savingAnnouncement, setSavingAnnouncement] = useState(false);
+  const [savingStatus, setSavingStatus] = useState(false);
   const [storageIssue, setStorageIssue] = useState<string | null>(null);
 
   const authGetHeaders = useCallback(
@@ -181,7 +184,8 @@ export default function AdminPanel({
 
   const handleSaveCast = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!editingCast || !token || !ensureWritable()) return;
+    if (!editingCast || !token || !ensureWritable() || savingCast) return;
+    setSavingCast(true);
     try {
       const payload = {
         ...editingCast,
@@ -203,6 +207,8 @@ export default function AdminPanel({
       }
     } catch {
       setMessage("保存に失敗しました。サーバーへの接続を確認してください。");
+    } finally {
+      setSavingCast(false);
     }
   };
 
@@ -224,7 +230,8 @@ export default function AdminPanel({
 
   const handleSaveAnnouncement = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!editingAnnouncement || !token || !ensureWritable()) return;
+    if (!editingAnnouncement || !token || !ensureWritable() || savingAnnouncement) return;
+    setSavingAnnouncement(true);
     try {
       const res = await fetch("/api/announcements", {
         method: isNewAnnouncement ? "POST" : "PUT",
@@ -241,6 +248,8 @@ export default function AdminPanel({
       }
     } catch {
       setMessage("保存に失敗しました。サーバーへの接続を確認してください。");
+    } finally {
+      setSavingAnnouncement(false);
     }
   };
 
@@ -262,7 +271,8 @@ export default function AdminPanel({
 
   const handleStatusUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!status || !token || !ensureWritable()) return;
+    if (!status || !token || !ensureWritable() || savingStatus) return;
+    setSavingStatus(true);
     try {
       const res = await fetch("/api/status", {
         method: "PATCH",
@@ -273,6 +283,8 @@ export default function AdminPanel({
       else setMessage(await readApiError(res, "運行状況の保存に失敗しました"));
     } catch {
       setMessage("運行状況の保存に失敗しました。サーバーへの接続を確認してください。");
+    } finally {
+      setSavingStatus(false);
     }
   };
 
@@ -519,8 +531,12 @@ export default function AdminPanel({
                 />
               </label>
             </div>
-            <button type="submit" className="btn-primary text-sm">
-              運行状況を保存
+            <button
+              type="submit"
+              disabled={savingStatus}
+              className="btn-primary text-sm disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              {savingStatus ? "保存中…" : "運行状況を保存"}
             </button>
           </form>
         </section>
@@ -539,7 +555,15 @@ export default function AdminPanel({
       )}
 
       {editingCast && token && (
-        <Modal title={isNewCast ? "住人を追加" : "住人を編集"} onClose={() => { setEditingCast(null); setIsNewCast(false); }} wide>
+        <Modal
+          title={isNewCast ? "住人を追加" : "住人を編集"}
+          onClose={() => {
+            if (savingCast) return;
+            setEditingCast(null);
+            setIsNewCast(false);
+          }}
+          wide
+        >
           <form onSubmit={handleSaveCast} className="space-y-3">
             <ImageUploader
               value={editingCast.image}
@@ -649,8 +673,24 @@ export default function AdminPanel({
               <span className="text-sm">公開する</span>
             </label>
             <div className="flex gap-3 pt-2">
-              <button type="submit" className="btn-primary">保存</button>
-              <button type="button" onClick={() => { setEditingCast(null); setIsNewCast(false); }} className="text-cream-muted">キャンセル</button>
+              <button
+                type="submit"
+                disabled={savingCast}
+                className="btn-primary disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                {savingCast ? "保存中…" : "保存"}
+              </button>
+              <button
+                type="button"
+                disabled={savingCast}
+                onClick={() => {
+                  setEditingCast(null);
+                  setIsNewCast(false);
+                }}
+                className="text-cream-muted disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                キャンセル
+              </button>
             </div>
           </form>
         </Modal>
@@ -659,7 +699,11 @@ export default function AdminPanel({
       {editingAnnouncement && (
         <Modal
           title={isNewAnnouncement ? "お知らせを追加" : "お知らせを編集"}
-          onClose={() => { setEditingAnnouncement(null); setIsNewAnnouncement(false); }}
+          onClose={() => {
+            if (savingAnnouncement) return;
+            setEditingAnnouncement(null);
+            setIsNewAnnouncement(false);
+          }}
         >
           <form onSubmit={handleSaveAnnouncement} className="space-y-3">
             <label className="block">
@@ -709,8 +753,24 @@ export default function AdminPanel({
               <span className="text-sm">公開する</span>
             </label>
             <div className="flex gap-3 pt-2">
-              <button type="submit" className="btn-primary">保存</button>
-              <button type="button" onClick={() => { setEditingAnnouncement(null); setIsNewAnnouncement(false); }} className="text-cream-muted">キャンセル</button>
+              <button
+                type="submit"
+                disabled={savingAnnouncement}
+                className="btn-primary disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                {savingAnnouncement ? "保存中…" : "保存"}
+              </button>
+              <button
+                type="button"
+                disabled={savingAnnouncement}
+                onClick={() => {
+                  setEditingAnnouncement(null);
+                  setIsNewAnnouncement(false);
+                }}
+                className="text-cream-muted disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                キャンセル
+              </button>
             </div>
           </form>
         </Modal>
