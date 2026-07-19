@@ -1,6 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { enforceSitePrivate } from "@/lib/site-private";
-import { updateSession } from "@/lib/supabase/middleware";
 
 function needsSessionRefresh(pathname: string): boolean {
   return (
@@ -20,18 +19,16 @@ export async function middleware(request: NextRequest) {
   if (privateResponse) return privateResponse;
 
   if (needsSessionRefresh(request.nextUrl.pathname)) {
+    const { updateSession } = await import("@/lib/supabase/middleware");
     return updateSession(request);
   }
 
   return NextResponse.next();
 }
 
-/**
- * Broad matcher so private mode can gate the whole site.
- * Static assets stay out; session refresh still only runs on auth paths above.
- */
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|txt|xml|webmanifest)$).*)",
+    "/",
+    "/((?!_next/static|_next/image|favicon.ico).*)",
   ],
 };
