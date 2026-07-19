@@ -1,24 +1,37 @@
-import { type NextRequest } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
+import { enforceSitePrivate } from "@/lib/site-private";
 import { updateSession } from "@/lib/supabase/middleware";
 
+function needsSessionRefresh(pathname: string): boolean {
+  return (
+    pathname.startsWith("/auth/") ||
+    pathname === "/login" ||
+    pathname.startsWith("/login/") ||
+    pathname === "/register" ||
+    pathname === "/profile" ||
+    pathname.startsWith("/profile/") ||
+    pathname === "/admin" ||
+    pathname.startsWith("/admin/")
+  );
+}
+
 export async function middleware(request: NextRequest) {
-  return updateSession(request);
+  const privateResponse = enforceSitePrivate(request);
+  if (privateResponse) return privateResponse;
+
+  if (needsSessionRefresh(request.nextUrl.pathname)) {
+    return updateSession(request);
+  }
+
+  return NextResponse.next();
 }
 
 /**
- * Session refresh only where SSR auth cookies matter.
- * Member feature pages (/gacha, /bonus, /collection, /dm) authenticate via
- * client + API routes — keeping them out of the matcher cuts Edge Requests.
+ * Broad matcher so private mode can gate the whole site.
+ * Static assets stay out; session refresh still only runs on auth paths above.
  */
 export const config = {
   matcher: [
-    "/auth/:path*",
-    "/login",
-    "/login/:path*",
-    "/register",
-    "/profile",
-    "/profile/:path*",
-    "/admin",
-    "/admin/:path*",
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|txt|xml|webmanifest)$).*)",
   ],
 };
