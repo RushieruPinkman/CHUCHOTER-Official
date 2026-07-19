@@ -1,14 +1,27 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 /**
- * Production is private by default until SITE_PRIVATE=false.
- * Set SITE_PASSWORD on Vercel so operators can still open the site (Basic Auth).
+ * Site-wide private lock.
+ *
+ * - Default ON for production builds (does not rely on VERCEL_ENV).
+ * - Reopen: set SITE_PRIVATE=false on Vercel and Redeploy.
+ * - Operator access: set SITE_PASSWORD (HTTP Basic Auth via middleware).
  */
 export function isSitePrivate(): boolean {
   const flag = process.env.SITE_PRIVATE?.trim().toLowerCase();
   if (flag === "0" || flag === "false" || flag === "off") return false;
   if (flag === "1" || flag === "true" || flag === "on") return true;
-  return process.env.VERCEL_ENV === "production";
+  // NODE_ENV is reliably "production" on Vercel builds/runtime.
+  return process.env.NODE_ENV === "production";
+}
+
+export function hasSitePassword(): boolean {
+  return Boolean(process.env.SITE_PASSWORD?.trim());
+}
+
+/** When true, SSR/prerender can safely render the locked page (no Basic Auth path). */
+export function shouldRenderPrivatePage(): boolean {
+  return isSitePrivate() && !hasSitePassword();
 }
 
 function getSitePassword(): string | null {
@@ -37,8 +50,8 @@ function checkBasicAuth(request: NextRequest, password: string): boolean {
   }
 }
 
-function privateUnavailableResponse(): NextResponse {
-  const body = `<!DOCTYPE html>
+export function privateUnavailableHtml(): string {
+  return `<!DOCTYPE html>
 <html lang="ja">
 <head>
   <meta charset="utf-8" />
@@ -71,13 +84,16 @@ function privateUnavailableResponse(): NextResponse {
   </main>
 </body>
 </html>`;
+}
 
-  return new NextResponse(body, {
+function privateUnavailableResponse(): NextResponse {
+  return new NextResponse(privateUnavailableHtml(), {
     status: 503,
     headers: {
       "Content-Type": "text/html; charset=utf-8",
       "Cache-Control": "no-store",
       "Retry-After": "3600",
+      "X-Chuchoter-Private": "1",
     },
   });
 }
@@ -88,6 +104,7 @@ function unauthorizedResponse(): NextResponse {
     headers: {
       "WWW-Authenticate": 'Basic realm="CHUCHOTER", charset="UTF-8"',
       "Cache-Control": "no-store",
+      "X-Chuchoter-Private": "1",
     },
   });
 }
