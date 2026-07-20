@@ -17,7 +17,7 @@ import { useCollectionUserKey } from "@/hooks/useCollectionUserKey";
 import { useGachaUserDataSync } from "@/hooks/useGachaUserDataSync";
 import { useCpBalance } from "@/hooks/useCpBalance";
 import { CP_GACHA_SINGLE_COST, CP_GACHA_TEN_COST } from "@/lib/cp";
-import { GACHA_SERIAL_UNUSED_RETENTION_DAYS, shouldTrackGachaPrizeSerial } from "@/lib/gacha-serial";
+import { shouldTrackGachaPrizeSerial } from "@/lib/gacha-serial";
 import { drawGacha } from "@/lib/cp-client";
 import {
   buildGachaPresentation,
@@ -673,10 +673,6 @@ export default function GachaMachine({ casts, mode = "production" }: GachaMachin
             </p>
             <p>
               ★5・★6は運営DMで当選内容・シリアルNo.をお送りください（★5は希望のキャスト名も）。
-            </p>
-            <p className="text-[10px] text-cream-faint/80">
-              シリアルNo.は★5以上の景品にのみ発行されます。未使用のシリアルNo.は発行から
-              {GACHA_SERIAL_UNUSED_RETENTION_DAYS}日後に自動削除されます。
             </p>
           </div>
         </ScrollReveal>

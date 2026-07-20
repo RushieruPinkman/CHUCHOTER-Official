@@ -65,11 +65,7 @@ function buildMixedSerialBody(): string {
   return chars.join("");
 }
 
-/** 未使用シリアルを保持する日数（この期間を過ぎると自動削除） */
-export const GACHA_SERIAL_UNUSED_RETENTION_DAYS = 30;
-
-/** 使用済みシリアルを保持する日数（この期間を過ぎると自動削除） */
-export const GACHA_SERIAL_USED_RETENTION_DAYS = 90;
+/** シリアルは無期限で保持（自動削除なし） */
 
 /** ★4〜★6の景品受け取り追跡用シリアルをサーバーに発行 */
 export function shouldTrackGachaPrizeSerial(rarity: GachaSerialRarity): boolean {

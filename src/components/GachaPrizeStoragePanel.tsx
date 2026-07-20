@@ -10,7 +10,6 @@ import { formatGachaHistoryTimestamp } from "@/lib/gacha-history";
 import { getRarityLabel, type GachaDrawResult } from "@/lib/gacha";
 import {
   formatGachaSerialLabel,
-  GACHA_SERIAL_UNUSED_RETENTION_DAYS,
   shouldIssueGachaSerialNumber,
 } from "@/lib/gacha-serial";
 import { isUserAuthEnabled } from "@/lib/supabase/config";
@@ -138,12 +137,6 @@ export default function GachaPrizeStoragePanel({
                   );
                 })}
               </ul>
-            )}
-
-            {hydrated && userKey && (
-              <p className="mt-4 text-center text-[10px] leading-relaxed text-cream-faint/80">
-                未使用の景品は当選から{GACHA_SERIAL_UNUSED_RETENTION_DAYS}日後に自動削除されます。
-              </p>
             )}
           </div>
         </div>

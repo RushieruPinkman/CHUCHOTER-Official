@@ -2,8 +2,6 @@ import "server-only";
 
 import { buildAuthCollectionUserKey } from "@/lib/gacha-collection";
 import {
-  GACHA_SERIAL_UNUSED_RETENTION_DAYS,
-  GACHA_SERIAL_USED_RETENTION_DAYS,
   generateGachaSerialNumber,
   isValidGachaSerialNumber,
   normalizeGachaSerialNumber,
@@ -97,8 +95,6 @@ export async function issueGachaSerial(input: IssueGachaSerialInput): Promise<Ga
   if (input.rarity < 4 || input.rarity > 6) {
     throw new Error("シリアル発行対象のレアリティが不正です。");
   }
-
-  void purgeExpiredGachaSerials().catch(() => {});
 
   for (let attempt = 0; attempt < 8; attempt++) {
     const serial = generateGachaSerialNumber();
@@ -419,58 +415,17 @@ export function buildUserKeyFromAuthUserId(userId: string): string {
   return buildAuthCollectionUserKey(userId);
 }
 
-export async function purgeExpiredUnusedGachaSerials(
-  retentionDays = GACHA_SERIAL_UNUSED_RETENTION_DAYS
-): Promise<number> {
-  const supabase = getSupabaseAdmin();
-  if (!supabase) return 0;
-
-  const cutoff = new Date(Date.now() - retentionDays * 24 * 60 * 60 * 1000).toISOString();
-  const { data, error } = await supabase
-    .from("gacha_serials")
-    .delete()
-    .eq("status", "issued")
-    .lt("created_at", cutoff)
-    .select("serial");
-
-  if (error) {
-    if (isMissingTableError(error)) return 0;
-    throw new Error(error.message);
-  }
-
-  return data?.length ?? 0;
+export async function purgeExpiredUnusedGachaSerials(): Promise<number> {
+  return 0;
 }
 
-export async function purgeExpiredUsedGachaSerials(
-  retentionDays = GACHA_SERIAL_USED_RETENTION_DAYS
-): Promise<number> {
-  const supabase = getSupabaseAdmin();
-  if (!supabase) return 0;
-
-  const cutoff = new Date(Date.now() - retentionDays * 24 * 60 * 60 * 1000).toISOString();
-  const { data, error } = await supabase
-    .from("gacha_serials")
-    .delete()
-    .eq("status", "used")
-    .not("used_at", "is", null)
-    .lt("used_at", cutoff)
-    .select("serial");
-
-  if (error) {
-    if (isMissingTableError(error)) return 0;
-    throw new Error(error.message);
-  }
-
-  return data?.length ?? 0;
+export async function purgeExpiredUsedGachaSerials(): Promise<number> {
+  return 0;
 }
 
 export async function purgeExpiredGachaSerials(): Promise<{
   unusedDeleted: number;
   usedDeleted: number;
 }> {
-  const [unusedDeleted, usedDeleted] = await Promise.all([
-    purgeExpiredUnusedGachaSerials(),
-    purgeExpiredUsedGachaSerials(),
-  ]);
-  return { unusedDeleted, usedDeleted };
+  return { unusedDeleted: 0, usedDeleted: 0 };
 }

@@ -2,7 +2,6 @@ import "server-only";
 
 import { notifyDmReplyPush } from "@/lib/push-send";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
-import { DM_INACTIVITY_DAYS } from "@/lib/dm";
 import type {
   DmAttachmentKind,
   DmAttachmentPayload,
@@ -22,7 +21,6 @@ import {
 } from "@/lib/dm-attachments";
 import { isSupabaseConnectionError } from "@/lib/supabase-errors";
 
-const DM_INACTIVITY_MS = DM_INACTIVITY_DAYS * 24 * 60 * 60 * 1000;
 const MESSAGE_MAX_LENGTH = 2000;
 const PREVIEW_MAX_LENGTH = 120;
 
@@ -148,60 +146,7 @@ export function isDmStoreEnabled(): boolean {
 }
 
 export async function cleanupInactiveDmThreads(): Promise<number> {
-  const supabase = getSupabaseAdmin();
-  if (!supabase) return 0;
-
-  const cutoff = new Date(Date.now() - DM_INACTIVITY_MS).toISOString();
-
-  try {
-    const { data: staleThreads, error: fetchError } = await supabase
-      .from("dm_threads")
-      .select("id")
-      .lt("last_message_at", cutoff);
-
-    if (fetchError) {
-      if (!isMissingTableError(fetchError) && !isSupabaseConnectionError(fetchError)) {
-        console.error("[dm-store] cleanup fetch failed:", fetchError.message);
-      }
-      return 0;
-    }
-
-    if (!staleThreads?.length) {
-      return 0;
-    }
-
-    const threadIds = staleThreads.map((thread) => thread.id);
-    const { data: messages, error: messagesError } = await supabase
-      .from("dm_messages")
-      .select("attachment_path")
-      .in("thread_id", threadIds)
-      .not("attachment_path", "is", null);
-
-    if (messagesError && !isMissingTableError(messagesError) && !isSupabaseConnectionError(messagesError)) {
-      console.error("[dm-store] cleanup attachment lookup failed:", messagesError.message);
-    } else {
-      const attachmentPaths = (messages ?? [])
-        .map((message) => message.attachment_path)
-        .filter((pathValue): pathValue is string => Boolean(pathValue?.trim()));
-      if (attachmentPaths.length > 0) {
-        await deleteDmAttachmentStorage(attachmentPaths);
-      }
-    }
-
-    const { error: deleteError } = await supabase.from("dm_threads").delete().lt("last_message_at", cutoff);
-
-    if (deleteError && !isMissingTableError(deleteError) && !isSupabaseConnectionError(deleteError)) {
-      console.error("[dm-store] cleanup failed:", deleteError.message);
-      return 0;
-    }
-
-    return staleThreads.length;
-  } catch (error) {
-    if (!isSupabaseConnectionError(error)) {
-      console.error("[dm-store] cleanup fetch failed:", error);
-    }
-    return 0;
-  }
+  return 0;
 }
 
 export async function getUserDmThread(userKey: string): Promise<DmThreadSummary | null> {

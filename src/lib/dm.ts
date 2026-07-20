@@ -52,10 +52,6 @@ export interface DmSettings {
   discordWebhookUrl: string;
 }
 
-export const DM_INACTIVITY_DAYS = 14;
-
-export const DM_RETENTION_NOTICE = `最終メッセージから${DM_INACTIVITY_DAYS}日間やり取りがない場合、会話は自動的に削除されます。`;
-
 export function formatDmTimestamp(iso: string): string {
   return new Intl.DateTimeFormat("ja-JP", {
     timeZone: "Asia/Tokyo",

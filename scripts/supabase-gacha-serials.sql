@@ -37,7 +37,8 @@ create policy "No public access on gacha_serials"
   using (false)
   with check (false);
 
--- 未使用シリアルの自動削除（発行から 30 日間、status = issued のみ）
+-- 未使用・使用済みシリアルの自動削除関数（参考用・現行アプリでは無効）
+-- アプリ側で purge を呼ばないため、pg_cron でスケジュールしないでください。
 create or replace function public.purge_expired_gacha_serials(retention_days int default 30)
 returns bigint
 language plpgsql
@@ -57,7 +58,7 @@ $$;
 
 grant execute on function public.purge_expired_gacha_serials(int) to service_role;
 
--- 使用済みシリアルの自動削除（使用から 90 日経過）
+-- 使用済みシリアルの自動削除関数（参考用・現行アプリでは無効）
 create or replace function public.purge_expired_used_gacha_serials(retention_days int default 90)
 returns bigint
 language plpgsql
@@ -82,9 +83,4 @@ grant execute on function public.purge_expired_used_gacha_serials(int) to servic
 -- scripts/supabase-gacha-serials-migrate-rarity.sql を実行してください。
 -- （rarity < 4 の古い行を削除してから制約を更新します）
 --
--- Supabase pg_cron で毎日実行する場合（Database → Extensions で pg_cron を有効化）:
--- select cron.schedule(
---   'purge-expired-gacha-serials',
---   '0 3 * * *',
---   $$ select public.purge_expired_gacha_serials(30); $$
--- );
+-- pg_cron は使用しないでください（現行アプリではシリアル自動削除は無効）。

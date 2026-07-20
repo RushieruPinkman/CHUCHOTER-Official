@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { readApiError } from "@/lib/api-error";
 import {
-  DM_RETENTION_NOTICE,
   formatDmListTimestamp,
   formatDmTimestamp,
   getDmSenderLabel,
@@ -381,7 +380,6 @@ export default function DmAdmin({ authJsonHeaders, remoteStorage }: DmAdminProps
               </button>
             </div>
           </div>
-          <p className="mt-2 text-xs leading-relaxed text-cream-faint">{DM_RETENTION_NOTICE}</p>
         </div>
 
         <div

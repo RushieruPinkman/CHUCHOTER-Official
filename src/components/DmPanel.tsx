@@ -7,7 +7,6 @@ import DmMessageContent from "@/components/DmMessageContent";
 import { useCollectionUserKey } from "@/hooks/useCollectionUserKey";
 import { getAuthLoginHref, getAuthRegisterHref } from "@/lib/auth-routes";
 import {
-  DM_RETENTION_NOTICE,
   formatDmTimestamp,
   getDmSenderLabel,
   type DmAttachmentPayload,
@@ -173,10 +172,6 @@ export default function DmPanel({ loginNextPath = "/dm" }: DmPanelProps) {
         <p className="mt-3 text-sm leading-relaxed text-cream-muted">
           運営とのDMは、ログイン中のアカウントでのみご利用いただけます。
         </p>
-        <details className="dm-panel__notice mt-4 text-left">
-          <summary>ご利用上の注意</summary>
-          <p className="mt-2">{DM_RETENTION_NOTICE}</p>
-        </details>
         <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-center">
           <Link href={getAuthLoginHref(loginNextPath)} className="btn-primary inline-flex min-h-11 items-center justify-center px-6">
             ログイン
@@ -195,7 +190,6 @@ export default function DmPanel({ loginNextPath = "/dm" }: DmPanelProps) {
         <summary>ご利用上の注意</summary>
         <div className="dm-panel__notice-body">
           {memberLabel && <p className="text-cream-muted">{memberLabel} として送信されます。</p>}
-          <p>{DM_RETENTION_NOTICE}</p>
           <p className="text-[10px] text-cream-faint">
             画像 5MB まで / 音声 10MB まで。Enter で送信、Shift+Enter で改行。
           </p>

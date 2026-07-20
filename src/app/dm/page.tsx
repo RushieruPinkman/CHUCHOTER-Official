@@ -2,12 +2,11 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import DmPanel from "@/components/DmPanel";
 import PageHero from "@/components/PageHero";
-import { DM_RETENTION_NOTICE } from "@/lib/dm";
 import { buildPageMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = buildPageMetadata({
   title: "運営DM",
-  description: `CHUCHOTER 運営への連絡窓口。${DM_RETENTION_NOTICE}`,
+  description: "CHUCHOTER 運営への連絡窓口。",
   path: "/dm",
   index: false,
   follow: false,
@@ -21,7 +20,7 @@ export default function DmPage() {
       <PageHero
         titleEn="Contact"
         titleJa="運営DM"
-        description={`CHUCHOTER 運営への連絡窓口です。${DM_RETENTION_NOTICE}`}
+        description="CHUCHOTER 運営への連絡窓口です。"
         compact
       />
       <section className="dm-page__body site-container flex min-h-0 flex-1 flex-col overflow-hidden pb-0 md:pb-12">
