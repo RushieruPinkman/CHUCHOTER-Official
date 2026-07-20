@@ -9,7 +9,8 @@
     "build:clean": "node -e \"try{require('fs').rmSync('.next',{recursive:true,force:true})}catch(e){}\" && next build",
     "start": "next start",
     "lint": "eslint . --max-warnings 0",
-    "logo:transparent": "node scripts/make-logo-transparent.mjs"
+    "logo:transparent": "node scripts/make-logo-transparent.mjs",
+    "backup:supabase": "node scripts/backup-supabase.mjs"
   },
   "dependencies": {
     "@next/third-parties": "^16.2.9",
