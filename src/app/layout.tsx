@@ -4,21 +4,26 @@ import GoogleTagManager from "@/components/GoogleTagManager";
 import SiteShell from "@/components/SiteShell";
 import StructuredData from "@/components/StructuredData";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { shouldRenderPrivatePage } from "@/lib/site-private";
 import { SITE } from "@/lib/site";
 import "./globals.css";
 
 /** 管理画面保存時は revalidateTag / revalidatePath で即時反映 */
 export const revalidate = 86400;
 
+const sitePrivatePage = shouldRenderPrivatePage();
+
 export const metadata: Metadata = {
   metadataBase: new URL(SITE.url),
   title: {
-    default: `${SITE.name} | 高級隠れ家マンション`,
+    default: sitePrivatePage ? `${SITE.name} — 非公開` : `${SITE.name} | 高級隠れ家マンション`,
     template: `%s | ${SITE.name}`,
   },
   description: SITE.description,
   applicationName: SITE.name,
-  robots: { index: true, follow: true },
+  robots: sitePrivatePage
+    ? { index: false, follow: false }
+    : { index: true, follow: true },
   ...(process.env.GOOGLE_SITE_VERIFICATION
     ? { verification: { google: process.env.GOOGLE_SITE_VERIFICATION } }
     : {}),
@@ -44,6 +49,44 @@ const themeInitScript = `(function(){try{var t=localStorage.getItem("chuchoter-t
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  if (sitePrivatePage) {
+    return (
+      <html lang="ja">
+        <head>
+          <meta name="robots" content="noindex,nofollow" />
+        </head>
+        <body
+          style={{
+            margin: 0,
+            minHeight: "100vh",
+            display: "grid",
+            placeItems: "center",
+            fontFamily: '"Hiragino Mincho ProN", "Yu Mincho", "Noto Serif JP", serif',
+            background:
+              "radial-gradient(ellipse at 20% 0%, rgba(120, 80, 40, 0.35), transparent 50%), radial-gradient(ellipse at 80% 100%, rgba(40, 30, 20, 0.8), transparent 45%), #0c0a08",
+            color: "#f3e8d8",
+          }}
+        >
+          <main style={{ textAlign: "center", padding: "2rem" }}>
+            <h1
+              style={{
+                fontWeight: 500,
+                letterSpacing: "0.28em",
+                fontSize: "1.35rem",
+                margin: "0 0 1rem",
+              }}
+            >
+              CHUCHOTER
+            </h1>
+            <p style={{ margin: 0, opacity: 0.72, fontSize: "0.95rem", letterSpacing: "0.06em" }}>
+              現在サイトは非公開です。
+            </p>
+          </main>
+        </body>
+      </html>
+    );
+  }
+
   return (
     <html lang="ja" suppressHydrationWarning>
       <head>

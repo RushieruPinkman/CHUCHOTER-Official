@@ -19,6 +19,18 @@ npm run dev
 
 http://localhost:3000 でサイトを確認できます。
 
+## サイトの非公開 / 再公開
+
+本番ビルドは **デフォルトで非公開** です（middleware + ルート layout の二重ロック）。
+
+| 目的 | 操作 |
+|------|------|
+| 関係者だけ見る | Vercel に `SITE_PASSWORD` を設定 → Redeploy（Basic 認証） |
+| 一般公開に戻す | `SITE_PRIVATE=false` を追加して **Redeploy**（`false` が残っていると公開のまま） |
+| 再び非公開 | `SITE_PRIVATE` を削除（または `true`）して Redeploy |
+
+`/api/cron/*` は `CRON_SECRET` 付きリクエストのみ通過します。
+
 ## 管理画面
 
 `/admin` に **URL とパスワード** がわかれば誰でも更新できます（ロボットは `noindex`）。
