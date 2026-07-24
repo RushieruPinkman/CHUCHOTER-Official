@@ -172,6 +172,19 @@ async function main() {
     process.exit(1);
   }
 
+  try {
+    const host = new URL(url).hostname;
+    if (/x{4,}|example|xxxxxxxx|your-/i.test(host) || key.length < 80 || /your-|example|xxxxxxxx/i.test(key)) {
+      console.error(
+        ".env.local の Supabase 設定がプレースホルダです。Dashboard の本物の URL / service_role キーを設定してから再実行してください。"
+      );
+      process.exit(1);
+    }
+  } catch {
+    console.error("SUPABASE_URL の形式が不正です。");
+    process.exit(1);
+  }
+
   const supabase = createClient(url, key, {
     auth: { persistSession: false, autoRefreshToken: false },
     global: {

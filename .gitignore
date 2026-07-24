@@ -20,6 +20,7 @@
 
 # backups (local Supabase exports)
 /backups/
+.env.local.retired*
 
 # misc
 .DS_Store

@@ -10,7 +10,8 @@
     "start": "next start",
     "lint": "eslint . --max-warnings 0",
     "logo:transparent": "node scripts/make-logo-transparent.mjs",
-    "backup:supabase": "node scripts/backup-supabase.mjs"
+    "backup:supabase": "node scripts/backup-supabase.mjs",
+    "decommission": "node scripts/decommission.mjs"
   },
   "dependencies": {
     "@next/third-parties": "^16.2.9",
